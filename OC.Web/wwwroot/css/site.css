@@ -1,0 +1,90 @@
+:root {
+    /* Paleta de Colores Corporativa */
+    --color-primary: #1E3A8A; /* Azul Oscuro - Headers/Sidebar */
+    --color-brand: #2563EB; /* Azul Marca - Botones/Acentos */
+    --color-bg: #F8FAFC; /* Fondo Suave - Área de trabajo */
+    --color-text: #334155; /* Gris Oscuro - Texto legible */
+    --sidebar-width: 260px;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden; /* Evitar scroll horizontal */
+}
+
+/* --- Layout Estructural --- */
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: var(--color-primary);
+    color: #fff;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+#content {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* --- Componentes UI --- */
+.card-dashboard {
+    background: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-brand {
+    background-color: var(--color-brand);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+    .btn-brand:hover {
+        background-color: #1d4ed8; /* Un tono más oscuro */
+        color: #fff;
+    }
+
+/* Sidebar Links */
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: #172554;
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+}
+
+#sidebar ul li a {
+    padding: 15px 20px;
+    font-size: 1.1em;
+    display: block;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+}
+
+    #sidebar ul li a:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+    }
+
+#sidebar ul li.active > a {
+    color: #fff;
+    background: var(--color-brand);
+}

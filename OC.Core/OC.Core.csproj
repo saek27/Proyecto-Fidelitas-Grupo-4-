@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Aplication\Mappers\" />
+    <Folder Include="Aplication\Services\" />
+    <Folder Include="Aplication\DTOs\" />
+    <Folder Include="Contracts\IServices\" />
+    <Folder Include="Domain\ValueObjects\" />
+  </ItemGroup>
+
+</Project>

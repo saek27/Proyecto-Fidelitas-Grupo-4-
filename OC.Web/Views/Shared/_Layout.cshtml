@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Sistema Óptica Comunal</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+
+    <div class="wrapper">
+        <vc:sidebar></vc:sidebar>
+
+        <div id="content">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light rounded mb-4 shadow-sm">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-brand">
+                        <i class="bi bi-list"></i> Menú
+                    </button>
+
+                    <div class="d-flex align-items-center">
+                        <span class="me-3 fw-bold text-secondary">Dr. Usuario Demo</span>
+                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center" style="width: 35px; height: 35px;">
+                            US
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <main role="main" class="container-fluid">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+                // Nota: Podrías necesitar agregar una clase .active en CSS para colapsarlo visualmente
+                // ocultando el sidebar con margin-left negativo si deseas esa funcionalidad.
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
