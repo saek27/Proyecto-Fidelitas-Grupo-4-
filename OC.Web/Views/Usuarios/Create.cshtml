@@ -1,0 +1,68 @@
+﻿@model OC.Web.ViewModels.UserViewModel
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card-dashboard">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="text-primary">Crear Nuevo Usuario</h3>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Volver al Listado
+                </a>
+            </div>
+
+            <form asp-action="Create">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label asp-for="Name" class="form-label fw-bold">Nombre Completo</label>
+                        <input asp-for="Name" class="form-control" placeholder="Ej: Juan Pérez" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-bold">Correo Electrónico</label>
+                        <input asp-for="Email" class="form-control" placeholder="nombre@optica.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Password" class="form-label fw-bold">Contraseña</label>
+                        <input asp-for="Password" class="form-control" placeholder="******" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="RoleId" class="form-label fw-bold">Rol de Usuario</label>
+                        <select asp-for="RoleId" asp-items="Model.RolesList" class="form-select">
+                            <option value="">-- Seleccionar Rol --</option>
+                        </select>
+                        <span asp-validation-for="RoleId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="SucursalId" class="form-label fw-bold">Sucursal Asignada</label>
+                        <select asp-for="SucursalId" asp-items="Model.SucursalesList" class="form-select">
+                            <option value="">-- Seleccionar Sucursal --</option>
+                        </select>
+                        <span asp-validation-for="SucursalId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-brand px-5">
+                        <i class="bi bi-save me-2"></i> Guardar Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

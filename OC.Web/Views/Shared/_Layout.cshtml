@@ -18,18 +18,32 @@
         <div id="content">
             <nav class="navbar navbar-expand-lg navbar-light bg-light rounded mb-4 shadow-sm">
                 <div class="container-fluid">
-                    <button type="button" id="sidebarCollapse" class="btn btn-brand">
-                        <i class="bi bi-list"></i> Menú
-                    </button>
 
-                    <div class="d-flex align-items-center">
-                        <span class="me-3 fw-bold text-secondary">Dr. Usuario Demo</span>
-                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center" style="width: 35px; height: 35px;">
-                            US
-                        </div>
+                    <!-- lado derecho -->
+                    <div class="d-flex align-items-center ms-auto">
+                        <span class="me-3 fw-bold text-secondary">
+                            @if (User.Identity!.IsAuthenticated)
+                            {
+                                <i class="bi bi-person-circle me-1"></i>
+                                @User.Identity.Name
+                            }
+                            else
+                            {
+                                <span>Invitado</span>
+                            }
+                        </span>
+
+                        <a asp-controller="Account"
+                           asp-action="Logout"
+                           class="btn btn-danger btn-sm d-flex align-items-center">
+                            <i class="bi bi-box-arrow-left me-1"></i> Salir
+                        </a>
                     </div>
+
                 </div>
             </nav>
+
+
 
             <main role="main" class="container-fluid">
                 @RenderBody()

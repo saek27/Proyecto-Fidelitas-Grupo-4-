@@ -1,0 +1,54 @@
+﻿@model OC.Web.ViewModels.LoginViewModel
+@{
+    Layout = null; // Login no lleva el Sidebar del Dashboard
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Óptica Comunal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center align-items-center vh-100">
+            <div class="col-md-4">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <h2 class="text-primary fw-bold">Óptica Comunal</h2>
+                            <p class="text-muted">Inicia sesión para continuar</p>
+                        </div>
+
+                        <form asp-action="Login" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label">Correo</label>
+                                <input asp-for="Email" class="form-control" placeholder="admin@optica.com" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">Contraseña</label>
+                                <input asp-for="Password" class="form-control" />
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input asp-for="RememberMe" class="form-check-input" />
+                                <label class="form-check-label" asp-for="RememberMe">Recordarme</label>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-brand text-white btn-lg">Entrar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

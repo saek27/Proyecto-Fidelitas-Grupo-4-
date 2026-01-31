@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Security.Claims; // Necesario para trabajar con Roles
 
 namespace OC.Web.ViewComponents.Sidebar
 {
@@ -7,25 +8,37 @@ namespace OC.Web.ViewComponents.Sidebar
     {
         public IViewComponentResult Invoke()
         {
-            // SIMULACIÓN: En producción esto vendría de User.Claims o Database
-            // Roles posibles para probar: "Admin", "Optometrista", "Recepcion"
-            var userRole = "Admin";
-
+            // OBTENER IDENTIDAD REAL: Leemos el usuario de la petición actual
+            var user = HttpContext.User;
             var menuItems = new List<MenuItem>();
 
-            // Menú Común (Todos lo ven)
+            // Menú Común: Todos los usuarios autenticados ven esto
             menuItems.Add(new MenuItem { Title = "Inicio", Url = "/", Icon = "bi-speedometer2" });
 
-            // Lógica de visualización según Rol
-            if (userRole == "Admin")
+            // --- Lógica de visualización REAL según el Rol en la Cookie ---
+
+            // Solo para Administradores
+            if (user.IsInRole("Admin"))
             {
-                menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Users", Icon = "bi-people-fill" });
+                menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Usuarios", Icon = "bi-people-fill" });
                 menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
                 menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
+                menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Patients", Icon = "bi-person-heart" });
+                menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
             }
 
-            if (userRole == "Admin" || userRole == "Optometrista")
+            // Para Admin o Personal Médico
+            if (user.IsInRole("Optometrista"))
             {
+                menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Patients", Icon = "bi-person-heart" });
+                menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
+            }
+
+            // Para Recepción
+            if (user.IsInRole("Recepcion"))
+            {
+                menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
+                menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Patients", Icon = "bi-person-heart" });
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
             }
@@ -34,11 +47,10 @@ namespace OC.Web.ViewComponents.Sidebar
         }
     }
 
-    // Clase auxiliar simple para el menú (puedes moverla a un archivo separado después)
     public class MenuItem
     {
         public string Title { get; set; }
         public string Url { get; set; }
-        public string Icon { get; set; } // Clase de Bootstrap Icons
+        public string Icon { get; set; }
     }
 }
