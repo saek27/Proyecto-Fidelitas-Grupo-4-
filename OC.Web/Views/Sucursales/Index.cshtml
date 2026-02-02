@@ -1,0 +1,66 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Sucursal>
+
+<div class="card-dashboard">
+    <h4>Sucursales</h4>
+
+    <a asp-action="Create" class="btn btn-brand mb-3">
+        <i class="bi bi-plus-lg"></i> Nueva Sucursal
+    </a>
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay sucursales registradas.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Items)
+                {
+                    <tr>
+                        <td>@s.Nombre</td>
+                        <td>@s.Direccion</td>
+                        <td>@s.Telefono</td>
+                        <td>
+                            @if (s.Activo)
+                            {
+                                <span class="badge bg-success">Activa</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactiva</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Edit"
+                               asp-route-id="@s.Id"
+                               class="btn btn-sm btn-warning">
+                                Editar
+                            </a>
+
+                            <form asp-action="ToggleStatus"
+                                  asp-route-id="@s.Id"
+                                  method="post"
+                                  class="d-inline"
+                                onsubmit="return confirm('¿Está seguro que desea desactivar esta sucursal?');">
+                                <button type="submit"
+                                        class="btn btn-sm btn-danger">
+                                    @(s.Activo ? "Desactivar" : "Activar")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

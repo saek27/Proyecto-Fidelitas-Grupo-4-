@@ -1,0 +1,36 @@
+﻿@model OC.Web.ViewModels.SucursalViewModel
+
+<div class="card-dashboard">
+    <h4>Nueva Sucursal</h4>
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Nombre"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Direccion"></label>
+            <input asp-for="Direccion" class="form-control" />
+            <span asp-validation-for="Direccion" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Telefono"></label>
+            <input asp-for="Telefono" class="form-control" />
+            <span asp-validation-for="Telefono" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Crear Sucursal
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
