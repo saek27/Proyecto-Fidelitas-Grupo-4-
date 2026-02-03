@@ -72,6 +72,48 @@ namespace OC.Web.Controllers
             return View(model);
         }
 
+
+        // --- ASSIGN ROLE ---
+        [HttpGet]
+        public async Task<IActionResult> AssignRole()
+        {
+            var model = new RoleAssignmentViewModel();
+            await LoadAssignmentDropdowns(model);
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignRole(RoleAssignmentViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userRepository.GetByIdAsync(model.UserId!.Value);
+                if (user == null)
+                {
+                    ModelState.AddModelError(nameof(model.UserId), "El usuario seleccionado no existe.");
+                }
+
+                var role = await _roleRepository.GetByIdAsync(model.RoleId!.Value);
+                if (role == null)
+                {
+                    ModelState.AddModelError(nameof(model.RoleId), "El rol seleccionado no existe.");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    user!.RolId = role!.Id;
+                    await _userRepository.UpdateAsync(user);
+
+                    TempData["SuccessMessage"] = "Rol asignado correctamente. Los permisos fueron actualizados.";
+                    return RedirectToAction(nameof(AssignRole));
+                }
+            }
+
+            await LoadAssignmentDropdowns(model);
+            return View(model);
+        }
+
         // --- EDIT ---
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
@@ -146,6 +188,18 @@ namespace OC.Web.Controllers
 
             model.RolesList = roles.Items.Select(x => new SelectListItem { Text = x.Nombre, Value = x.Id.ToString() });
             model.SucursalesList = branches.Items.Select(x => new SelectListItem { Text = x.Nombre, Value = x.Id.ToString() });
+        }
+        private async Task LoadAssignmentDropdowns(RoleAssignmentViewModel model)
+        {
+            var roles = await _roleRepository.GetPagedAsync(1, 100);
+            var users = await _userRepository.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 100,
+                orderBy: q => q.OrderBy(u => u.Nombre)
+            );
+
+            model.RolesList = roles.Items.Select(x => new SelectListItem { Text = x.Nombre, Value = x.Id.ToString() });
+            model.UsersList = users.Items.Select(x => new SelectListItem { Text = $"{x.Nombre} ({x.Correo})", Value = x.Id.ToString() });
         }
     }
 }
