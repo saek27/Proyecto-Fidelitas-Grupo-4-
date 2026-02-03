@@ -20,6 +20,7 @@ namespace OC.Web.ViewComponents.Sidebar
             // Solo para Administradores
             if (user.IsInRole("Admin"))
             {
+                menuItems.Add(new MenuItem { Title = "Empleados", Url = "/Empleados", Icon = "bi-person-badge-fill" });
                 menuItems.Add(new MenuItem { Title = "Sucursales", Url = "/Sucursales", Icon = "bi-building" });
                 menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Usuarios", Icon = "bi-people-fill" });
                 menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
