@@ -24,9 +24,10 @@ namespace OC.Web.Controllers
         public async Task<IActionResult> Index(int page = 1)
         {
             var result = await _empleadosRepo.GetPagedAsync(
-                page,
-                10,
-                e => e.Activo
+                pageIndex: page,
+                pageSize: 10,
+                filter: e => e.Activo,
+                includeProperties: "Sucursal"
             );
 
             return View(result);
