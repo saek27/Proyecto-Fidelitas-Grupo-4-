@@ -1,0 +1,117 @@
+@{
+    var paciente = ViewBag.Paciente as OC.Core.Domain.Entities.Paciente;
+    var citas = ViewBag.Citas as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
+    var solicitudes = ViewBag.SolicitudesPendientes as List<OC.Core.Domain.Entities.SolicitudCita> ?? new List<OC.Core.Domain.Entities.SolicitudCita>();
+}
+
+<div class="card-dashboard">
+    <h4>Bienvenido, @paciente?.NombreCompleto</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-calendar-check"></i> Mis Citas Programadas
+                    </h5>
+                    <p class="card-text">@citas.Count cita(s) programada(s)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-clock-history"></i> Solicitudes Pendientes
+                    </h5>
+                    <p class="card-text">@solicitudes.Count solicitud(es) pendiente(s)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5>Mis Citas</h5>
+    @if (!citas.Any())
+    {
+        <p>No tiene citas programadas.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cita in citas)
+                {
+                    <tr>
+                        <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (cita.Estado == "Programada")
+                            {
+                                <span class="badge bg-primary">@cita.Estado</span>
+                            }
+                            else if (cita.Estado == "Completada")
+                            {
+                                <span class="badge bg-success">@cita.Estado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@cita.Estado</span>
+                            }
+                        </td>
+                        <td>@(cita.Observaciones ?? "Sin observaciones")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h5 class="mt-4">Solicitudes Pendientes</h5>
+    @if (!solicitudes.Any())
+    {
+        <p>No tiene solicitudes pendientes.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha de Solicitud</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var solicitud in solicitudes)
+                {
+                    <tr>
+                        <td>@solicitud.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(solicitud.Motivo ?? "Sin motivo especificado")</td>
+                        <td><span class="badge bg-warning">@solicitud.Estado</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

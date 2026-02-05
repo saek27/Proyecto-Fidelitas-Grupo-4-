@@ -33,7 +33,7 @@
 
                             <div class="mb-3">
                                 <label asp-for="Password" class="form-label">Contraseña</label>
-                                <input asp-for="Password" class="form-control" />
+                                <input asp-for="Password" type="password" class="form-control" />
                             </div>
 
                             <div class="mb-3 form-check">
@@ -41,8 +41,16 @@
                                 <label class="form-check-label" asp-for="RememberMe">Recordarme</label>
                             </div>
 
-                            <div class="d-grid">
+                            <div class="d-grid mb-3">
                                 <button type="submit" class="btn btn-brand text-white btn-lg">Entrar</button>
+                            </div>
+
+                            <div class="text-center">
+                                <hr class="my-3" />
+                                <p class="text-muted mb-2">¿Eres paciente y no tienes cuenta?</p>
+                                <a asp-controller="Pacientes" asp-action="Registro" class="btn btn-outline-primary">
+                                    <i class="bi bi-person-plus"></i> Registrarse como Paciente
+                                </a>
                             </div>
                         </form>
                     </div>

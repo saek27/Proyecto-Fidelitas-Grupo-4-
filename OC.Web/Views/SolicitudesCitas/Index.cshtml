@@ -1,0 +1,98 @@
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.SolicitudCita>
+
+<div class="card-dashboard">
+    <h4>Solicitudes de Citas</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (ViewBag.PendientesCount > 0)
+    {
+        <div class="alert alert-info d-flex align-items-center mb-3">
+            <i class="bi bi-bell-fill me-2"></i>
+            <strong>Tiene @ViewBag.PendientesCount solicitud(es) pendiente(s) de revisar</strong>
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay solicitudes pendientes.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Cédula</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Fecha de Solicitud</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Items)
+                {
+                    <tr>
+                        <td>@s.Paciente.NombreCompleto</td>
+                        <td>@s.Paciente.Cedula</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(s.Paciente.Email))
+                            {
+                                <a href="mailto:@s.Paciente.Email">
+                                    <i class="bi bi-envelope"></i> @s.Paciente.Email
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(s.Paciente.Telefono))
+                            {
+                                <a href="tel:@s.Paciente.Telefono">
+                                    <i class="bi bi-telephone"></i> @s.Paciente.Telefono
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </td>
+                        <td>@s.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(s.Motivo ?? "Sin motivo especificado")</td>
+                        <td>
+                            <span class="badge bg-warning">@s.Estado</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Agendar"
+                               asp-route-id="@s.Id"
+                               class="btn btn-sm btn-brand">
+                                <i class="bi bi-calendar-check"></i> Agendar
+                            </a>
+                            <form asp-action="Rechazar"
+                                  asp-route-id="@s.Id"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('¿Está seguro de rechazar esta solicitud?');">
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Rechazar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

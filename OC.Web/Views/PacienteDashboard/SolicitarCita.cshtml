@@ -1,0 +1,17 @@
+<div class="card-dashboard">
+    <h4>Solicitar Nueva Cita</h4>
+
+    <form asp-action="SolicitarCita" method="post">
+        <div class="mb-3">
+            <label for="motivo" class="form-label">Motivo de la Cita</label>
+            <textarea name="motivo" id="motivo" class="form-control" rows="4" placeholder="Describa el motivo de su consulta" maxlength="500"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-brand">
+            <i class="bi bi-send"></i> Enviar Solicitud
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </form>
+</div>

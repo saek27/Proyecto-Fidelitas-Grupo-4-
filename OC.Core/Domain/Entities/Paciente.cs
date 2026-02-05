@@ -11,13 +11,15 @@ namespace OC.Core.Domain.Entities
         public string Cedula { get; set; } = string.Empty; // O Documento de Identidad
         public string? Telefono { get; set; }
         public string? Email { get; set; }
+        public string Contrasena { get; set; } = string.Empty; // Contraseña hasheada
         public DateTime FechaNacimiento { get; set; }
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 
         // Propiedad calculada (útil para la UI)
         public string NombreCompleto => $"{Nombres} {Apellidos}";
 
-        // Aqui luego agregaremos la relación con Consultas/Lentes
-        // public ICollection<Consulta> Consultas { get; set; }
+        // Relaciones
+        public ICollection<SolicitudCita> SolicitudesCitas { get; set; } = new List<SolicitudCita>();
+        public ICollection<Cita> Citas { get; set; } = new List<Cita>();
     }
 }

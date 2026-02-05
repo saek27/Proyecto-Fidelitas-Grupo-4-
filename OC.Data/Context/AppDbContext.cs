@@ -22,6 +22,8 @@ namespace OC.Data.Context
         public DbSet<Rol> Roles { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet <Empleado> Empleados { get; set; }
+        public DbSet<SolicitudCita> SolicitudesCitas { get; set; }
+        public DbSet<Cita> Citas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,0 +1,58 @@
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Paciente>
+
+<div class="card-dashboard">
+    <h4>Pacientes</h4>
+
+    <a asp-action="Create" class="btn btn-brand mb-3">
+        <i class="bi bi-plus-lg"></i> Nuevo Paciente
+    </a>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay pacientes registrados.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>Cédula</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Fecha de Registro</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td>@p.NombreCompleto</td>
+                        <td>@p.Cedula</td>
+                        <td>@(p.Telefono ?? "N/A")</td>
+                        <td>@(p.Email ?? "N/A")</td>
+                        <td>@p.FechaNacimiento.ToString("dd/MM/yyyy")</td>
+                        <td>@p.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <a asp-action="Edit"
+                               asp-route-id="@p.Id"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

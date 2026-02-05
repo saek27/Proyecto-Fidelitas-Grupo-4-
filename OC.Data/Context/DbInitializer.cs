@@ -27,9 +27,19 @@ namespace OC.Data.Context
                 context.Roles.AddRange(
                     new Rol { Nombre = "Admin", Descripcion = "Acceso Total" },
                     new Rol { Nombre = "Optometrista", Descripcion = "Personal Médico" },
-                    new Rol { Nombre = "Recepcion", Descripcion = "Atención al Cliente" }
+                    new Rol { Nombre = "Recepcion", Descripcion = "Atención al Cliente" },
+                    new Rol { Nombre = "Paciente", Descripcion = "Paciente del Sistema" }
                 );
                 context.SaveChanges();
+            }
+            else
+            {
+                // Si los roles ya existen, verificar si existe el rol Paciente y agregarlo si no existe
+                if (!context.Roles.Any(r => r.Nombre == "Paciente"))
+                {
+                    context.Roles.Add(new Rol { Nombre = "Paciente", Descripcion = "Paciente del Sistema" });
+                    context.SaveChanges();
+                }
             }
 
             // 3. Solo crear el admin si no existe el correo

@@ -1,0 +1,139 @@
+@model OC.Web.ViewModels.CitaViewModel
+
+<div class="card-dashboard">
+    <h4>Agendar Cita</h4>
+
+    <div class="alert alert-info mb-3">
+        <strong>Paciente:</strong> @Model.NombrePaciente<br />
+        <strong>Motivo:</strong> @(Model.MotivoSolicitud ?? "Sin motivo especificado")
+    </div>
+
+    <form asp-action="Agendar" method="post">
+        <input type="hidden" asp-for="SolicitudCitaId" />
+        <input type="hidden" asp-for="PacienteId" />
+        <input type="hidden" asp-for="NombrePaciente" />
+        <input type="hidden" asp-for="MotivoSolicitud" />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="FechaHora">Fecha y Hora</label>
+                <div class="row g-2">
+                    <div class="col-12 col-md-5">
+                        <input type="date" id="fecha" class="form-control" required />
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <select id="hora" class="form-select" required>
+                            <option value="">Hora</option>
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <select id="minutos" class="form-select" required>
+                            <option value="">Min</option>
+                            @for (int i = 0; i < 60; i++)
+                            {
+                                <option value="@i.ToString("00")">@i.ToString("00")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-3">
+                        <select id="ampm" class="form-select" required>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" asp-for="FechaHora" id="fechaHoraCompleta" />
+                <span asp-validation-for="FechaHora" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="UsuarioAsignadoId">Optometrista Asignado</label>
+                <select asp-for="UsuarioAsignadoId"
+                        class="form-select"
+                        asp-items="Model.OptometristasList">
+                    <option value="">Seleccione un optometrista (opcional)</option>
+                </select>
+                <span asp-validation-for="UsuarioAsignadoId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Observaciones"></label>
+            <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Observaciones" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-brand">
+            <i class="bi bi-calendar-check"></i> Confirmar Cita
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            // Inicializar con la fecha/hora del modelo si existe
+            @if (Model.FechaHora != default(DateTime))
+            {
+                <text>
+                var fechaHora = new Date('@Model.FechaHora.ToString("yyyy-MM-ddTHH:mm")');
+                $('#fecha').val(fechaHora.toISOString().split('T')[0]);
+                
+                var horas = fechaHora.getHours();
+                var minutos = fechaHora.getMinutes();
+                var ampm = horas >= 12 ? 'PM' : 'AM';
+                horas = horas % 12;
+                horas = horas ? horas : 12; // 0 debería ser 12
+                
+                $('#hora').val(horas);
+                $('#minutos').val(minutos.toString().padStart(2, '0'));
+                $('#ampm').val(ampm);
+                </text>
+            }
+
+            // Función para combinar fecha y hora en formato DateTime
+            function actualizarFechaHora() {
+                var fecha = $('#fecha').val();
+                var hora = parseInt($('#hora').val());
+                var minutos = parseInt($('#minutos').val());
+                var ampm = $('#ampm').val();
+
+                if (fecha && hora && minutos !== undefined && ampm) {
+                    // Convertir hora de 12 horas a 24 horas
+                    if (ampm === 'PM' && hora !== 12) {
+                        hora = hora + 12;
+                    } else if (ampm === 'AM' && hora === 12) {
+                        hora = 0;
+                    }
+
+                    // Crear fecha en formato ISO para el input hidden
+                    var fechaHoraCompleta = fecha + 'T' + hora.toString().padStart(2, '0') + ':' + minutos.toString().padStart(2, '0') + ':00';
+                    $('#fechaHoraCompleta').val(fechaHoraCompleta);
+                }
+            }
+
+            // Actualizar cuando cambien los campos
+            $('#fecha, #hora, #minutos, #ampm').on('change', actualizarFechaHora);
+
+            // Validar antes de enviar
+            $('form').on('submit', function (e) {
+                if (!$('#fecha').val() || !$('#hora').val() || !$('#minutos').val() || !$('#ampm').val()) {
+                    e.preventDefault();
+                    alert('Por favor, complete todos los campos de fecha y hora.');
+                    return false;
+                }
+                actualizarFechaHora();
+            });
+        });
+    </script>
+}

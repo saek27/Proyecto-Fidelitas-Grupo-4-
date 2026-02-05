@@ -40,7 +40,16 @@ namespace OC.Data.Configurations
                 .HasMaxLength(20);
 
             builder.Property(x => x.Email)
+                .IsRequired()
                 .HasMaxLength(100);
+
+            // Índice único para no repetir emails (usado como usuario)
+            builder.HasIndex(x => x.Email)
+                .IsUnique();
+
+            builder.Property(x => x.Contrasena)
+                .IsRequired()
+                .HasMaxLength(255);
         }
     }
 }

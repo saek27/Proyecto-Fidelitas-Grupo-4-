@@ -1,0 +1,70 @@
+@{
+    var paciente = ViewBag.Paciente as OC.Core.Domain.Entities.Paciente;
+    var citas = ViewBag.Citas as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
+}
+
+<div class="card-dashboard">
+    <h4>Mis Citas</h4>
+
+    <form asp-action="VerMisCitas" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="cedula" class="form-label">Ingrese su cédula para ver sus citas</label>
+                <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Número de cédula" required />
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-brand">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    @if (paciente != null)
+    {
+        <div class="alert alert-info mb-3">
+            <strong>Paciente:</strong> @paciente.NombreCompleto<br />
+            <strong>Cédula:</strong> @paciente.Cedula
+        </div>
+
+        @if (!citas.Any())
+        {
+            <p>No tiene citas programadas.</p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cita in citas)
+                    {
+                        <tr>
+                            <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (cita.Estado == "Programada")
+                                {
+                                    <span class="badge bg-primary">@cita.Estado</span>
+                                }
+                                else if (cita.Estado == "Completada")
+                                {
+                                    <span class="badge bg-success">@cita.Estado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@cita.Estado</span>
+                                }
+                            </td>
+                            <td>@(cita.Observaciones ?? "Sin observaciones")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+</div>

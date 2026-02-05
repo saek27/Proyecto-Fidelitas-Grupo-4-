@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Login Paciente";
+}
+
+<div class="card-dashboard">
+    <h4>Iniciar Sesión - Paciente</h4>
+
+    @if (ViewData.ModelState[""]?.Errors.Any() == true)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewData.ModelState[""].Errors.First().ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <p class="text-muted">Ingrese su cédula para acceder a su área de paciente.</p>
+
+    <form asp-action="Login" method="post">
+        <div class="mb-3">
+            <label for="cedula" class="form-label">Cédula</label>
+            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ingrese su número de cédula" required />
+        </div>
+
+        <button type="submit" class="btn btn-brand">
+            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+        </button>
+        <a asp-controller="Pacientes" asp-action="Registro" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus"></i> Registrarse
+        </a>
+    </form>
+</div>

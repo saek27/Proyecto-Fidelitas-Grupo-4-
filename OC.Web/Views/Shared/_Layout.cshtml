@@ -21,6 +21,8 @@
 
                     <!-- lado derecho -->
                     <div class="d-flex align-items-center ms-auto">
+                        <vc:notificaciones></vc:notificaciones>
+                        
                         <span class="me-3 fw-bold text-secondary">
                             @if (User.Identity!.IsAuthenticated)
                             {
@@ -33,11 +35,14 @@
                             }
                         </span>
 
-                        <a asp-controller="Account"
-                           asp-action="Logout"
-                           class="btn btn-danger btn-sm d-flex align-items-center">
-                            <i class="bi bi-box-arrow-left me-1"></i> Salir
-                        </a>
+                        @if (User.Identity!.IsAuthenticated)
+                        {
+                            <a asp-controller="Account"
+                               asp-action="Logout"
+                               class="btn btn-danger btn-sm d-flex align-items-center">
+                                <i class="bi bi-box-arrow-left me-1"></i> Salir
+                            </a>
+                        }
                     </div>
 
                 </div>
