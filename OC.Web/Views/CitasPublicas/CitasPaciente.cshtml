@@ -1,0 +1,103 @@
+@model IEnumerable<OC.Core.Domain.Entities.Cita>
+
+<div class="card-dashboard">
+    <h4>Gestión de Citas</h4>
+
+    <!-- FILTRO POR ESTADO -->
+    <form method="get" asp-action="CitasPaciente" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Filtrar por estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="Programada">Programada</option>
+                    <option value="Atendida">Atendida</option>
+                    <option value="Cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-brand">
+                    <i class="bi bi-filter"></i> Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <p>No existen citas registradas.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Cédula</th>
+                    <th>Fecha y Hora</th>
+                    <th>Estado</th>
+                    <th>Atender</th>
+                    <th>MotivoConsulta</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var cita in Model)
+                {
+                    <tr>
+                        <td>@cita.Paciente?.NombreCompleto</td>
+                        <td>@cita.Paciente?.Cedula</td>
+
+                        <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+
+                        <td>
+                            @switch (cita.Estado)
+                            {
+                                case "Pendiente":
+                                    <span class="badge bg-warning">@cita.Estado</span>
+                                    break;
+
+                                case "Programada":
+                                    <span class="badge bg-primary">@cita.Estado</span>
+                                    break;
+
+                                case "Completada":
+                                    <span class="badge bg-success">@cita.Estado</span>
+                                    break;
+
+                                default:
+                                    <span class="badge bg-secondary">@cita.Estado</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Editar" asp-route-id="@cita.Id"
+                               class="btn btn-sm btn-primary">
+                                Editar
+                            </a>
+                        </td>
+                        <td>
+                            @(cita.MotivoConsulta ?? "Sin Motivo de Consulta")
+                        </td>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Optometrista"))
+                        {
+                            <td>
+                                <a asp-controller="Historial"
+                                   asp-action="HistorialPaciente"
+                                   asp-route-pacienteId="@cita.PacienteId"
+                                   class="btn btn-sm btn-info">
+                                    Ver Historial
+                                </a>
+                            </td>
+                        }
+                        else
+                        {
+                            <td></td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

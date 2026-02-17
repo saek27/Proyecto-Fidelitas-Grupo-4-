@@ -43,9 +43,12 @@ namespace OC.Data.Migrations
                     b.Property<DateTime>("FechaHora")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Observaciones")
+                    b.Property<string>("MotivoConsulta")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ObservacionesEspecialista")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PacienteId")
                         .HasColumnType("int");
@@ -327,7 +330,7 @@ namespace OC.Data.Migrations
             modelBuilder.Entity("OC.Core.Domain.Entities.Empleado", b =>
                 {
                     b.HasOne("OC.Core.Domain.Entities.Sucursal", "Sucursal")
-                        .WithMany()
+                        .WithMany("Empleados")
                         .HasForeignKey("SucursalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -386,6 +389,8 @@ namespace OC.Data.Migrations
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Sucursal", b =>
                 {
+                    b.Navigation("Empleados");
+
                     b.Navigation("Usuarios");
                 });
 #pragma warning restore 612, 618

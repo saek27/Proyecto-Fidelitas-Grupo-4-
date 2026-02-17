@@ -12,7 +12,7 @@ namespace OC.Data.Configurations
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Observaciones)
+            builder.Property(x => x.MotivoConsulta)
                 .HasMaxLength(1000);
 
             builder.Property(x => x.Estado)

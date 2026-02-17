@@ -8,7 +8,8 @@ namespace OC.Core.Domain.Entities
         public int PacienteId { get; set; }
         public int SolicitudCitaId { get; set; }
         public DateTime FechaHora { get; set; }
-        public string? Observaciones { get; set; }
+        public string? MotivoConsulta { get; set; } 
+        public string? ObservacionesEspecialista {  get; set; } 
         public string Estado { get; set; } = "Programada"; // Programada, Completada, Cancelada
         public int? UsuarioAsignadoId { get; set; } // Optometrista asignado
         public DateTime FechaCreacion { get; set; } = DateTime.Now;

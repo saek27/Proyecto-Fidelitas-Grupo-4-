@@ -25,9 +25,11 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Usuarios", Icon = "bi-people-fill" });
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
                 menuItems.Add(new MenuItem { Title = "Solicitudes de Citas", Url = "/SolicitudesCitas", Icon = "bi-calendar-check" });
+                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
                 menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/Historial/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
             }
 
             // Para Admin o Personal Médico
@@ -35,6 +37,8 @@ namespace OC.Web.ViewComponents.Sidebar
             {
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
+                menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
             }
 
             // Para Recepción
@@ -45,6 +49,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
                 menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
             }
 
             // Para Pacientes
@@ -52,6 +57,7 @@ namespace OC.Web.ViewComponents.Sidebar
             {
                 menuItems.Add(new MenuItem { Title = "Mis Citas", Url = "/PacienteDashboard", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Solicitar Cita", Url = "/PacienteDashboard/SolicitarCita", Icon = "bi-calendar-plus" });
+                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/MiHistorial", Icon = "bi-calendar-event" });
             }
 
             return View(menuItems);

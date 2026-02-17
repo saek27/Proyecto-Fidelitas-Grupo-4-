@@ -1,0 +1,24 @@
+@model IEnumerable<OC.Core.Domain.Entities.Cita>
+
+<h4>Historial Clínico</h4>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Paciente</th>
+            <th>Resultado</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@c.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                <td>@c.Paciente.NombreCompleto</td>
+                <td>@c.ObservacionesEspecialista</td>
+            </tr>
+        }
+    </tbody>
+</table>

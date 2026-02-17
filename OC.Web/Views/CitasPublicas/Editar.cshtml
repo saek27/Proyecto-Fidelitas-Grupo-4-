@@ -1,0 +1,43 @@
+@using Microsoft.AspNetCore.Identity
+
+@model OC.Core.Domain.Entities.Cita
+
+<div class="card-dashboard">
+
+    <h4>Atender Cita</h4>
+
+    <p><b>Paciente:</b> @Model.Paciente.NombreCompleto</p>
+
+    <form method="post">
+
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <select name="estado" class="form-control mb-3">
+
+            @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
+            {
+                <option value="Programada">Programada</option>
+                <option value="Atendida">Atendida</option>
+            }
+
+            <option value="Cancelada">Cancelada</option>
+
+            @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
+            {
+            <textarea name="ObservacionesEspecialista"
+          class="form-control mb-3"
+                      placeholder="ObservacionesEspecialista">
+</textarea>
+            }
+        </select>
+
+<textarea name="resultadoClinico"
+          class="form-control mb-3"
+          placeholder="Resultado clínico (obligatorio si Atendida)">
+</textarea>
+
+        <button class="btn btn-success">Guardar</button>
+
+    </form>
+
+</div>

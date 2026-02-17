@@ -20,6 +20,8 @@ namespace OC.Core.Domain.Entities
 
         // Relaciones
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
+        public ICollection<Empleado> Empleados { get; set; } = new List<Empleado>();
+
         // Aquí luego pondremos el Inventario
     }
 }

@@ -145,7 +145,7 @@ namespace OC.Web.Controllers
                 PacienteId = model.PacienteId,
                 SolicitudCitaId = model.SolicitudCitaId,
                 FechaHora = model.FechaHora,
-                Observaciones = model.Observaciones,
+                MotivoConsulta = model.Observaciones,
                 Estado = "Programada",
                 UsuarioAsignadoId = model.UsuarioAsignadoId,
                 FechaCreacion = DateTime.Now

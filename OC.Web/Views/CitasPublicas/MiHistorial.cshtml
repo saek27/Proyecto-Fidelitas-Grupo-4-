@@ -1,0 +1,44 @@
+@model IEnumerable<OC.Core.Domain.Entities.Cita>
+
+<div class="card-dashboard">
+
+    <h4>Mi Historial Clínico</h4>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Aún no tienes consultas atendidas.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped">
+
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Resultado Clínico</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var cita in Model)
+                {
+                    <tr>
+                        <td>
+                            @cita.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+
+                        <td>
+                            @(string.IsNullOrEmpty(cita.ObservacionesEspecialista)
+                                ? "Sin registro clínico"
+                                : cita.ObservacionesEspecialista)
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+        </table>
+    }
+
+</div>
