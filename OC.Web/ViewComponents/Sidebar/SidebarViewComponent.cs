@@ -20,7 +20,6 @@ namespace OC.Web.ViewComponents.Sidebar
             // Solo para Administradores
             if (user.IsInRole("Admin"))
             {
-                menuItems.Add(new MenuItem { Title = "Empleados", Url = "/Empleados", Icon = "bi-person-badge-fill" });
                 menuItems.Add(new MenuItem { Title = "Sucursales", Url = "/Sucursales", Icon = "bi-building" });
                 menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Usuarios", Icon = "bi-people-fill" });
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
@@ -30,6 +29,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/Historial/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem{Title = "Proveedores", Url = "/Proveedores", Icon = "bi-truck"});
             }
 
             // Para Admin o Personal Médico

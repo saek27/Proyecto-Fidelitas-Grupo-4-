@@ -1,0 +1,40 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Proveedor>
+
+
+<h2>Proveedores</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">
+    Nuevo Proveedor
+</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Tipo Producto</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.Nombre</td>
+                <td>@item.Contacto</td>
+                <td>@item.TipoProducto</td>
+                <td>
+                    @(item.Activo ? "Activo" : "Inactivo")
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
+                    <a asp-action="ToggleStatus" asp-route-id="@item.Id" class="btn btn-danger btn-sm">
+                        @(item.Activo ? "Desactivar" : "Activar")
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
