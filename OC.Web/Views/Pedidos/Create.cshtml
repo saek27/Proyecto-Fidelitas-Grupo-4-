@@ -1,0 +1,35 @@
+﻿@model OC.Core.Domain.Entities.Pedido
+
+<h2>Generar Pedido</h2>
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-3">
+        <label class="form-label">Proveedor</label>
+        <select asp-for="ProveedorId" class="form-select">
+            <option value="">Seleccione un proveedor</option>
+            @foreach (var p in ViewBag.Proveedores)
+            {
+                <option value="@p.Id">@p.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Descripción del pedido</label>
+        <textarea asp-for="Descripcion" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha Entrega Estimada</label>
+        <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        Generar Pedido
+    </button>
+
+    <a asp-action="Historial" class="btn btn-secondary">
+        Cancelar
+    </a>
+
+</form>

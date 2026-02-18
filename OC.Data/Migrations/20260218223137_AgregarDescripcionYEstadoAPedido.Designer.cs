@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OC.Data.Context;
 
@@ -11,9 +12,11 @@ using OC.Data.Context;
 namespace OC.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260218223137_AgregarDescripcionYEstadoAPedido")]
+    partial class AgregarDescripcionYEstadoAPedido
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,9 +194,6 @@ namespace OC.Data.Migrations
 
                     b.Property<DateTime>("FechaPedido")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Indicador")
-                        .HasColumnType("int");
 
                     b.Property<int>("ProveedorId")
                         .HasColumnType("int");

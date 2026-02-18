@@ -30,6 +30,10 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/Historial/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem{Title = "Proveedores", Url = "/Proveedores", Icon = "bi-truck"});
+                menuItems.Add(new MenuItem{Title = "Historial de Pedidos", Url = "/Pedidos/Historial",Icon = "bi-clock-history"});
+                menuItems.Add(new MenuItem {Title = "Nuevo Pedido",Url = "/Pedidos/Create",Icon = "bi-plus-circle"
+                });
+
             }
 
             // Para Admin o Personal Médico

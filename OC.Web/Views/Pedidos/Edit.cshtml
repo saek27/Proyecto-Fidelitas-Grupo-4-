@@ -1,0 +1,40 @@
+﻿@model OC.Core.Domain.Entities.Pedido
+@using OC.Core.Domain.Entities
+
+<form asp-action="Edit" method="post">
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="FechaPedido" />
+
+    <div class="mb-3">
+        <label>Fecha Entrega Estimada</label>
+        <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Proveedor</label>
+        <select asp-for="ProveedorId" class="form-select">
+            @foreach (var p in ViewBag.Proveedores)
+            {
+                <option value="@p.Id">@p.Nombre</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción</label>
+        <textarea asp-for="Descripcion" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label>Estado</label>
+        <select asp-for="Estado" class="form-select"
+                asp-items="Html.GetEnumSelectList<EstadoPedido>()">
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Guardar Cambios
+    </button>
+
+</form>

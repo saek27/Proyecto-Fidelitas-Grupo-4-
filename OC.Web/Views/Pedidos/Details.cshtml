@@ -1,0 +1,22 @@
+﻿@model OC.Core.Domain.Entities.Pedido
+@using OC.Core.Domain.Entities
+
+<h2>Detalle del Pedido</h2>
+
+<div class="card">
+    <div class="card-body">
+
+        <p><strong>Proveedor:</strong> @Model.Proveedor?.Nombre</p>
+        <p><strong>Fecha Pedido:</strong> @Model.FechaPedido.ToShortDateString()</p>
+        <p><strong>Entrega Estimada:</strong> @Model.FechaEntregaEstimada.ToShortDateString()</p>
+        <p><strong>Entrega Real:</strong> @(Model.FechaEntregaReal?.ToShortDateString() ?? "-")</p>
+        <p><strong>Estado:</strong> @Model.Estado</p>
+        <p><strong>Indicador:</strong> @Model.Indicador</p>
+        <p><strong>Descripción:</strong> @Model.Descripcion</p>
+
+        <a asp-action="Historial" class="btn btn-secondary mt-3">
+            Volver
+        </a>
+
+    </div>
+</div>

@@ -26,6 +26,9 @@ namespace OC.Data.Context
         public DbSet<Cita> Citas { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
 
+        public DbSet<Pedido> Pedidos { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
