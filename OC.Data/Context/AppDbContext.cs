@@ -25,8 +25,12 @@ namespace OC.Data.Context
         public DbSet<SolicitudCita> SolicitudesCitas { get; set; }
         public DbSet<Cita> Citas { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
-
         public DbSet<Pedido> Pedidos { get; set; }
+
+        public DbSet<Expediente> Expedientes { get; set; }
+        public DbSet<ValorClinico> ValoresClinicos { get; set; }
+        public DbSet<DocumentoExpediente> DocumentosExpediente { get; set; }
+
 
 
 
@@ -34,6 +38,23 @@ namespace OC.Data.Context
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            modelBuilder.Entity<ValorClinico>(entity =>
+            {
+                entity.Property(e => e.EsferaOD).HasPrecision(4, 2);
+                entity.Property(e => e.CilindroOD).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOD).HasPrecision(4, 2);
+                entity.Property(e => e.EsferaOI).HasPrecision(4, 2);
+                entity.Property(e => e.CilindroOI).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOI).HasPrecision(4, 2);
+            });
+
+            modelBuilder.Entity<Expediente>()
+            .HasOne(e => e.Cita)
+            .WithOne(c => c.Expediente)
+            .HasForeignKey<Expediente>(e => e.CitaId)
+            .OnDelete(DeleteBehavior.Restrict); // o Cascade según necesidad
+
         }
     }
 }

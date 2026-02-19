@@ -3,7 +3,6 @@
 <div class="card-dashboard">
     <h4>Gestión de Citas</h4>
 
-    <!-- FILTRO POR ESTADO -->
     <form method="get" asp-action="CitasPaciente" class="mb-4">
         <div class="row">
             <div class="col-md-4">
@@ -15,11 +14,8 @@
                     <option value="Cancelada">Cancelada</option>
                 </select>
             </div>
-
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-brand">
-                    <i class="bi bi-filter"></i> Filtrar
-                </button>
+                <button class="btn btn-brand"><i class="bi bi-filter"></i> Filtrar</button>
             </div>
         </div>
     </form>
@@ -39,51 +35,44 @@
                     <th>Estado</th>
                     <th>Atender</th>
                     <th>MotivoConsulta</th>
+                    <th></th>
                 </tr>
             </thead>
-
             <tbody>
                 @foreach (var cita in Model)
                 {
                     <tr>
                         <td>@cita.Paciente?.NombreCompleto</td>
                         <td>@cita.Paciente?.Cedula</td>
-
                         <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
-
                         <td>
                             @switch (cita.Estado)
                             {
                                 case "Pendiente":
                                     <span class="badge bg-warning">@cita.Estado</span>
                                     break;
-
                                 case "Programada":
+
                                     <span class="badge bg-primary">@cita.Estado</span>
                                     break;
-
                                 case "Completada":
+
                                     <span class="badge bg-success">@cita.Estado</span>
                                     break;
-
                                 default:
+
                                     <span class="badge bg-secondary">@cita.Estado</span>
                                     break;
                             }
                         </td>
                         <td>
-                            <a asp-action="Editar" asp-route-id="@cita.Id"
-                               class="btn btn-sm btn-primary">
-                                Editar
-                            </a>
+                            <a asp-action="Editar" asp-route-id="@cita.Id" class="btn btn-sm btn-primary">Editar</a>
                         </td>
-                        <td>
-                            @(cita.MotivoConsulta ?? "Sin Motivo de Consulta")
-                        </td>
+                        <td>@(cita.MotivoConsulta ?? "Sin Motivo de Consulta")</td>
                         @if (User.IsInRole("Admin") || User.IsInRole("Optometrista"))
                         {
                             <td>
-                                <a asp-controller="Historial"
+                                <a asp-controller="CitasPublicas"
                                    asp-action="HistorialPaciente"
                                    asp-route-pacienteId="@cita.PacienteId"
                                    class="btn btn-sm btn-info">

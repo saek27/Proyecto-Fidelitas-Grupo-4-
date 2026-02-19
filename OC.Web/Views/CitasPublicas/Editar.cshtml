@@ -1,43 +1,41 @@
 @using Microsoft.AspNetCore.Identity
-
 @model OC.Core.Domain.Entities.Cita
 
 <div class="card-dashboard">
-
     <h4>Atender Cita</h4>
 
     <p><b>Paciente:</b> @Model.Paciente.NombreCompleto</p>
+    <p><b>Fecha:</b> @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
 
     <form method="post">
-
         <input type="hidden" name="Id" value="@Model.Id" />
 
-        <select name="estado" class="form-control mb-3">
+        <div class="mb-3">
+            <label for="estado" class="form-label">Cambiar estado</label>
+            <select name="estado" id="estado" class="form-select">
+                @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
+                {
+                    <option value="Programada" selected="@(Model.Estado == "Programada")">Programada</option>
+                    <option value="Atendida" selected="@(Model.Estado == "Atendida")">Atendida</option>
+                }
+                <option value="Cancelada" selected="@(Model.Estado == "Cancelada")">Cancelada</option>
+            </select>
+        </div>
 
-            @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
-            {
-                <option value="Programada">Programada</option>
-                <option value="Atendida">Atendida</option>
-            }
+        <div class="mb-3">
+            <label for="resultadoClinico" class="form-label">Resultado clínico (obligatorio si Atendida)</label>
+            <textarea name="resultadoClinico" id="resultadoClinico" class="form-control" rows="4">@Model.ObservacionesEspecialista</textarea>
+            <small class="form-text text-muted">
+                Si marca como "Atendida", después de guardar podrá registrar el expediente clínico.
+            </small>
+        </div>
 
-            <option value="Cancelada">Cancelada</option>
-
-            @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
-            {
-            <textarea name="ObservacionesEspecialista"
-          class="form-control mb-3"
-                      placeholder="ObservacionesEspecialista">
-</textarea>
-            }
-        </select>
-
-<textarea name="resultadoClinico"
-          class="form-control mb-3"
-          placeholder="Resultado clínico (obligatorio si Atendida)">
-</textarea>
-
-        <button class="btn btn-success">Guardar</button>
-
+        <button type="submit" class="btn btn-success">Guardar cambios</button>
+        <a asp-action="CitasPaciente" class="btn btn-secondary">Cancelar</a>
     </form>
-
 </div>

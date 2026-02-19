@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OC.Data.Context;
 
@@ -11,9 +12,11 @@ using OC.Data.Context;
 namespace OC.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219203525_ModeloClinicoHU18")]
+    partial class ModeloClinicoHU18
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,7 +99,7 @@ namespace OC.Data.Migrations
 
                     b.HasIndex("ExpedienteId");
 
-                    b.ToTable("DocumentosExpediente");
+                    b.ToTable("DocumentoExpediente");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Empleado", b =>
@@ -167,7 +170,7 @@ namespace OC.Data.Migrations
                     b.HasIndex("CitaId")
                         .IsUnique();
 
-                    b.ToTable("Expedientes");
+                    b.ToTable("Expediente");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Paciente", b =>
@@ -477,7 +480,7 @@ namespace OC.Data.Migrations
 
                     b.HasIndex("ExpedienteId");
 
-                    b.ToTable("ValoresClinicos");
+                    b.ToTable("ValorClinico");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Cita", b =>
@@ -533,7 +536,7 @@ namespace OC.Data.Migrations
                     b.HasOne("OC.Core.Domain.Entities.Cita", "Cita")
                         .WithOne("Expediente")
                         .HasForeignKey("OC.Core.Domain.Entities.Expediente", "CitaId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cita");

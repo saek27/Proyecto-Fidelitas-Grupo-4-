@@ -18,5 +18,7 @@ namespace OC.Core.Domain.Entities
         public Paciente Paciente { get; set; } = null!;
         public SolicitudCita SolicitudCita { get; set; } = null!;
         public Usuario? UsuarioAsignado { get; set; }
+
+        public Expediente? Expediente { get; set; }
     }
 }

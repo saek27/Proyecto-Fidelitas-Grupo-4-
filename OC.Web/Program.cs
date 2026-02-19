@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using OC.Core.Contracts.IRepositories;
+using OC.Core.Domain.Entities;
 using OC.Data.Context;
 using OC.Data.Repositories;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +29,22 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+//Valor Clinico
+builder.Services.AddScoped<IGenericRepository<ValorClinico>, GenericRepository<ValorClinico>>();
+
+
+
+//Documento
+builder.Services.AddScoped<IGenericRepository<DocumentoExpediente>, GenericRepository<DocumentoExpediente>>();
+
+//Peso de archivo
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.ValueLengthLimit = 10 * 1024 * 1024; // 10 MB
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024;
+});
 
 // --- LA LÍNEA FRONTERIZA (Solo una vez) ---
 var app = builder.Build();

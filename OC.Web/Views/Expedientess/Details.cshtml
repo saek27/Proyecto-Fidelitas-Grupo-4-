@@ -1,0 +1,92 @@
+﻿@model OC.Core.Domain.Entities.Expediente
+
+<div class="card-dashboard">
+    <h4>Expediente Clínico</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="mb-3">
+        <strong>Paciente:</strong> @Model.Cita?.Paciente?.NombreCompleto<br />
+        <strong>Fecha de la cita:</strong> @Model.Cita?.FechaHora.ToString("dd/MM/yyyy HH:mm")<br />
+        <strong>Fecha de registro expediente:</strong> @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")<br />
+        <strong>Motivo de consulta:</strong> @Model.MotivoConsulta<br />
+        @if (!string.IsNullOrEmpty(Model.Observaciones))
+        {
+            <strong>Observaciones:</strong> 
+            @Model.Observaciones
+        }
+    </div>
+
+    <hr />
+    <h5>Valores Clínicos</h5>
+    @if (Model.ValoresClinicos != null && Model.ValoresClinicos.Any())
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Diagnóstico</th>
+                    <th>Esfera OD</th>
+                    <th>Cilindro OD</th>
+                    <th>Eje OD</th>
+                    <th>Esfera OI</th>
+                    <th>Cilindro OI</th>
+                    <th>Eje OI</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vc in Model.ValoresClinicos)
+                {
+                    <tr>
+                        <td>@vc.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                        <td>@vc.Diagnostico</td>
+                        <td>@vc.EsferaOD</td>
+                        <td>@vc.CilindroOD</td>
+                        <td>@vc.EjeOD</td>
+                        <td>@vc.EsferaOI</td>
+                        <td>@vc.CilindroOI</td>
+                        <td>@vc.EjeOI</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No hay valores clínicos registrados.</p>
+    }
+
+    <hr />
+    <h5>Documentos Adjuntos</h5>
+    @if (Model.Documentos != null && Model.Documentos.Any())
+    {
+        <ul>
+            @foreach (var doc in Model.Documentos)
+            {
+                <li><a href="@doc.RutaArchivo" target="_blank">@doc.NombreArchivo</a> <span class="text-muted">(subido el @doc.FechaSubida.ToString("dd/MM/yyyy HH:mm"))</span></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No hay documentos adjuntos.</p>
+    }
+
+    <div class="mt-3">
+        <a asp-action="AddValorClinico" asp-route-expedienteId="@Model.Id" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Agregar Valor Clínico
+        </a>
+        <a asp-action="AddDocumento" asp-route-expedienteId="@Model.Id" class="btn btn-sm btn-primary">
+            <i class="bi bi-paperclip"></i> Adjuntar Documento
+        </a>
+        <a asp-controller="CitasPublicas" asp-action="HistorialPaciente" asp-route-pacienteId="@Model.Cita?.PacienteId" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Historial
+        </a>
+    </div>
+</div>

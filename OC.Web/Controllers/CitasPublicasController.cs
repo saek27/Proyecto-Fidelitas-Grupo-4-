@@ -3,33 +3,33 @@ using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Web.ViewModels;
+using System.Security.Claims;
 
 namespace OC.Web.Controllers
 {
-    // Controlador público para que los pacientes soliciten citas
     [AllowAnonymous]
     public class CitasPublicasController : Controller
     {
         private readonly IGenericRepository<Paciente> _pacientesRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Cita> _citasRepo;
+        private readonly IGenericRepository<Expediente> _expedienteRepo; // Nuevo
 
         public CitasPublicasController(
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<SolicitudCita> solicitudesRepo,
-            IGenericRepository<Cita> citasRepo)
+            IGenericRepository<Cita> citasRepo,
+            IGenericRepository<Expediente> expedienteRepo) // Nuevo parámetro
         {
             _pacientesRepo = pacientesRepo;
             _solicitudesRepo = solicitudesRepo;
             _citasRepo = citasRepo;
+            _expedienteRepo = expedienteRepo;
         }
 
         // SOLICITAR CITA (Público)
         [HttpGet]
-        public IActionResult Solicitar()
-        {
-            return View();
-        }
+        public IActionResult Solicitar() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -41,13 +41,11 @@ namespace OC.Web.Controllers
                 return View();
             }
 
-            // Buscar paciente por cédula
             var pacientes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Cedula == cedula
             );
-
             var paciente = pacientes.Items.FirstOrDefault();
             if (paciente == null)
             {
@@ -55,7 +53,6 @@ namespace OC.Web.Controllers
                 return View();
             }
 
-            // Crear la solicitud de cita
             var solicitud = new SolicitudCita
             {
                 PacienteId = paciente.Id,
@@ -63,7 +60,6 @@ namespace OC.Web.Controllers
                 FechaSolicitud = DateTime.Now,
                 Estado = "Pendiente"
             };
-
             await _solicitudesRepo.AddAsync(solicitud);
 
             TempData["Success"] = "Solicitud de cita enviada exitosamente. Un recepcionista se pondrá en contacto con usted.";
@@ -72,10 +68,7 @@ namespace OC.Web.Controllers
 
         // VER MIS CITAS (Público - por cédula)
         [HttpGet]
-        public IActionResult VerMisCitas()
-        {
-            return View();
-        }
+        public IActionResult VerMisCitas() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -87,14 +80,12 @@ namespace OC.Web.Controllers
                 return View();
             }
 
-            // Buscar paciente por cédula
             var pacientes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Cedula == cedula,
                 includeProperties: "Citas"
             );
-
             var paciente = pacientes.Items.FirstOrDefault();
             if (paciente == null)
             {
@@ -102,7 +93,6 @@ namespace OC.Web.Controllers
                 return View();
             }
 
-            // Obtener citas del paciente
             var citas = await _citasRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 100,
@@ -113,10 +103,8 @@ namespace OC.Web.Controllers
 
             ViewBag.Paciente = paciente;
             ViewBag.Citas = citas.Items;
-
             return View();
         }
-
 
         [Authorize]
         public async Task<IActionResult> CitasPaciente(string estado)
@@ -129,25 +117,22 @@ namespace OC.Web.Controllers
             );
 
             var resultado = citas.Items.AsQueryable();
-
             if (!string.IsNullOrEmpty(estado))
-            {
                 resultado = resultado.Where(c => c.Estado == estado);
-            }
 
             return View(resultado.ToList());
         }
-
 
         [Authorize(Roles = "Optometrista, Recepcion, Admin")]
         public async Task<IActionResult> Editar(int id)
         {
             var cita = (await _citasRepo.GetPagedAsync(
-                1, 1, c => c.Id == id,
-                includeProperties: "Paciente")).Items.FirstOrDefault();
+                1, 1,
+                filter: c => c.Id == id,
+                includeProperties: "Paciente"
+            )).Items.FirstOrDefault();
 
             if (cita == null) return NotFound();
-
             return View(cita);
         }
 
@@ -156,13 +141,10 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int id, string estado, string resultadoClinico)
         {
-
             var esRecepcionista = User.IsInRole("Recepcion");
-
-
             var cita = (await _citasRepo.GetPagedAsync(
                 1, 1,
-                c => c.Id == id,
+                filter: c => c.Id == id,
                 includeProperties: "Paciente"
             )).Items.FirstOrDefault();
 
@@ -174,8 +156,6 @@ namespace OC.Web.Controllers
 
             if (cita == null) return NotFound();
 
-
-            // Validación clínica
             if (estado == "Atendida" && string.IsNullOrWhiteSpace(resultadoClinico))
             {
                 ModelState.AddModelError("", "Debe ingresar resultado clínico.");
@@ -183,27 +163,32 @@ namespace OC.Web.Controllers
             }
 
             cita.Estado = estado;
-
             if (estado == "Atendida")
             {
                 cita.ObservacionesEspecialista = resultadoClinico;
-                cita.FechaCreacion = DateTime.Now;
             }
 
             await _citasRepo.UpdateAsync(cita);
+            TempData["Success"] = "Cita actualizada correctamente.";
 
-            return RedirectToAction("CitasPaciente", "CitasPublicas");
-
+            // Redirigir a creación de expediente si es atendida por optometrista/admin
+            if (estado == "Atendida" && (User.IsInRole("Optometrista") || User.IsInRole("Admin")))
+            {
+                return RedirectToAction("Create", "Expedientess", new { citaId = cita.Id });
+            }
+            else
+            {
+                return RedirectToAction("CitasPaciente");
+            }
         }
 
         [Authorize]
         public async Task<IActionResult> MiHistorial()
         {
             var userCedula = User.FindFirst("Cedula")?.Value;
-
             var paciente = (await _pacientesRepo.GetPagedAsync(
                 1, 1,
-                p => p.Cedula == userCedula
+                filter: p => p.Cedula == userCedula
             )).Items.FirstOrDefault();
 
             if (paciente == null)
@@ -211,17 +196,31 @@ namespace OC.Web.Controllers
 
             var citas = await _citasRepo.GetPagedAsync(
                 1, 200,
-                c => c.PacienteId == paciente.Id && c.Estado == "Atendida",
-                q => q.OrderByDescending(c => c.FechaHora),
+                filter: c => c.PacienteId == paciente.Id && c.Estado == "Atendida",
+                orderBy: q => q.OrderByDescending(c => c.FechaHora),
                 includeProperties: "Paciente"
             );
-
             return View(citas.Items);
         }
 
+        // NUEVA ACCIÓN: Historial de expedientes (misma URL, pero ahora devuelve expedientes)
+        [Authorize(Roles = "Optometrista,Admin")]
+        public async Task<IActionResult> HistorialPaciente(int pacienteId)
+        {
+            var expedientes = await _expedienteRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 100,
+                filter: e => e.Cita.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(e => e.FechaRegistro),
+                includeProperties: "Cita.Paciente,ValoresClinicos,Documentos"
+            );
 
+            if (!expedientes.Items.Any())
+            {
+                TempData["Info"] = "Este paciente no tiene expedientes registrados.";
+            }
 
-
-
+            return View("~/Views/Expedientess/HistorialPaciente.cshtml", expedientes.Items);
+        }
     }
 }
