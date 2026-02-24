@@ -7,7 +7,7 @@ using OC.Web.ViewModels;
 
 namespace OC.Web.Controllers
 {
-    [Authorize(Roles = "Admin,Recepcion")]
+    [Authorize(Roles = "Admin,Recepcion,Optometrista")]
     public class PacientesController : Controller
     {
         private readonly IGenericRepository<Paciente> _pacientesRepo;
@@ -17,16 +17,31 @@ namespace OC.Web.Controllers
             _pacientesRepo = pacientesRepo;
         }
 
-        // LISTAR (Solo Admin y Recepcion)
-        public async Task<IActionResult> Index(int page = 1)
+        // LISTAR con búsqueda por nombre o cédula
+        public async Task<IActionResult> Index(string searchTerm, int page = 1)
         {
-            var result = await _pacientesRepo.GetPagedAsync(
-                pageIndex: page,
-                pageSize: 10,
-                orderBy: q => q.OrderByDescending(p => p.FechaRegistro)
-            );
-
-            return View(result);
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                // Búsqueda por nombre o cédula (insensible a mayúsculas)
+                var results = await _pacientesRepo.GetPagedAsync(
+                    pageIndex: page,
+                    pageSize: 100, // Mostrar todos los resultados en una página
+                    filter: p => p.Nombres.Contains(searchTerm) || p.Apellidos.Contains(searchTerm) || p.Cedula.Contains(searchTerm),
+                    includeProperties: "Citas.Expediente" // Incluir citas y expedientes
+                );
+                ViewBag.SearchTerm = searchTerm;
+                return View(results);
+            }
+            else
+            {
+                // Listado normal paginado
+                var result = await _pacientesRepo.GetPagedAsync(
+                    pageIndex: page,
+                    pageSize: 10,
+                    orderBy: q => q.OrderByDescending(p => p.FechaRegistro)
+                );
+                return View(result);
+            }
         }
 
         // REGISTRO PÚBLICO (Sin autenticación)
@@ -107,7 +122,6 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PacienteViewModel model)
         {
-            // Validación manual: Contraseña es obligatoria al crear desde Admin/Recepcion
             if (string.IsNullOrWhiteSpace(model.Contrasena))
             {
                 ModelState.AddModelError(nameof(model.Contrasena), "La contraseña es obligatoria.");
@@ -228,13 +242,12 @@ namespace OC.Web.Controllers
             entity.Cedula = cedulaNorm;
             entity.Telefono = model.Telefono;
             entity.Email = model.Email;
-            
-            // Solo actualizar contraseña si se proporcionó una nueva
+
             if (!string.IsNullOrWhiteSpace(model.Contrasena))
             {
                 entity.Contrasena = BCrypt.Net.BCrypt.HashPassword(model.Contrasena);
             }
-            
+
             entity.FechaNacimiento = model.FechaNacimiento;
 
             await _pacientesRepo.UpdateAsync(entity);
@@ -242,6 +255,5 @@ namespace OC.Web.Controllers
             TempData["Success"] = "Paciente actualizado exitosamente";
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

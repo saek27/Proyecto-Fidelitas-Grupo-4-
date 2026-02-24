@@ -3,9 +3,28 @@
 <div class="card-dashboard">
     <h4>Pacientes</h4>
 
-    <a asp-action="Create" class="btn btn-brand mb-3">
-        <i class="bi bi-plus-lg"></i> Nuevo Paciente
-    </a>
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <form method="get" asp-action="Index" class="d-flex">
+                <input type="text" name="searchTerm" class="form-control me-2"
+                       placeholder="Buscar por nombre o cédula..." value="@ViewBag.SearchTerm" />
+                <button type="submit" class="btn btn-brand">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+                {
+                    <a asp-action="Index" class="btn btn-secondary ms-2">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                }
+            </form>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-action="Create" class="btn btn-brand">
+                <i class="bi bi-plus-lg"></i> Nuevo Paciente
+            </a>
+        </div>
+    </div>
 
     @if (TempData["Success"] != null)
     {
@@ -44,15 +63,49 @@
                         <td>@p.FechaNacimiento.ToString("dd/MM/yyyy")</td>
                         <td>@p.FechaRegistro.ToString("dd/MM/yyyy")</td>
                         <td class="text-end">
-                            <a asp-action="Edit"
-                               asp-route-id="@p.Id"
-                               class="btn btn-sm btn-outline-primary">
+                            <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
                         </td>
                     </tr>
+                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm) && p.Citas != null && p.Citas.Any(c => c.Expediente != null))
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="ms-4">
+                                    <strong>Expedientes clínicos:</strong>
+                                    <ul>
+                                        @foreach (var cita in p.Citas.Where(c => c.Expediente != null))
+                                        {
+                                            <li>
+                                                <a asp-controller="Expedientess"
+                                                   asp-action="Details"
+                                                   asp-route-id="@cita.Expediente.Id">
+                                                    @cita.FechaHora.ToString("dd/MM/yyyy") - @cita.Expediente.MotivoConsulta
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
+
+        @if (string.IsNullOrEmpty(ViewBag.SearchTerm))
+        {
+            <nav>
+                <ul class="pagination">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
     }
 </div>
