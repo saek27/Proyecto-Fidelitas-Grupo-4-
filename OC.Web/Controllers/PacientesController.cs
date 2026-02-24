@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Helpers;
 using OC.Web.ViewModels;
 
 namespace OC.Web.Controllers
@@ -41,37 +42,36 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Registro(PacienteViewModel model)
         {
-            // Validación manual: Contraseña es obligatoria en el registro público
             if (string.IsNullOrWhiteSpace(model.Contrasena))
-            {
                 ModelState.AddModelError(nameof(model.Contrasena), "La contraseña es obligatoria.");
-            }
 
-            if (!ModelState.IsValid)
+            var cedulaNormalizada = CedulaValidation.Normalizar(model.Cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNormalizada))
             {
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
                 return View(model);
             }
+            model.Cedula = cedulaNormalizada;
 
-            // Verificar si ya existe un paciente con la misma cédula
+            if (!ModelState.IsValid)
+                return View(model);
+
             var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Cedula == model.Cedula
             );
-
             if (pacientesExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Cedula), "Ya existe un paciente registrado con esta cédula.");
                 return View(model);
             }
 
-            // Verificar si ya existe un paciente con el mismo correo
             var emailsExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Email == model.Email
             );
-
             if (emailsExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso. Por favor, use otro.");
@@ -82,18 +82,18 @@ namespace OC.Web.Controllers
             {
                 Nombres = model.Nombres,
                 Apellidos = model.Apellidos,
-                Cedula = model.Cedula,
+                Cedula = cedulaNormalizada,
                 Telefono = model.Telefono,
                 Email = model.Email,
-                Contrasena = BCrypt.Net.BCrypt.HashPassword(model.Contrasena!), // Hashear contraseña
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(model.Contrasena!),
                 FechaNacimiento = model.FechaNacimiento,
                 FechaRegistro = DateTime.Now
             };
 
             await _pacientesRepo.AddAsync(entity);
 
-            TempData["Success"] = "Paciente registrado exitosamente. Ahora puede iniciar sesión.";
-            return RedirectToAction("Login", "Account");
+            TempData["Success"] = "Paciente registrado exitosamente. Ahora puede iniciar sesión como paciente.";
+            return RedirectToAction("Login", "PacienteAccount");
         }
 
         // CREATE (Solo Admin y Recepcion)
@@ -113,31 +113,33 @@ namespace OC.Web.Controllers
                 ModelState.AddModelError(nameof(model.Contrasena), "La contraseña es obligatoria.");
             }
 
-            if (!ModelState.IsValid)
+            var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
                 return View(model);
             }
+            model.Cedula = cedulaNorm;
 
-            // Verificar si ya existe un paciente con la misma cédula
+            if (!ModelState.IsValid)
+                return View(model);
+
             var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Cedula == model.Cedula
             );
-
             if (pacientesExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Cedula), "Ya existe un paciente registrado con esta cédula.");
                 return View(model);
             }
 
-            // Verificar si ya existe un paciente con el mismo correo
             var emailsExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Email == model.Email
             );
-
             if (emailsExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso. Por favor, use otro.");
@@ -148,7 +150,7 @@ namespace OC.Web.Controllers
             {
                 Nombres = model.Nombres,
                 Apellidos = model.Apellidos,
-                Cedula = model.Cedula,
+                Cedula = cedulaNorm,
                 Telefono = model.Telefono,
                 Email = model.Email,
                 Contrasena = BCrypt.Net.BCrypt.HashPassword(model.Contrasena!),
@@ -185,34 +187,36 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(PacienteViewModel model)
         {
-            if (!ModelState.IsValid)
+            var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
                 return View(model);
             }
+            model.Cedula = cedulaNorm;
+
+            if (!ModelState.IsValid)
+                return View(model);
 
             var entity = await _pacientesRepo.GetByIdAsync(model.Id);
             if (entity == null) return NotFound();
 
-            // Verificar si la cédula ya existe en otro paciente
             var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Cedula == model.Cedula && p.Id != model.Id
             );
-
             if (pacientesExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Cedula), "Ya existe otro paciente con esta cédula.");
                 return View(model);
             }
 
-            // Verificar si el correo ya existe en otro paciente
             var emailsExistentes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: p => p.Email == model.Email && p.Id != model.Id
             );
-
             if (emailsExistentes.Items.Any())
             {
                 ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso.");
@@ -221,7 +225,7 @@ namespace OC.Web.Controllers
 
             entity.Nombres = model.Nombres;
             entity.Apellidos = model.Apellidos;
-            entity.Cedula = model.Cedula;
+            entity.Cedula = cedulaNorm;
             entity.Telefono = model.Telefono;
             entity.Email = model.Email;
             

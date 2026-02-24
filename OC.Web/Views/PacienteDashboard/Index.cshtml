@@ -1,11 +1,24 @@
 @{
     var paciente = ViewBag.Paciente as OC.Core.Domain.Entities.Paciente;
     var citas = ViewBag.Citas as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
-    var solicitudes = ViewBag.SolicitudesPendientes as List<OC.Core.Domain.Entities.SolicitudCita> ?? new List<OC.Core.Domain.Entities.SolicitudCita>();
+    var recordatorios = ViewBag.Recordatorios as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
 }
 
 <div class="card-dashboard">
     <h4>Bienvenido, @paciente?.NombreCompleto</h4>
+
+    @if (recordatorios.Any())
+    {
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            <strong><i class="bi bi-bell me-2"></i>Recordatorio:</strong>
+            Tiene @recordatorios.Count cita(s) próxima(s):
+            @foreach (var r in recordatorios.Take(3))
+            {
+                <span class="d-block">@r.FechaHora.ToString("dd/MM/yyyy HH:mm") @(r.Sucursal?.Nombre ?? "Sede") — @r.Estado</span>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     @if (TempData["Success"] != null)
     {
@@ -23,6 +36,13 @@
         </div>
     }
 
+    <p class="mb-3">
+        <a asp-action="AgendarCita" class="btn btn-brand">
+            <i class="bi bi-calendar-plus"></i> Reservar mi cita
+        </a>
+        <span class="text-muted small">Elija sede, fecha y horario (L-D 8:00-18:00, slots de 30 min).</span>
+    </p>
+
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
@@ -31,16 +51,6 @@
                         <i class="bi bi-calendar-check"></i> Mis Citas Programadas
                     </h5>
                     <p class="card-text">@citas.Count cita(s) programada(s)</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-clock-history"></i> Solicitudes Pendientes
-                    </h5>
-                    <p class="card-text">@solicitudes.Count solicitud(es) pendiente(s)</p>
                 </div>
             </div>
         </div>
@@ -57,8 +67,10 @@
             <thead>
                 <tr>
                     <th>Fecha y Hora</th>
+                    <th>Sede</th>
                     <th>Estado</th>
                     <th>Observaciones</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,49 +78,25 @@
                 {
                     <tr>
                         <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(cita.Sucursal?.Nombre ?? "—")</td>
                         <td>
-                            @if (cita.Estado == "Programada")
+                            @if (cita.Estado == "Confirmada") { <span class="badge bg-primary">Confirmada</span> }
+                            else if (cita.Estado == "Atendida") { <span class="badge bg-success">Atendida</span> }
+                            else if (cita.Estado == "Cancelada") { <span class="badge bg-secondary">Cancelada</span> }
+                            else if (cita.Estado == "Pendiente") { <span class="badge bg-warning text-dark">Pendiente</span> }
+                            else { <span class="badge bg-secondary">@cita.Estado</span> }
+                        </td>
+                        <td>@(cita.MotivoConsulta ?? "Sin observaciones")</td>
+                        <td>
+                            @if (cita.Estado == "Confirmada" || cita.Estado == "Pendiente")
                             {
-                                <span class="badge bg-primary">@cita.Estado</span>
-                            }
-                            else if (cita.Estado == "Completada")
-                            {
-                                <span class="badge bg-success">@cita.Estado</span>
+                                <a asp-action="EditarMiCita" asp-route-id="@cita.Id" class="btn btn-sm btn-outline-primary">Cambiar horario</a>
                             }
                             else
                             {
-                                <span class="badge bg-secondary">@cita.Estado</span>
+                                <span class="text-muted">—</span>
                             }
                         </td>
-                        <td>@(cita.MotivoConsulta ?? "Sin observaciones")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-    <h5 class="mt-4">Solicitudes Pendientes</h5>
-    @if (!solicitudes.Any())
-    {
-        <p>No tiene solicitudes pendientes.</p>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Fecha de Solicitud</th>
-                    <th>Motivo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var solicitud in solicitudes)
-                {
-                    <tr>
-                        <td>@solicitud.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>@(solicitud.Motivo ?? "Sin motivo especificado")</td>
-                        <td><span class="badge bg-warning">@solicitud.Estado</span></td>
                     </tr>
                 }
             </tbody>

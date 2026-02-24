@@ -14,9 +14,9 @@
     <form asp-action="Solicitar" method="post">
         <div class="mb-3">
             <label for="cedula" class="form-label">Cédula del Paciente</label>
-            <input name="cedula" id="cedula" type="text" class="form-control" placeholder="Ingrese su cédula" required />
-            <small class="form-text text-muted">Ingrese la cédula con la que se registró como paciente.</small>
-            @if (ViewData.ModelState[""]?.Errors.Any() == true)
+            <input name="cedula" id="cedula" type="text" class="form-control" placeholder="9 dígitos, ej: 604240201" maxlength="9" pattern="\d{9}" title="Solo 9 dígitos numéricos" required />
+            <small class="form-text text-muted">Cédula con 9 dígitos (ej: 604240201).</small>
+            @if (ViewData.ModelState[""]?.Errors?.Any() == true)
             {
                 <span class="text-danger">@ViewData.ModelState[""].Errors.First().ErrorMessage</span>
             }

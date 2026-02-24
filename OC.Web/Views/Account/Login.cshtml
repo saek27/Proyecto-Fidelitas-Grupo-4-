@@ -1,4 +1,4 @@
-﻿@model OC.Web.ViewModels.LoginViewModel
+@model OC.Web.ViewModels.LoginViewModel
 @{
     Layout = null; // Login no lleva el Sidebar del Dashboard
 }
@@ -39,6 +39,10 @@
                             <div class="mb-3 form-check">
                                 <input asp-for="RememberMe" class="form-check-input" />
                                 <label class="form-check-label" asp-for="RememberMe">Recordarme</label>
+                            </div>
+
+                            <div class="mb-3">
+                                <a asp-controller="PacienteAccount" asp-action="RecuperarContrasena" class="small text-muted">¿Olvidó su contraseña?</a>
                             </div>
 
                             <div class="d-grid mb-3">

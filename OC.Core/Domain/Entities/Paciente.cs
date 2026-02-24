@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace OC.Core.Domain.Entities
@@ -8,12 +8,15 @@ namespace OC.Core.Domain.Entities
         public int Id { get; set; }
         public string Nombres { get; set; } = string.Empty;
         public string Apellidos { get; set; } = string.Empty;
-        public string Cedula { get; set; } = string.Empty; // O Documento de Identidad
+        public string Cedula { get; set; } = string.Empty;
         public string? Telefono { get; set; }
         public string? Email { get; set; }
         public string Contrasena { get; set; } = string.Empty; // Contraseña hasheada
         public DateTime FechaNacimiento { get; set; }
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
+
+        public string? TokenRecuperacion { get; set; }
+        public DateTime? FechaExpiracionToken { get; set; }
 
         // Propiedad calculada (útil para la UI)
         public string NombreCompleto => $"{Nombres} {Apellidos}";

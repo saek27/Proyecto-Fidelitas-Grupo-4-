@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
@@ -19,7 +19,7 @@ namespace OC.Web.Controllers
         {
             var citas = await _citasRepo.GetPagedAsync(
                 1, 100,
-                filter: c => c.PacienteId == pacienteId && c.Estado == "Atendida",
+                filter: c => c.PacienteId == pacienteId && c.Estado == EstadoCita.Atendida,
                 orderBy: q => q.OrderByDescending(c => c.FechaCreacion),
                 includeProperties: "Paciente,Expediente"
             );

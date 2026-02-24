@@ -18,9 +18,10 @@
         <div class="mb-3">
             <label for="estado" class="form-label">Cambiar estado</label>
             <select name="estado" id="estado" class="form-select">
+                <option value="Pendiente" selected="@(Model.Estado == "Pendiente")">Pendiente</option>
+                <option value="Confirmada" selected="@(Model.Estado == "Confirmada")">Confirmada</option>
                 @if (User.IsInRole("Optometrista") || User.IsInRole("Admin"))
                 {
-                    <option value="Programada" selected="@(Model.Estado == "Programada")">Programada</option>
                     <option value="Atendida" selected="@(Model.Estado == "Atendida")">Atendida</option>
                 }
                 <option value="Cancelada" selected="@(Model.Estado == "Cancelada")">Cancelada</option>

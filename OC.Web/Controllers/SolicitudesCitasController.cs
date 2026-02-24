@@ -11,21 +11,26 @@ namespace OC.Web.Controllers
     [Authorize(Roles = "Recepcion,Admin")]
     public class SolicitudesCitasController : Controller
     {
+        private const int HoraInicio = 8;
+        private const int HoraFin = 18;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Paciente> _pacientesRepo;
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<Usuario> _usuariosRepo;
+        private readonly IGenericRepository<Sucursal> _sucursalesRepo;
 
         public SolicitudesCitasController(
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<Cita> citasRepo,
-            IGenericRepository<Usuario> usuariosRepo)
+            IGenericRepository<Usuario> usuariosRepo,
+            IGenericRepository<Sucursal> sucursalesRepo)
         {
             _solicitudesRepo = solicitudesRepo;
             _pacientesRepo = pacientesRepo;
             _citasRepo = citasRepo;
             _usuariosRepo = usuariosRepo;
+            _sucursalesRepo = sucursalesRepo;
         }
 
         // LISTAR SOLICITUDES PENDIENTES
@@ -50,7 +55,37 @@ namespace OC.Web.Controllers
             return View(result);
         }
 
-        // AGENDAR CITA (Convertir solicitud en cita)
+        // Horario 8-18, slots 30 min
+        [Authorize(Roles = "Recepcion,Admin,Paciente")]
+        [HttpGet]
+        public async Task<IActionResult> ObtenerHorasDisponibles(int sucursalId, string fecha)
+        {
+            if (!DateTime.TryParse(fecha, out var date))
+                return Json(Array.Empty<string>());
+
+            var inicioDia = date.Date.AddHours(HoraInicio);
+            var finDia = date.Date.AddHours(HoraFin);
+            var citasOcupadas = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 500,
+                filter: c => c.SucursalId == sucursalId
+                    && c.FechaHora >= inicioDia
+                    && c.FechaHora < finDia
+                    && c.Estado != EstadoCita.Cancelada
+            );
+            var slotsOcupados = citasOcupadas.Items
+                .Select(c => c.FechaHora.ToString("HH:mm"))
+                .ToHashSet();
+
+            var disponibles = new List<string>();
+            for (int h = HoraInicio; h < HoraFin; h++)
+            {
+                if (!slotsOcupados.Contains($"{h:D2}:00")) disponibles.Add($"{h:D2}:00");
+                if (!slotsOcupados.Contains($"{h:D2}:30")) disponibles.Add($"{h:D2}:30");
+            }
+            return Json(disponibles);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Agendar(int id)
         {
@@ -64,14 +99,17 @@ namespace OC.Web.Controllers
             var solicitudEntity = solicitud.Items.FirstOrDefault();
             if (solicitudEntity == null) return NotFound();
 
-            // Cargar optometristas para el dropdown
+            var sucursales = await _sucursalesRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 100,
+                filter: s => s.Activo
+            );
             var todosUsuarios = await _usuariosRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1000,
                 filter: u => u.Activo,
                 includeProperties: "Rol"
             );
-
             var optometristas = todosUsuarios.Items.Where(u => u.Rol.Nombre == "Optometrista");
 
             var model = new CitaViewModel
@@ -80,57 +118,66 @@ namespace OC.Web.Controllers
                 PacienteId = solicitudEntity.PacienteId,
                 NombrePaciente = solicitudEntity.Paciente.NombreCompleto,
                 MotivoSolicitud = solicitudEntity.Motivo,
-                FechaHora = DateTime.Now.AddDays(1),
-                OptometristasList = optometristas.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = u.Nombre
-                }).ToList()
+                FechaHora = ProximaHoraLaboral(DateTime.Now),
+                SucursalId = sucursales.Items.FirstOrDefault()?.Id ?? 0,
+                SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList(),
+                OptometristasList = optometristas.Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Nombre }).ToList()
             };
 
             return View(model);
+        }
+
+        private static DateTime ProximaHoraLaboral(DateTime from)
+        {
+            var d = from.Date;
+            int h = from.Hour;
+            if (from.DayOfWeek == DayOfWeek.Sunday) { d = d.AddDays(1); h = HoraInicio; }
+            else if (h < HoraInicio) h = HoraInicio;
+            else if (h >= HoraFin) { d = d.AddDays(1); if (d.DayOfWeek == DayOfWeek.Sunday) d = d.AddDays(1); h = HoraInicio; }
+            return d.AddHours(h);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Agendar(CitaViewModel model)
         {
+            if (model.SucursalId <= 0)
+                ModelState.AddModelError(nameof(model.SucursalId), "Debe seleccionar una sede.");
+
+            var fecha = model.FechaHora;
+            if (fecha.Hour < HoraInicio || fecha.Hour >= HoraFin)
+                ModelState.AddModelError("", $"El horario de atención es de {HoraInicio}:00 a {HoraFin}:00.");
+
             if (!ModelState.IsValid)
             {
-                // Recargar dropdowns
-                var todosUsuarios2 = await _usuariosRepo.GetPagedAsync(
-                    pageIndex: 1,
-                    pageSize: 1000,
-                    filter: u => u.Activo,
-                    includeProperties: "Rol"
-                );
-
-                var optometristas2 = todosUsuarios2.Items.Where(u => u.Rol.Nombre == "Optometrista");
-
-                model.OptometristasList = optometristas2.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = u.Nombre
-                }).ToList();
-
+                await RecargarDropdownsAgendar(model);
                 return View(model);
             }
 
-            // Obtener el ID del usuario actual (recepcionista)
+            var ocupado = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 10,
+                filter: c => c.SucursalId == model.SucursalId
+                    && c.FechaHora == model.FechaHora
+                    && c.Estado != EstadoCita.Cancelada
+            );
+            if (ocupado.Items.Any())
+            {
+                ModelState.AddModelError("", "Ese horario ya no está disponible en la sede seleccionada. Elija otra hora o sede.");
+                await RecargarDropdownsAgendar(model);
+                return View(model);
+            }
+
             var userIdClaim = User.FindFirst("UserId")?.Value;
             int? usuarioAprobadorId = null;
             if (int.TryParse(userIdClaim, out int userId))
-            {
                 usuarioAprobadorId = userId;
-            }
 
-            // Actualizar la solicitud a "Aprobada"
             var solicitud = await _solicitudesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
                 filter: s => s.Id == model.SolicitudCitaId
             );
-
             var solicitudEntity = solicitud.Items.FirstOrDefault();
             if (solicitudEntity == null) return NotFound();
 
@@ -139,22 +186,30 @@ namespace OC.Web.Controllers
             solicitudEntity.UsuarioAprobadorId = usuarioAprobadorId;
             await _solicitudesRepo.UpdateAsync(solicitudEntity);
 
-            // Crear la cita
             var cita = new Cita
             {
                 PacienteId = model.PacienteId,
                 SolicitudCitaId = model.SolicitudCitaId,
+                SucursalId = model.SucursalId,
                 FechaHora = model.FechaHora,
                 MotivoConsulta = model.Observaciones,
-                Estado = "Programada",
+                Estado = EstadoCita.Confirmada,
                 UsuarioAsignadoId = model.UsuarioAsignadoId,
                 FechaCreacion = DateTime.Now
             };
 
             await _citasRepo.AddAsync(cita);
 
-            TempData["Success"] = "Cita agendada exitosamente";
+            TempData["Success"] = "Cita agendada exitosamente en la sede seleccionada. El paciente ha sido notificado.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task RecargarDropdownsAgendar(CitaViewModel model)
+        {
+            var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
+            var usuarios = await _usuariosRepo.GetPagedAsync(pageIndex: 1, pageSize: 1000, filter: u => u.Activo, includeProperties: "Rol");
+            model.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            model.OptometristasList = usuarios.Items.Where(u => u.Rol.Nombre == "Optometrista").Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Nombre }).ToList();
         }
 
         // RECHAZAR SOLICITUD

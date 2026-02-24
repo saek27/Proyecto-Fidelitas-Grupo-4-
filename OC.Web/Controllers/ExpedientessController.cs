@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
@@ -42,10 +42,9 @@ namespace OC.Web.Controllers
             if (cita == null)
                 return NotFound();
 
-            // Permitir tanto Programada como Atendida (para casos donde ya se marcó)
-            if (cita.Estado != "Programada" && cita.Estado != "Atendida")
+            if (cita.Estado != EstadoCita.Confirmada && cita.Estado != EstadoCita.Atendida)
             {
-                TempData["Error"] = "Solo se puede crear expediente para citas en estado Programada o Atendida.";
+                TempData["Error"] = "Solo se puede crear expediente para citas en estado Confirmada o Atendida.";
                 return RedirectToAction("HistorialPaciente", "CitasPublicas", new { pacienteId = cita.PacienteId });
             }
 
@@ -61,7 +60,7 @@ namespace OC.Web.Controllers
                 NombrePaciente = cita.Paciente.NombreCompleto,
                 FechaCita = cita.FechaHora,
                 PacienteId = cita.PacienteId,
-                CitaAtendida = (cita.Estado == "Atendida")
+                CitaAtendida = (cita.Estado == EstadoCita.Atendida)
             };
 
             return View("~/Views/Expedientess/Create.cshtml", viewModel);
@@ -99,7 +98,7 @@ namespace OC.Web.Controllers
             if (citaParaActualizar == null)
                 return NotFound();
 
-            if (citaParaActualizar.Estado != "Programada" && citaParaActualizar.Estado != "Atendida")
+            if (citaParaActualizar.Estado != EstadoCita.Confirmada && citaParaActualizar.Estado != EstadoCita.Atendida)
             {
                 TempData["Error"] = "La cita ya no está en estado válido.";
                 return RedirectToAction("HistorialPaciente", "CitasPublicas", new { pacienteId = citaParaActualizar.PacienteId });
@@ -122,9 +121,9 @@ namespace OC.Web.Controllers
             await _expedienteRepo.AddAsync(expediente);
 
             // Si la cita aún está programada, la marcamos como atendida
-            if (citaParaActualizar.Estado == "Programada")
+            if (citaParaActualizar.Estado == EstadoCita.Confirmada)
             {
-                citaParaActualizar.Estado = "Atendida";
+                citaParaActualizar.Estado = EstadoCita.Atendida;
                 citaParaActualizar.ObservacionesEspecialista = model.MotivoConsulta;
                 await _citaRepo.UpdateAsync(citaParaActualizar);
             }
@@ -169,7 +168,7 @@ namespace OC.Web.Controllers
                 NombrePaciente = expediente.Cita?.Paciente?.NombreCompleto,
                 FechaCita = expediente.Cita?.FechaHora ?? DateTime.Now,
                 PacienteId = expediente.Cita?.PacienteId ?? 0,
-                CitaAtendida = (expediente.Cita?.Estado == "Atendida")
+                CitaAtendida = (expediente.Cita?.Estado == EstadoCita.Atendida)
             };
 
             return View("~/Views/Expedientess/Edit.cshtml", viewModel);

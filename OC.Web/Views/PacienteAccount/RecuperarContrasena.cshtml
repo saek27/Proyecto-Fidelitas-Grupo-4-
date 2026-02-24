@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Recuperar contraseña";
+}
+
+<div class="card-dashboard">
+    <h4>Recuperar contraseña</h4>
+    <p class="text-muted">Ingrese su cédula (9 dígitos). Si está registrada, podrá generar un enlace seguro para restablecer su contraseña. El enlace será válido por 1 hora.</p>
+
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["Info"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="RecuperarContrasena" method="post">
+        <div class="mb-3">
+            <label for="cedula" class="form-label">Cédula</label>
+            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ej: 604240201" maxlength="9" pattern="\d{9}" required />
+        </div>
+        <button type="submit" class="btn btn-brand">Enviar enlace de recuperación</button>
+        <a asp-action="Login" class="btn btn-secondary">Volver al inicio de sesión</a>
+    </form>
+</div>

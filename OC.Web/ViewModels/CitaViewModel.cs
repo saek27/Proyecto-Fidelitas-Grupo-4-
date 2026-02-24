@@ -26,16 +26,18 @@ namespace OC.Web.ViewModels
         public string? Observaciones { get; set; }
 
         [Display(Name = "Estado")]
-        public string Estado { get; set; } = "Programada";
+        public string Estado { get; set; } = OC.Core.Domain.Entities.EstadoCita.Confirmada;
+
+        [Display(Name = "Sede / Sucursal")]
+        public int SucursalId { get; set; }
 
         [Display(Name = "Optometrista Asignado")]
         public int? UsuarioAsignadoId { get; set; }
 
-        // Para mostrar información
         public string? NombrePaciente { get; set; }
         public string? MotivoSolicitud { get; set; }
 
-        // Listas para dropdowns
+        public IEnumerable<SelectListItem>? SucursalesList { get; set; }
         public IEnumerable<SelectListItem>? OptometristasList { get; set; }
     }
 }

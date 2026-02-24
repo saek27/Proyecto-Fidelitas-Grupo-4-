@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -50,11 +50,21 @@ namespace OC.Data.Context
             });
 
             modelBuilder.Entity<Expediente>()
-            .HasOne(e => e.Cita)
-            .WithOne(c => c.Expediente)
-            .HasForeignKey<Expediente>(e => e.CitaId)
-            .OnDelete(DeleteBehavior.Restrict); // o Cascade según necesidad
+                .HasOne(e => e.Cita)
+                .WithOne(c => c.Expediente)
+                .HasForeignKey<Expediente>(e => e.CitaId)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Cita>()
+                .HasOne(c => c.Sucursal)
+                .WithMany(s => s.Citas)
+                .HasForeignKey(c => c.SucursalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Paciente>(e =>
+            {
+                e.Property(p => p.Cedula).HasMaxLength(9);
+            });
         }
     }
 }

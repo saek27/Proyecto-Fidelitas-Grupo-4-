@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using System.Security.Claims;
@@ -9,18 +10,24 @@ namespace OC.Web.Controllers
     [Authorize(Roles = "Paciente")]
     public class PacienteDashboardController : Controller
     {
+        private const int HoraInicio = 8;
+        private const int HoraFin = 18;
+
         private readonly IGenericRepository<Paciente> _pacientesRepo;
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
+        private readonly IGenericRepository<Sucursal> _sucursalesRepo;
 
         public PacienteDashboardController(
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<Cita> citasRepo,
-            IGenericRepository<SolicitudCita> solicitudesRepo)
+            IGenericRepository<SolicitudCita> solicitudesRepo,
+            IGenericRepository<Sucursal> sucursalesRepo)
         {
             _pacientesRepo = pacientesRepo;
             _citasRepo = citasRepo;
             _solicitudesRepo = solicitudesRepo;
+            _sucursalesRepo = sucursalesRepo;
         }
 
         public async Task<IActionResult> Index()
@@ -47,74 +54,233 @@ namespace OC.Web.Controllers
                     pageSize: 100,
                     filter: c => c.PacienteId == pacienteId,
                     orderBy: q => q.OrderByDescending(c => c.FechaHora),
-                    includeProperties: "Paciente"
+                    includeProperties: "Paciente,Sucursal"
                 );
+
+                var ahora = DateTime.Now;
+                var recordatorios = citas.Items
+                    .Where(c => c.Estado != EstadoCita.Cancelada
+                        && c.FechaHora >= ahora
+                        && c.FechaHora <= ahora.AddHours(48))
+                    .OrderBy(c => c.FechaHora)
+                    .ToList();
 
                 ViewBag.Paciente = paciente;
                 ViewBag.Citas = citas.Items;
+                ViewBag.Recordatorios = recordatorios;
             }
             catch
             {
                 // Si la tabla no existe aún, mostrar lista vacía
                 ViewBag.Paciente = paciente;
                 ViewBag.Citas = new List<Cita>();
-            }
-
-            // Obtener solicitudes pendientes del paciente
-            try
-            {
-                var solicitudes = await _solicitudesRepo.GetPagedAsync(
-                    pageIndex: 1,
-                    pageSize: 100,
-                    filter: s => s.PacienteId == pacienteId && s.Estado == "Pendiente",
-                    orderBy: q => q.OrderByDescending(s => s.FechaSolicitud)
-                );
-
-                ViewBag.SolicitudesPendientes = solicitudes.Items;
-            }
-            catch
-            {
-                ViewBag.SolicitudesPendientes = new List<SolicitudCita>();
+                ViewBag.Recordatorios = new List<Cita>();
             }
 
             return View();
         }
 
+        // Horarios disponibles (slots 30 min) por sede y fecha
         [HttpGet]
-        public IActionResult SolicitarCita()
+        public async Task<IActionResult> ObtenerHorasDisponibles(int sucursalId, string fecha)
         {
+            if (sucursalId <= 0 || string.IsNullOrWhiteSpace(fecha))
+                return Json(Array.Empty<string>());
+            if (!DateTime.TryParse(fecha, out var date))
+                return Json(Array.Empty<string>());
+
+            var inicioDia = date.Date.AddHours(HoraInicio);
+            var finDia = date.Date.AddHours(HoraFin);
+            var citasOcupadas = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 500,
+                filter: c => c.SucursalId == sucursalId
+                    && c.FechaHora >= inicioDia
+                    && c.FechaHora < finDia
+                    && c.Estado != EstadoCita.Cancelada
+            );
+            var slotsOcupados = citasOcupadas.Items
+                .Select(c => c.FechaHora.ToString("HH:mm"))
+                .ToHashSet();
+
+            var disponibles = new List<string>();
+            for (int h = HoraInicio; h < HoraFin; h++)
+            {
+                if (!slotsOcupados.Contains($"{h:D2}:00")) disponibles.Add($"{h:D2}:00");
+                if (!slotsOcupados.Contains($"{h:D2}:30")) disponibles.Add($"{h:D2}:30");
+            }
+            return Json(disponibles);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SolicitarCita()
+        {
+            var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
+            ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            ViewBag.EsSolicitarCita = true;
+            return View("AgendarCita");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AgendarCita()
+        {
+            var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
+            ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SolicitarCita(string motivo)
+        public async Task<IActionResult> AgendarCita(int sucursalId, string fecha, string hora, string? motivo)
         {
             var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
             if (!int.TryParse(pacienteIdClaim, out int pacienteId))
-            {
                 return RedirectToAction("Login", "PacienteAccount");
-            }
 
-            try
+            if (!DateTime.TryParse(fecha, out var date) || string.IsNullOrWhiteSpace(hora))
             {
-                var solicitud = new SolicitudCita
-                {
-                    PacienteId = pacienteId,
-                    Motivo = motivo,
-                    FechaSolicitud = DateTime.Now,
-                    Estado = "Pendiente"
-                };
-
-                await _solicitudesRepo.AddAsync(solicitud);
-
-                TempData["Success"] = "Solicitud de cita enviada exitosamente. Un recepcionista se pondrá en contacto con usted.";
+                TempData["Error"] = "Seleccione fecha y hora.";
+                return RedirectToAction(nameof(AgendarCita));
             }
-            catch
+
+            var parts = hora.Trim().Split(':');
+            if (parts.Length < 2 || !int.TryParse(parts[0], out int h) || !int.TryParse(parts[1], out int m))
             {
-                TempData["Error"] = "Error al enviar la solicitud. Por favor, intente más tarde.";
+                TempData["Error"] = "Hora no válida.";
+                return RedirectToAction(nameof(AgendarCita));
+            }
+            if (h < HoraInicio || h >= HoraFin || (m != 0 && m != 30))
+            {
+                TempData["Error"] = "El horario es de 8:00 a 18:00 en slots de 30 minutos.";
+                return RedirectToAction(nameof(AgendarCita));
             }
 
+            var fechaHora = date.Date.AddHours(h).AddMinutes(m);
+
+            var ocupado = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 10,
+                filter: c => c.SucursalId == sucursalId && c.FechaHora == fechaHora && c.Estado != EstadoCita.Cancelada
+            );
+            if (ocupado.Items.Any())
+            {
+                TempData["Error"] = "Ese horario ya no está disponible. Elija otro slot.";
+                return RedirectToAction(nameof(AgendarCita));
+            }
+
+            var solicitud = new SolicitudCita
+            {
+                PacienteId = pacienteId,
+                Motivo = motivo ?? "Reserva en línea",
+                FechaSolicitud = DateTime.Now,
+                Estado = "Aprobada"
+            };
+            await _solicitudesRepo.AddAsync(solicitud);
+
+            var cita = new Cita
+            {
+                PacienteId = pacienteId,
+                SolicitudCitaId = solicitud.Id,
+                SucursalId = sucursalId,
+                FechaHora = fechaHora,
+                MotivoConsulta = motivo,
+                Estado = EstadoCita.Confirmada,
+                FechaCreacion = DateTime.Now
+            };
+            await _citasRepo.AddAsync(cita);
+
+            TempData["Success"] = "Cita agendada correctamente. El slot quedó reservado a su nombre.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditarMiCita(int id)
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var citaResult = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 1,
+                filter: c => c.Id == id && c.PacienteId == pacienteId,
+                includeProperties: "Sucursal"
+            );
+            var cita = citaResult.Items.FirstOrDefault();
+            if (cita == null)
+                return NotFound();
+
+            if (cita.Estado != EstadoCita.Confirmada && cita.Estado != EstadoCita.Pendiente)
+            {
+                TempData["Error"] = "Solo puede cambiar la fecha/hora de citas en estado Confirmada o Pendiente.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
+            ViewBag.Cita = cita;
+            ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarMiCita(int id, int sucursalId, string fecha, string hora)
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var citaResult = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 1,
+                filter: c => c.Id == id && c.PacienteId == pacienteId
+            );
+            var cita = citaResult.Items.FirstOrDefault();
+            if (cita == null)
+                return NotFound();
+
+            if (cita.Estado != EstadoCita.Confirmada && cita.Estado != EstadoCita.Pendiente)
+            {
+                TempData["Error"] = "Solo puede cambiar la fecha/hora de citas en estado Confirmada o Pendiente.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!DateTime.TryParse(fecha, out var date) || string.IsNullOrWhiteSpace(hora))
+            {
+                TempData["Error"] = "Seleccione fecha y hora.";
+                return RedirectToAction(nameof(EditarMiCita), new { id });
+            }
+
+            var parts = hora.Trim().Split(':');
+            if (parts.Length < 2 || !int.TryParse(parts[0], out int h) || !int.TryParse(parts[1], out int m))
+            {
+                TempData["Error"] = "Hora no válida.";
+                return RedirectToAction(nameof(EditarMiCita), new { id });
+            }
+            if (h < HoraInicio || h >= HoraFin || (m != 0 && m != 30))
+            {
+                TempData["Error"] = "El horario es de 8:00 a 18:00 en slots de 30 minutos.";
+                return RedirectToAction(nameof(EditarMiCita), new { id });
+            }
+
+            var nuevaFechaHora = date.Date.AddHours(h).AddMinutes(m);
+
+            var ocupado = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 10,
+                filter: c => c.SucursalId == sucursalId && c.FechaHora == nuevaFechaHora && c.Estado != EstadoCita.Cancelada && c.Id != id
+            );
+            if (ocupado.Items.Any())
+            {
+                TempData["Error"] = "Ese horario ya no está disponible. Elija otro slot.";
+                return RedirectToAction(nameof(EditarMiCita), new { id });
+            }
+
+            cita.SucursalId = sucursalId;
+            cita.FechaHora = nuevaFechaHora;
+            await _citasRepo.UpdateAsync(cita);
+
+            TempData["Success"] = "Cita actualizada. El horario anterior quedó liberado para otros pacientes.";
             return RedirectToAction(nameof(Index));
         }
     }

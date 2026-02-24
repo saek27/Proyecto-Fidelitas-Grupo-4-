@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Helpers;
 using OC.Web.ViewModels;
 
 namespace OC.Web.Controllers
@@ -45,10 +46,14 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(EmpleadoViewModel model)
         {
+            var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
+            {
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+            }
             if (!ModelState.IsValid)
             {
-                ViewBag.Sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1,
-            pageSize: 1000, filter: s => s.Activo);
+                ViewBag.Sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 1000, filter: s => s.Activo);
                 return View(model);
             }
 
@@ -56,7 +61,7 @@ namespace OC.Web.Controllers
             {
                 Nombre = model.Nombre,
                 Apellidos = model.Apellidos,
-                Cedula = model.Cedula,
+                Cedula = cedulaNorm,
                 Telefono = model.Telefono,
                 Puesto = model.Puesto,
                 SucursalId = model.SucursalId,
@@ -94,6 +99,9 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EmpleadoViewModel model)
         {
+            var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
             if (!ModelState.IsValid)
             {
                 ViewBag.Sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 1000, filter: s => s.Activo);
@@ -105,7 +113,7 @@ namespace OC.Web.Controllers
 
             entity.Nombre = model.Nombre;
             entity.Apellidos = model.Apellidos;
-            entity.Cedula = model.Cedula;
+            entity.Cedula = cedulaNorm;
             entity.Telefono = model.Telefono;
             entity.Puesto = model.Puesto;
             entity.SucursalId = model.SucursalId;

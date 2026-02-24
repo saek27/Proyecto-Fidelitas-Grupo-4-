@@ -6,11 +6,15 @@
 <div class="card-dashboard">
     <h4>Mis Citas</h4>
 
+    @if (ViewData.ModelState[""]?.Errors?.Any() == true)
+    {
+        <div class="alert alert-danger">@ViewData.ModelState[""].Errors.First().ErrorMessage</div>
+    }
     <form asp-action="VerMisCitas" method="post" class="mb-4">
         <div class="row">
             <div class="col-md-6">
-                <label for="cedula" class="form-label">Ingrese su cédula para ver sus citas</label>
-                <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Número de cédula" required />
+                <label for="cedula" class="form-label">Cédula (9 dígitos)</label>
+                <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ej: 604240201" maxlength="9" required />
             </div>
             <div class="col-md-6 d-flex align-items-end">
                 <button type="submit" class="btn btn-brand">
@@ -47,18 +51,11 @@
                         <tr>
                             <td>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
-                                @if (cita.Estado == "Programada")
-                                {
-                                    <span class="badge bg-primary">@cita.Estado</span>
-                                }
-                                else if (cita.Estado == "Completada")
-                                {
-                                    <span class="badge bg-success">@cita.Estado</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">@cita.Estado</span>
-                                }
+                                @if (cita.Estado == "Confirmada") { <span class="badge bg-primary">Confirmada</span> }
+                                else if (cita.Estado == "Atendida") { <span class="badge bg-success">Atendida</span> }
+                                else if (cita.Estado == "Cancelada") { <span class="badge bg-secondary">Cancelada</span> }
+                                else if (cita.Estado == "Pendiente") { <span class="badge bg-warning text-dark">Pendiente</span> }
+                                else { <span class="badge bg-secondary">@cita.Estado</span> }
                             </td>
                             <td>@(cita.MotivoConsulta ?? "Sin observaciones")</td>
                         </tr>

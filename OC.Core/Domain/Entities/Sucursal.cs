@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,10 +18,8 @@ namespace OC.Core.Domain.Entities
 
 
 
-        // Relaciones
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
         public ICollection<Empleado> Empleados { get; set; } = new List<Empleado>();
-
-        // Aquí luego pondremos el Inventario
+        public ICollection<Cita> Citas { get; set; } = new List<Cita>();
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Helpers;
 using OC.Web.ViewModels;
 using System.Security.Claims;
 
@@ -35,16 +36,17 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Solicitar(string cedula, string motivo)
         {
-            if (string.IsNullOrWhiteSpace(cedula))
+            var cedulaNorm = CedulaValidation.Normalizar(cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError("", "Debe ingresar su cédula.");
+                ModelState.AddModelError("", "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
                 return View();
             }
 
             var pacientes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
-                filter: p => p.Cedula == cedula
+                filter: p => p.Cedula == cedulaNorm
             );
             var paciente = pacientes.Items.FirstOrDefault();
             if (paciente == null)
@@ -74,16 +76,17 @@ namespace OC.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerMisCitas(string cedula)
         {
-            if (string.IsNullOrWhiteSpace(cedula))
+            var cedulaNorm = CedulaValidation.Normalizar(cedula);
+            if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError("", "Debe ingresar su cédula.");
+                ModelState.AddModelError("", "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
                 return View();
             }
 
             var pacientes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
-                filter: p => p.Cedula == cedula,
+                filter: p => p.Cedula == cedulaNorm,
                 includeProperties: "Citas"
             );
             var paciente = pacientes.Items.FirstOrDefault();
@@ -148,7 +151,7 @@ namespace OC.Web.Controllers
                 includeProperties: "Paciente"
             )).Items.FirstOrDefault();
 
-            if (esRecepcionista && estado != "Cancelada")
+            if (esRecepcionista && estado != EstadoCita.Cancelada)
             {
                 ModelState.AddModelError("", "Recepción solo puede cancelar citas.");
                 return View(cita);
@@ -156,14 +159,14 @@ namespace OC.Web.Controllers
 
             if (cita == null) return NotFound();
 
-            if (estado == "Atendida" && string.IsNullOrWhiteSpace(resultadoClinico))
+            if (estado == EstadoCita.Atendida && string.IsNullOrWhiteSpace(resultadoClinico))
             {
                 ModelState.AddModelError("", "Debe ingresar resultado clínico.");
                 return View(cita);
             }
 
             cita.Estado = estado;
-            if (estado == "Atendida")
+            if (estado == EstadoCita.Atendida)
             {
                 cita.ObservacionesEspecialista = resultadoClinico;
             }
@@ -171,8 +174,7 @@ namespace OC.Web.Controllers
             await _citasRepo.UpdateAsync(cita);
             TempData["Success"] = "Cita actualizada correctamente.";
 
-            // Redirigir a creación de expediente si es atendida por optometrista/admin
-            if (estado == "Atendida" && (User.IsInRole("Optometrista") || User.IsInRole("Admin")))
+            if (estado == EstadoCita.Atendida && (User.IsInRole("Optometrista") || User.IsInRole("Admin")))
             {
                 return RedirectToAction("Create", "Expedientess", new { citaId = cita.Id });
             }
@@ -196,7 +198,7 @@ namespace OC.Web.Controllers
 
             var citas = await _citasRepo.GetPagedAsync(
                 1, 200,
-                filter: c => c.PacienteId == paciente.Id && c.Estado == "Atendida",
+                filter: c => c.PacienteId == paciente.Id && c.Estado == EstadoCita.Atendida,
                 orderBy: q => q.OrderByDescending(c => c.FechaHora),
                 includeProperties: "Paciente"
             );
