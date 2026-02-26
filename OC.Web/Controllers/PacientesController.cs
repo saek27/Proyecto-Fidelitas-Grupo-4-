@@ -48,7 +48,7 @@ namespace OC.Web.Controllers
             var cedulaNormalizada = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNormalizada))
             {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
                 return View(model);
             }
             model.Cedula = cedulaNormalizada;
@@ -63,7 +63,7 @@ namespace OC.Web.Controllers
             );
             if (pacientesExistentes.Items.Any())
             {
-                ModelState.AddModelError(nameof(model.Cedula), "Ya existe un paciente registrado con esta cédula.");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
                 return View(model);
             }
 
@@ -116,7 +116,7 @@ namespace OC.Web.Controllers
             var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
                 return View(model);
             }
             model.Cedula = cedulaNorm;
@@ -131,7 +131,7 @@ namespace OC.Web.Controllers
             );
             if (pacientesExistentes.Items.Any())
             {
-                ModelState.AddModelError(nameof(model.Cedula), "Ya existe un paciente registrado con esta cédula.");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
                 return View(model);
             }
 
@@ -176,7 +176,7 @@ namespace OC.Web.Controllers
                 Id = entity.Id,
                 Nombres = entity.Nombres,
                 Apellidos = entity.Apellidos,
-                Cedula = entity.Cedula,
+                Cedula = CedulaValidation.FormatearParaMostrar(entity.Cedula),
                 Telefono = entity.Telefono,
                 Email = entity.Email,
                 FechaNacimiento = entity.FechaNacimiento
@@ -190,7 +190,7 @@ namespace OC.Web.Controllers
             var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
                 return View(model);
             }
             model.Cedula = cedulaNorm;
@@ -208,7 +208,7 @@ namespace OC.Web.Controllers
             );
             if (pacientesExistentes.Items.Any())
             {
-                ModelState.AddModelError(nameof(model.Cedula), "Ya existe otro paciente con esta cédula.");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
                 return View(model);
             }
 

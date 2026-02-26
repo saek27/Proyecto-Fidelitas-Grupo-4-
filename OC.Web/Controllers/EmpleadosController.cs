@@ -49,7 +49,7 @@ namespace OC.Web.Controllers
             var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
             }
             if (!ModelState.IsValid)
             {
@@ -88,7 +88,7 @@ namespace OC.Web.Controllers
                 Id = entity.Id,
                 Nombre = entity.Nombre,
                 Apellidos = entity.Apellidos,
-                Cedula = entity.Cedula,
+                Cedula = CedulaValidation.FormatearParaMostrar(entity.Cedula),
                 Telefono = entity.Telefono,
                 Puesto = entity.Puesto,
                 SucursalId = entity.SucursalId
@@ -101,7 +101,7 @@ namespace OC.Web.Controllers
         {
             var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError(nameof(model.Cedula), "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
             if (!ModelState.IsValid)
             {
                 ViewBag.Sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 1000, filter: s => s.Activo);

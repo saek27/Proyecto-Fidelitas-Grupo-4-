@@ -40,7 +40,10 @@
         <a asp-action="AgendarCita" class="btn btn-brand">
             <i class="bi bi-calendar-plus"></i> Reservar mi cita
         </a>
-        <span class="text-muted small">Elija sede, fecha y horario (L-D 8:00-18:00, slots de 30 min).</span>
+        <a asp-controller="CitasPublicas" asp-action="MiHistorial" class="btn btn-outline-secondary">
+            <i class="bi bi-clipboard2-pulse"></i> Ver mi historial clínico
+        </a>
+        <span class="text-muted small d-block mt-2">Elija sede, fecha y horario (L-D 8:00-18:00, slots de 30 min). Desde aquí también puede ver sus consultas ya atendidas.</span>
     </p>
 
     <div class="row mb-4">

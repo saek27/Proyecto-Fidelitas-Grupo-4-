@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
@@ -105,7 +105,7 @@ namespace OC.Web.Controllers
                     user!.RolId = role!.Id;
                     await _userRepository.UpdateAsync(user);
 
-                    TempData["SuccessMessage"] = "Rol asignado correctamente. Los permisos fueron actualizados.";
+                    TempData["Success"] = "Rol asignado correctamente. Los permisos fueron actualizados.";
                     return RedirectToAction(nameof(AssignRole));
                 }
             }

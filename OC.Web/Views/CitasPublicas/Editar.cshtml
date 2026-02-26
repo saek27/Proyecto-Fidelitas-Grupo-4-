@@ -7,11 +7,6 @@
     <p><b>Paciente:</b> @Model.Paciente.NombreCompleto</p>
     <p><b>Fecha:</b> @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</p>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success">@TempData["Success"]</div>
-    }
-
     <form method="post">
         <input type="hidden" name="Id" value="@Model.Id" />
 

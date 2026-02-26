@@ -39,7 +39,7 @@ namespace OC.Web.Controllers
             var cedulaNorm = CedulaValidation.Normalizar(cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError("", "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError("", "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
                 return View();
             }
 
@@ -79,7 +79,7 @@ namespace OC.Web.Controllers
             var cedulaNorm = CedulaValidation.Normalizar(cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError("", "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201");
+                ModelState.AddModelError("", "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
                 return View();
             }
 
