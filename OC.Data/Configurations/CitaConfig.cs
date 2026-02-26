@@ -20,6 +20,13 @@ namespace OC.Data.Configurations
                 .HasMaxLength(20)
                 .HasDefaultValue("Programada");
 
+            builder.Property(x => x.NotificacionesActivas)
+                .HasDefaultValue(true);
+
+            builder.Property(x => x.CanalNotificacion)
+                .HasMaxLength(20)
+                .HasDefaultValue("Email");
+
             // Relación con Paciente
             builder.HasOne(x => x.Paciente)
                 .WithMany(p => p.Citas)

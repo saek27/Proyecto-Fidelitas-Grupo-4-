@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace OC.Core.Domain.Entities
 {
@@ -23,11 +24,16 @@ namespace OC.Core.Domain.Entities
         public string Estado { get; set; } = EstadoCita.Confirmada;
         public int? UsuarioAsignadoId { get; set; }
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
+        /// <summary>Si el paciente desea recibir recordatorios y notificaciones para esta cita.</summary>
+        public bool NotificacionesActivas { get; set; } = true;
+        /// <summary>Canal de notificación: Email, SMS, WhatsApp.</summary>
+        public string CanalNotificacion { get; set; } = "Email";
 
         public Paciente Paciente { get; set; } = null!;
         public SolicitudCita SolicitudCita { get; set; } = null!;
         public Sucursal Sucursal { get; set; } = null!;
         public Usuario? UsuarioAsignado { get; set; }
         public Expediente? Expediente { get; set; }
+        public ICollection<EnvioNotificacion> EnviosNotificacion { get; set; } = new List<EnvioNotificacion>();
     }
 }

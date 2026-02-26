@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Options;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Services;
 using OC.Web.ViewModels;
 using System.Security.Claims;
 
@@ -18,19 +20,25 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<Usuario> _usuariosRepo;
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
+        private readonly INotificationService _notificationService;
+        private readonly RecordatorioCitasOptions _recordatorioOptions;
 
         public SolicitudesCitasController(
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<Cita> citasRepo,
             IGenericRepository<Usuario> usuariosRepo,
-            IGenericRepository<Sucursal> sucursalesRepo)
+            IGenericRepository<Sucursal> sucursalesRepo,
+            INotificationService notificationService,
+            IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
             _solicitudesRepo = solicitudesRepo;
             _pacientesRepo = pacientesRepo;
             _citasRepo = citasRepo;
             _usuariosRepo = usuariosRepo;
             _sucursalesRepo = sucursalesRepo;
+            _notificationService = notificationService;
+            _recordatorioOptions = recordatorioOptions.Value;
         }
 
         // LISTAR SOLICITUDES PENDIENTES
@@ -199,6 +207,15 @@ namespace OC.Web.Controllers
             };
 
             await _citasRepo.AddAsync(cita);
+
+            // Escenario 2 CIT-RF-016: recordatorio inmediato si la cita es el mismo día y falta menos que el tiempo estándar
+            var ahora = DateTime.Now;
+            if (cita.FechaHora.Date == ahora.Date && (cita.FechaHora - ahora).TotalHours < _recordatorioOptions.HorasAntesRecordatorio && (cita.FechaHora - ahora).TotalMinutes > 0)
+            {
+                var citaConIncludes = (await _citasRepo.GetPagedAsync(1, 1, filter: c => c.Id == cita.Id, includeProperties: "Paciente,Sucursal")).Items.FirstOrDefault();
+                if (citaConIncludes != null)
+                    await _notificationService.EnviarRecordatorioInmediatoAsync(citaConIncludes);
+            }
 
             TempData["Success"] = "Cita agendada exitosamente en la sede seleccionada. El paciente ha sido notificado.";
             return RedirectToAction(nameof(Index));

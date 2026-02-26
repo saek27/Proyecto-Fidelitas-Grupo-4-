@@ -4,6 +4,7 @@ using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Web.Helpers;
 using OC.Web.ViewModels;
+using OC.Web.Services;
 using System.Security.Claims;
 
 namespace OC.Web.Controllers
@@ -14,18 +15,21 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Paciente> _pacientesRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Cita> _citasRepo;
-        private readonly IGenericRepository<Expediente> _expedienteRepo; // Nuevo
+        private readonly IGenericRepository<Expediente> _expedienteRepo;
+        private readonly INotificationService _notificationService;
 
         public CitasPublicasController(
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Cita> citasRepo,
-            IGenericRepository<Expediente> expedienteRepo) // Nuevo parámetro
+            IGenericRepository<Expediente> expedienteRepo,
+            INotificationService notificationService)
         {
             _pacientesRepo = pacientesRepo;
             _solicitudesRepo = solicitudesRepo;
             _citasRepo = citasRepo;
             _expedienteRepo = expedienteRepo;
+            _notificationService = notificationService;
         }
 
         // SOLICITAR CITA (Público)
@@ -172,6 +176,11 @@ namespace OC.Web.Controllers
             }
 
             await _citasRepo.UpdateAsync(cita);
+
+            // Escenario 3 CIT-RF-016: notificar cancelación al paciente
+            if (estado == EstadoCita.Cancelada)
+                await _notificationService.EnviarNotificacionCancelacionAsync(cita);
+
             TempData["Success"] = "Cita actualizada correctamente.";
 
             if (estado == EstadoCita.Atendida && (User.IsInRole("Optometrista") || User.IsInRole("Admin")))
