@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Options;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Services;
 using System.Security.Claims;
 
 namespace OC.Web.Controllers
@@ -17,17 +19,23 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
+        private readonly INotificationService _notificationService;
+        private readonly RecordatorioCitasOptions _recordatorioOptions;
 
         public PacienteDashboardController(
             IGenericRepository<Paciente> pacientesRepo,
             IGenericRepository<Cita> citasRepo,
             IGenericRepository<SolicitudCita> solicitudesRepo,
-            IGenericRepository<Sucursal> sucursalesRepo)
+            IGenericRepository<Sucursal> sucursalesRepo,
+            INotificationService notificationService,
+            IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
             _pacientesRepo = pacientesRepo;
             _citasRepo = citasRepo;
             _solicitudesRepo = solicitudesRepo;
             _sucursalesRepo = sucursalesRepo;
+            _notificationService = notificationService;
+            _recordatorioOptions = recordatorioOptions.Value;
         }
 
         public async Task<IActionResult> Index()
@@ -64,10 +72,22 @@ namespace OC.Web.Controllers
                         && c.FechaHora <= ahora.AddHours(48))
                     .OrderBy(c => c.FechaHora)
                     .ToList();
+                // Citas canceladas recientes (para mostrar aviso tipo "Atención: su cita fue cancelada")
+                var canceladasRecientes = citas.Items
+                    .Where(c => c.Estado == EstadoCita.Cancelada && c.FechaHora >= ahora.AddDays(-14))
+                    .OrderByDescending(c => c.FechaHora)
+                    .ToList();
+                // Escenario 2: citas agendadas para hoy (aviso amarillo)
+                var citasHoy = citas.Items
+                    .Where(c => c.Estado != EstadoCita.Cancelada && c.FechaHora.Date == ahora.Date && c.FechaHora >= ahora)
+                    .OrderBy(c => c.FechaHora)
+                    .ToList();
 
                 ViewBag.Paciente = paciente;
                 ViewBag.Citas = citas.Items;
                 ViewBag.Recordatorios = recordatorios;
+                ViewBag.CanceladasRecientes = canceladasRecientes;
+                ViewBag.CitasHoy = citasHoy;
             }
             catch
             {
@@ -75,6 +95,8 @@ namespace OC.Web.Controllers
                 ViewBag.Paciente = paciente;
                 ViewBag.Citas = new List<Cita>();
                 ViewBag.Recordatorios = new List<Cita>();
+                ViewBag.CanceladasRecientes = new List<Cita>();
+                ViewBag.CitasHoy = new List<Cita>();
             }
 
             return View();
@@ -188,6 +210,15 @@ namespace OC.Web.Controllers
                 FechaCreacion = DateTime.Now
             };
             await _citasRepo.AddAsync(cita);
+
+            // Escenario 2 CIT-RF-016: recordatorio inmediato si la cita es el mismo día y falta menos que el tiempo estándar
+            var ahora = DateTime.Now;
+            if (cita.FechaHora.Date == ahora.Date && (cita.FechaHora - ahora).TotalHours < _recordatorioOptions.HorasAntesRecordatorio && (cita.FechaHora - ahora).TotalMinutes > 0)
+            {
+                var citaConIncludes = (await _citasRepo.GetPagedAsync(1, 1, filter: c => c.Id == cita.Id, includeProperties: "Paciente,Sucursal")).Items.FirstOrDefault();
+                if (citaConIncludes != null)
+                    await _notificationService.EnviarRecordatorioInmediatoAsync(citaConIncludes);
+            }
 
             TempData["Success"] = "Cita agendada correctamente. El slot quedó reservado a su nombre.";
             return RedirectToAction(nameof(Index));

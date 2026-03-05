@@ -1,0 +1,30 @@
+@model OC.Core.Domain.Entities.Producto
+@{
+    ViewData["Title"] = "Detalle producto";
+}
+
+<h2>@Model.Nombre</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<dl class="row">
+    <dt class="col-sm-3">SKU</dt>
+    <dd class="col-sm-9">@Model.SKU</dd>
+
+    <dt class="col-sm-3">Costo unitario</dt>
+    <dd class="col-sm-9">@Model.CostoUnitario.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Stock disponible</dt>
+    <dd class="col-sm-9">@Model.Stock</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar costo y stock</a>
+<a asp-action="Index" class="btn btn-secondary">Volver al inventario</a>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline mt-2" onsubmit="return confirm('¿Eliminar este producto del catálogo? Dejará de estar disponible para movimiento de stock y ventas.');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-danger">Eliminar del catálogo</button>
+</form>

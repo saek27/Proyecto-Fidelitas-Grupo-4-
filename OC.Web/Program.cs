@@ -5,12 +5,13 @@ using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Data.Context;
 using OC.Data.Repositories;
+using OC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. REGISTRO DE SERVICIOS (Antes de builder.Build) ---
 
-// ConfiguraciÛn de Base de Datos
+// Configuraciùn de Base de Datos
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString,
@@ -19,7 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Registro de Repositorios
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-// CONFIGURACI”N DE AUTENTICACI”N (Se moviÛ aquÌ arriba)
+// CONFIGURACIùN DE AUTENTICACIùN (Se moviù aquù arriba)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -46,10 +47,16 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 10 * 1024 * 1024;
 });
 
-// --- LA LÕNEA FRONTERIZA (Solo una vez) ---
+// CIT-RF-016 Recordatorios de citas
+builder.Services.Configure<RecordatorioCitasOptions>(
+    builder.Configuration.GetSection(RecordatorioCitasOptions.SectionName));
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<RecordatorioCitasBackgroundService>();
+
+// --- LA LùNEA FRONTERIZA (Solo una vez) ---
 var app = builder.Build();
 
-// --- 2. SEEDING DE DATOS (DespuÈs de Build, antes de los Middlewares) ---
+// --- 2. SEEDING DE DATOS (Despuùs de Build, antes de los Middlewares) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -61,11 +68,11 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "OcurriÛ un error al sembrar la base de datos.");
+        logger.LogError(ex, "Ocurriù un error al sembrar la base de datos.");
     }
 }
 
-// --- 3. CONFIGURACI”N DEL PIPELINE (Middlewares) ---
+// --- 3. CONFIGURACIùN DEL PIPELINE (Middlewares) ---
 
 if (!app.Environment.IsDevelopment())
 {
@@ -78,8 +85,8 @@ app.UseStaticFiles();
 
 app.UseRouting(); // 1. Primero Routing
 
-app.UseAuthentication(); // 2. Luego QuiÈn eres
-app.UseAuthorization();  // 3. Finalmente QuÈ puedes hacer
+app.UseAuthentication(); // 2. Luego Quiùn eres
+app.UseAuthorization();  // 3. Finalmente Quù puedes hacer
 
 app.MapControllerRoute(
     name: "default",

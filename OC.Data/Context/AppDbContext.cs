@@ -26,10 +26,12 @@ namespace OC.Data.Context
         public DbSet<Cita> Citas { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<Pedido> Pedidos { get; set; }
+        public DbSet<Producto> Productos { get; set; }
 
         public DbSet<Expediente> Expedientes { get; set; }
         public DbSet<ValorClinico> ValoresClinicos { get; set; }
         public DbSet<DocumentoExpediente> DocumentosExpediente { get; set; }
+        public DbSet<EnvioNotificacion> EnviosNotificacion { get; set; }
 
 
 
@@ -64,6 +66,12 @@ namespace OC.Data.Context
             modelBuilder.Entity<Paciente>(e =>
             {
                 e.Property(p => p.Cedula).HasMaxLength(9);
+            });
+
+            modelBuilder.Entity<Producto>(e =>
+            {
+                e.HasIndex(p => p.SKU).IsUnique();
+                e.Property(p => p.CostoUnitario).HasPrecision(18, 2);
             });
         }
     }

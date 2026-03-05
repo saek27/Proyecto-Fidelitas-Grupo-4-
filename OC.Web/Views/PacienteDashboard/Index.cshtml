@@ -2,10 +2,38 @@
     var paciente = ViewBag.Paciente as OC.Core.Domain.Entities.Paciente;
     var citas = ViewBag.Citas as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
     var recordatorios = ViewBag.Recordatorios as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
+    var canceladasRecientes = ViewBag.CanceladasRecientes as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
+    var citasHoy = ViewBag.CitasHoy as List<OC.Core.Domain.Entities.Cita> ?? new List<OC.Core.Domain.Entities.Cita>();
 }
 
 <div class="card-dashboard">
     <h4>Bienvenido, @paciente?.NombreCompleto</h4>
+
+    @if (citasHoy.Any())
+    {
+        <div class="alert alert-warning alert-dismissible fade show border-2 border-dark" role="alert">
+            <strong><i class="bi bi-calendar-event me-2"></i>Recordatorio — Cita(s) para hoy:</strong>
+            Tiene @citasHoy.Count cita(s) agendada(s) para hoy. No olvide asistir:
+            @foreach (var c in citasHoy.Take(5))
+            {
+                <span class="d-block mt-1">@c.FechaHora.ToString("dd/MM/yyyy HH:mm") — @(c.Sucursal?.Nombre ?? "Sede") <span class="badge bg-dark ms-1">@c.Estado</span></span>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (canceladasRecientes.Any())
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-2 border-dark" role="alert">
+            <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Atención:</strong>
+            La(s) siguiente(s) cita(s) fue(ron) cancelada(s) y ya no se realizará(n). Si desea, puede reservar una nueva:
+            @foreach (var c in canceladasRecientes.Take(5))
+            {
+                <span class="d-block mt-1">@c.FechaHora.ToString("dd/MM/yyyy HH:mm") — @(c.Sucursal?.Nombre ?? "Sede") <span class="badge bg-dark ms-1">Cancelada</span></span>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     @if (recordatorios.Any())
     {
@@ -40,7 +68,10 @@
         <a asp-action="AgendarCita" class="btn btn-brand">
             <i class="bi bi-calendar-plus"></i> Reservar mi cita
         </a>
-        <span class="text-muted small">Elija sede, fecha y horario (L-D 8:00-18:00, slots de 30 min).</span>
+        <a asp-controller="CitasPublicas" asp-action="MiHistorial" class="btn btn-outline-secondary">
+            <i class="bi bi-clipboard2-pulse"></i> Ver mi historial clínico
+        </a>
+        <span class="text-muted small d-block mt-2">Elija sede, fecha y horario (L-D 8:00-18:00, slots de 30 min). Desde aquí también puede ver sus consultas ya atendidas.</span>
     </p>
 
     <div class="row mb-4">

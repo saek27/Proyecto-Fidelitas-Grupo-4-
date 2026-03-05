@@ -20,12 +20,12 @@
         </div>
     }
 
-    <p class="text-muted">Ingrese su cédula (9 dígitos) y contraseña para acceder.</p>
+    <p class="text-muted">Ingrese su cédula en formato X-XXXX-XXXX y contraseña para acceder.</p>
 
     <form asp-action="Login" method="post">
         <div class="mb-3">
-            <label for="cedula" class="form-label">Cédula (9 dígitos)</label>
-            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ej: 604240201" maxlength="9" pattern="\d{9}" title="Solo 9 dígitos numéricos" required />
+            <label for="cedula" class="form-label">Cédula</label>
+            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" title="Formato: X-XXXX-XXXX" required />
         </div>
         <div class="mb-3">
             <label for="contrasena" class="form-label">Contraseña</label>

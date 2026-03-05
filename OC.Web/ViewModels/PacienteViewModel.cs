@@ -17,8 +17,8 @@ namespace OC.Web.ViewModels
 
         [Required(ErrorMessage = "La cédula es obligatoria")]
         [Display(Name = "Cédula")]
-        [StringLength(9, MinimumLength = 9, ErrorMessage = "La cédula debe tener exactamente 9 dígitos. Ejemplo: 604240201")]
-        [RegularExpression(@"^\d{9}$", ErrorMessage = "La cédula debe contener solo números (9 dígitos).")]
+        [RegularExpression(@"^(\d-\d{4}-\d{4}|\d{9})$", ErrorMessage = "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789")]
+        [StringLength(11, MinimumLength = 9, ErrorMessage = "Use el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789")]
         public string Cedula { get; set; } = null!;
 
         [Display(Name = "Teléfono")]
