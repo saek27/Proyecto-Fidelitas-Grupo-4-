@@ -1,0 +1,28 @@
+﻿@model OC.Web.ViewModels.TicketCierreViewModel
+
+<div class="card-dashboard">
+    <h4>Cerrar Ticket</h4>
+
+    <div class="alert alert-info">
+        <strong>Ticket:</strong> @Model.NumeroSeguimiento - @Model.Titulo
+    </div>
+
+    <form asp-action="Cerrar" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Observaciones" class="form-label">Observaciones de cierre</label>
+            <textarea asp-for="Observaciones" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Observaciones" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-danger">Cerrar Ticket</button>
+        <a asp-action="PanelTecnico" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

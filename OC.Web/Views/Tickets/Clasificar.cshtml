@@ -1,0 +1,38 @@
+﻿@model OC.Web.ViewModels.TicketClasificarViewModel
+
+<div class="card-dashboard">
+    <h4>Clasificar Ticket</h4>
+
+    <div class="alert alert-info">
+        <strong>Ticket:</strong> @Model.NumeroSeguimiento - @Model.Titulo
+    </div>
+
+    <form asp-action="Clasificar" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Tipo" class="form-label"></label>
+            <select asp-for="Tipo" asp-items="Model.TiposList" class="form-select">
+                <option value="">Seleccione un tipo</option>
+            </select>
+            <span asp-validation-for="Tipo" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Prioridad" class="form-label"></label>
+            <select asp-for="Prioridad" asp-items="Model.PrioridadesList" class="form-select">
+                <option value="">Seleccione una prioridad</option>
+            </select>
+            <span asp-validation-for="Prioridad" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar clasificación</button>
+        <a asp-action="PanelTecnico" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

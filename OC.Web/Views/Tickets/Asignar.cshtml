@@ -1,0 +1,30 @@
+﻿@model OC.Web.ViewModels.TicketAsignarViewModel
+
+<div class="card-dashboard">
+    <h4>Asignar Ticket</h4>
+
+    <div class="alert alert-info">
+        <strong>Ticket:</strong> @Model.NumeroSeguimiento - @Model.Titulo
+    </div>
+
+    <form asp-action="Asignar" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="TecnicoAsignadoId" class="form-label">Seleccionar técnico</label>
+            <select asp-for="TecnicoAsignadoId" asp-items="Model.TecnicosList" class="form-select">
+                <option value="">-- Seleccione un técnico --</option>
+            </select>
+            <span asp-validation-for="TecnicoAsignadoId" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Asignar</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

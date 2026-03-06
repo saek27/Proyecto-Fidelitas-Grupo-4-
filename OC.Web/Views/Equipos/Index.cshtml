@@ -1,0 +1,90 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Equipo>
+
+<div class="card-dashboard">
+    <h4>Inventario de Equipos</h4>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <form method="get" asp-action="Index" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Buscar por nombre, inventario o serie" value="@ViewBag.Search" />
+                <button type="submit" class="btn btn-brand"><i class="bi bi-search"></i> Buscar</button>
+                @if (!string.IsNullOrEmpty(ViewBag.Search))
+                {
+                    <a asp-action="Index" class="btn btn-secondary ms-2"><i class="bi bi-x-circle"></i> Limpiar</a>
+                }
+            </form>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-action="Create" class="btn btn-brand"><i class="bi bi-plus-lg"></i> Nuevo Equipo</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay equipos registrados.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Marca/Modelo</th>
+                    <th>Usuario asignado</th>
+                    <th>Inventario</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model.Items)
+                {
+                    <tr>
+                        <td>@e.Nombre</td>
+                        <td>@e.Tipo</td>
+                        <td>@e.Marca @e.Modelo</td>
+                        <td>@e.UsuarioAsignado?.Nombre</td>
+                        <td>@e.Inventario</td>
+                        <td>
+                            @if (e.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactivo</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@e.Id" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Ver</a>
+                            <a asp-action="Edit" asp-route-id="@e.Id" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+                            <form asp-action="ToggleStatus" asp-route-id="@e.Id" method="post" class="d-inline" onsubmit="return confirm('¿Cambiar estado del equipo?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm @(e.Activo ? "btn-danger" : "btn-success")">
+                                    @(e.Activo ? "Desactivar" : "Activar")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-search="@ViewBag.Search">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

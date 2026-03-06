@@ -1,0 +1,83 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Ticket>
+
+<div class="card-dashboard">
+    <h4>Mis Tickets de Soporte</h4>
+
+    <a asp-action="Create" class="btn btn-brand mb-3">
+        <i class="bi bi-plus-lg"></i> Nuevo Ticket
+    </a>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No has creado ningún ticket.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Título</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Técnico</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Items)
+                {
+                    <tr>
+                        <td>@t.NumeroSeguimiento</td>
+                        <td>@t.Titulo</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(t.Prioridad))
+                            {
+                                var badgeClass = t.Prioridad switch
+                                {
+                                    "Urgente" => "bg-danger",
+                                    "Alta" => "bg-warning text-dark",
+                                    "Media" => "bg-info text-dark",
+                                    _ => "bg-secondary"
+                                };
+                                <span class="badge @badgeClass">@t.Prioridad</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@t.Estado</td>
+                        <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(t.TecnicoAsignado?.Nombre ?? "Sin asignar")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@t.Id" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="MisTickets" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

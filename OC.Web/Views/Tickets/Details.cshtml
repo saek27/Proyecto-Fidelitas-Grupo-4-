@@ -1,0 +1,92 @@
+﻿@model OC.Core.Domain.Entities.Ticket
+
+<div class="card-dashboard">
+    <h4>Detalle del Ticket</h4>
+
+    <dl class="row">
+        <dt class="col-sm-3">Número</dt>
+        <dd class="col-sm-9">@Model.NumeroSeguimiento</dd>
+
+        <dt class="col-sm-3">Título</dt>
+        <dd class="col-sm-9">@Model.Titulo</dd>
+
+        <dt class="col-sm-3">Descripción</dt>
+        <dd class="col-sm-9">@Model.Descripcion</dd>
+
+        @if (!string.IsNullOrEmpty(Model.Prioridad))
+        {
+            <dt class="col-sm-3">Prioridad</dt>
+            <dd class="col-sm-9">@Model.Prioridad</dd>
+        }
+
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">@Model.Estado</dd>
+
+        @if (!string.IsNullOrEmpty(Model.Tipo))
+        {
+            <dt class="col-sm-3">Tipo</dt>
+            <dd class="col-sm-9">@Model.Tipo</dd>
+        }
+
+        <dt class="col-sm-3">Fecha creación</dt>
+        <dd class="col-sm-9">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+
+        @if (Model.FechaAsignacion.HasValue)
+        {
+            <dt class="col-sm-3">Fecha asignación</dt>
+            <dd class="col-sm-9">@Model.FechaAsignacion.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+        }
+
+        @if (Model.FechaCierre.HasValue)
+        {
+            <dt class="col-sm-3">Fecha cierre</dt>
+            <dd class="col-sm-9">@Model.FechaCierre.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+        }
+
+        <dt class="col-sm-3">Creado por</dt>
+        <dd class="col-sm-9">@Model.CreadoPor?.Nombre</dd>
+
+        @if (Model.Equipo != null)
+        {
+            <dt class="col-sm-3">Equipo relacionado</dt>
+            <dd class="col-sm-9">
+                <a asp-controller="Equipos" asp-action="Details" asp-route-id="@Model.Equipo.Id">
+                    @Model.Equipo.Nombre (@Model.Equipo.Tipo)
+                </a>
+            </dd>
+        }
+
+        <dt class="col-sm-3">Técnico asignado</dt>
+        <dd class="col-sm-9">@(Model.TecnicoAsignado?.Nombre ?? "Sin asignar")</dd>
+
+        @if (!string.IsNullOrEmpty(Model.ObservacionesCierre))
+        {
+            <dt class="col-sm-3">Observaciones cierre</dt>
+            <dd class="col-sm-9">@Model.ObservacionesCierre</dd>
+        }
+    </dl>
+
+    <div class="mt-3">
+        @if (User.IsInRole("Tecnico") || User.IsInRole("Admin"))
+        {
+            <a asp-action="Clasificar" asp-route-id="@Model.Id" class="btn btn-sm btn-warning">
+                <i class="bi bi-tags"></i> Clasificar
+            </a>
+            <a asp-action="Cerrar" asp-route-id="@Model.Id" class="btn btn-sm btn-danger">
+                <i class="bi bi-check-circle"></i> Cerrar
+            </a>
+        }
+        @if (User.IsInRole("Admin") && (Model.TecnicoAsignadoId == null || Model.Estado == "Pendiente"))
+        {
+            <a asp-action="Asignar" asp-route-id="@Model.Id" class="btn btn-sm btn-primary">
+                <i class="bi bi-person-plus"></i> Asignar
+            </a>
+        }
+        @if (User.IsInRole("Tecnico") && Model.TecnicoAsignadoId.ToString() == User.FindFirst("UserId")?.Value && Model.Estado != "Cerrado")
+        {
+            <a asp-action="Clasificar" asp-route-id="@Model.Id" class="btn btn-sm btn-warning">Clasificar</a>
+            <a asp-action="Cerrar" asp-route-id="@Model.Id" class="btn btn-sm btn-danger">Cerrar</a>
+        }
+        <a asp-action="MisTickets" class="btn btn-sm btn-secondary">Volver a mis tickets</a>
+    </div>
+</div>

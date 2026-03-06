@@ -1,0 +1,102 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Ticket>
+
+<div class="card-dashboard">
+    <h4>Gestión de Tickets</h4>
+
+    <form method="get" asp-action="Index" class="row mb-3">
+        <div class="col-md-4">
+            <select name="estado" class="form-select">
+                <option value="">Todos los estados</option>
+                <option value="Pendiente" selected="@(ViewBag.Estado == "Pendiente")">Pendiente</option>
+                <option value="Asignado" selected="@(ViewBag.Estado == "Asignado")">Asignado</option>
+                <option value="Cerrado" selected="@(ViewBag.Estado == "Cerrado")">Cerrado</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-brand">Filtrar</button>
+        </div>
+    </form>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay tickets que coincidan con los criterios.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Fecha</th>
+                    <th>Equipo</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Tipo</th>
+                    <th>Técnico</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Items)
+                {
+                    <tr>
+                        <td>@t.NumeroSeguimiento</td>
+                        <td>@t.Titulo</td>
+                        <td>@t.CreadoPor?.Nombre</td>
+                        <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(t.Equipo != null ? t.Equipo.Nombre : "-")</td>
+                        <td>@t.Estado</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(t.Prioridad))
+                            {
+                                var badgeClass = t.Prioridad switch
+                                {
+                                    "Urgente" => "bg-danger",
+                                    "Alta" => "bg-warning text-dark",
+                                    "Media" => "bg-info text-dark",
+                                    _ => "bg-secondary"
+                                };
+                                <span class="badge @badgeClass">@t.Prioridad</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@(t.Tipo ?? "-")</td>
+                        <td>@(t.TecnicoAsignado?.Nombre ?? "Sin asignar")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@t.Id" class="btn btn-sm btn-info" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (t.TecnicoAsignadoId == null || t.Estado == "Pendiente")
+                            {
+                                <a asp-action="Asignar" asp-route-id="@t.Id" class="btn btn-sm btn-primary" title="Asignar">
+                                    <i class="bi bi-person-plus"></i>
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-estado="@ViewBag.Estado">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

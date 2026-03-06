@@ -1,0 +1,115 @@
+﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Ticket>
+
+<div class="card-dashboard">
+    <h4>Panel de Técnico - Tickets</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <p>No hay tickets pendientes o asignados a usted.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Fecha</th>
+                    <th>Equipo</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Tipo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Items)
+                {
+                    <tr>
+                        <td>@t.NumeroSeguimiento</td>
+                        <td>@t.Titulo</td>
+                        <td>@t.CreadoPor?.Nombre</td>
+                        <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(t.Equipo != null ? t.Equipo.Nombre : "-")</td>
+                        <td>@t.Estado</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(t.Prioridad))
+                            {
+                                var badgeClass = t.Prioridad switch
+                                {
+                                    "Urgente" => "bg-danger",
+                                    "Alta" => "bg-warning text-dark",
+                                    "Media" => "bg-info text-dark",
+                                    _ => "bg-secondary"
+                                };
+                                <span class="badge @badgeClass">@t.Prioridad</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@(t.Tipo ?? "-")</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a asp-action="Details" asp-route-id="@t.Id" class="btn btn-sm btn-info" title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                @if (t.TecnicoAsignadoId == null)
+                                {
+                                    <form asp-action="TomarTicket" asp-route-id="@t.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-success" title="Tomar ticket">
+                                            <i class="bi bi-hand-index-thumb"></i> Tomar
+                                        </button>
+                                    </form>
+                                }
+                                else if (t.TecnicoAsignadoId.ToString() == User.FindFirst("UserId")?.Value)
+                                {
+                                    <a asp-action="Clasificar" asp-route-id="@t.Id" class="btn btn-sm btn-warning" title="Clasificar">
+                                        <i class="bi bi-tags"></i>
+                                    </a>
+                                    <a asp-action="Cerrar" asp-route-id="@t.Id" class="btn btn-sm btn-danger" title="Cerrar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Asignado a otro</span>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="PanelTecnico" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

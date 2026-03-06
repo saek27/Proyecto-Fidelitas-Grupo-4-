@@ -37,6 +37,10 @@ namespace OC.Data.Context
 
         public DbSet<DetallePedido> DetallePedidos { get; set; }
 
+        public DbSet<Equipo> Equipos { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+        public DbSet<ComentarioTicket> ComentarioTickets { get; set; }
+
 
 
 
@@ -81,6 +85,34 @@ namespace OC.Data.Context
             modelBuilder.Entity<DetallePedido>(entity =>
             {
                 entity.Property(e => e.CostoUnitario).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Equipo>(e =>
+            {
+                e.HasOne(e => e.UsuarioAsignado)
+                    .WithMany()
+                    .HasForeignKey(e => e.UsuarioAsignadoId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<Ticket>(t =>
+            {
+                t.HasOne(t => t.CreadoPor)
+                    .WithMany()
+                    .HasForeignKey(t => t.CreadoPorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                t.HasOne(t => t.TecnicoAsignado)
+                    .WithMany()
+                    .HasForeignKey(t => t.TecnicoAsignadoId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                t.HasOne(t => t.Equipo)
+                    .WithMany()
+                    .HasForeignKey(t => t.EquipoId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                t.Property(t => t.NumeroSeguimiento).HasMaxLength(20);
             });
 
 

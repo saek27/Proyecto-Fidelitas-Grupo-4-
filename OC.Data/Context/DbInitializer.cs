@@ -28,7 +28,8 @@ namespace OC.Data.Context
                     new Rol { Nombre = "Admin", Descripcion = "Acceso Total" },
                     new Rol { Nombre = "Optometrista", Descripcion = "Personal Médico" },
                     new Rol { Nombre = "Recepcion", Descripcion = "Atención al Cliente" },
-                    new Rol { Nombre = "Paciente", Descripcion = "Paciente del Sistema" }
+                    new Rol { Nombre = "Paciente", Descripcion = "Paciente del Sistema" },
+                    new Rol { Nombre = "Tecnico", Descripcion = "Técnico de soporte" }
                 );
                 context.SaveChanges();
             }
