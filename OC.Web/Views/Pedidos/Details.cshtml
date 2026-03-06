@@ -5,7 +5,6 @@
 
 <div class="card">
     <div class="card-body">
-
         <p><strong>Proveedor:</strong> @Model.Proveedor?.Nombre</p>
         <p><strong>Fecha Pedido:</strong> @Model.FechaPedido.ToShortDateString()</p>
         <p><strong>Entrega Estimada:</strong> @Model.FechaEntregaEstimada.ToShortDateString()</p>
@@ -14,9 +13,39 @@
         <p><strong>Indicador:</strong> @Model.Indicador</p>
         <p><strong>Descripción:</strong> @Model.Descripcion</p>
 
-        <a asp-action="Historial" class="btn btn-secondary mt-3">
-            Volver
-        </a>
+        <h4 class="mt-4">Productos del Pedido</h4>
+        @if (Model.Detalles != null && Model.Detalles.Any())
+        {
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Cantidad</th>
+                        <th>Costo Unitario</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in Model.Detalles)
+                    {
+                        <tr>
+                            <td>@detalle.Producto?.Nombre</td>
+                            <td>@detalle.Producto?.SKU</td>
+                            <td>@detalle.Cantidad</td>
+                            <td>@detalle.CostoUnitario.ToString("N2")</td>
+                            <td>@((detalle.Cantidad * detalle.CostoUnitario).ToString("N2"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No hay productos asociados a este pedido.</p>
+        }
 
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a>
+        <a asp-action="Historial" class="btn btn-secondary">Volver</a>
     </div>
 </div>

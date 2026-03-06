@@ -11,6 +11,8 @@ using System.Reflection;
 namespace OC.Data.Context
 {
     public class AppDbContext : DbContext
+
+
     {
         // OJO AQUÍ: Debe decir <AppDbContext> dentro de los símbolos menor/mayor
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
@@ -32,6 +34,8 @@ namespace OC.Data.Context
         public DbSet<ValorClinico> ValoresClinicos { get; set; }
         public DbSet<DocumentoExpediente> DocumentosExpediente { get; set; }
         public DbSet<EnvioNotificacion> EnviosNotificacion { get; set; }
+
+        public DbSet<DetallePedido> DetallePedidos { get; set; }
 
 
 
@@ -73,6 +77,15 @@ namespace OC.Data.Context
                 e.HasIndex(p => p.SKU).IsUnique();
                 e.Property(p => p.CostoUnitario).HasPrecision(18, 2);
             });
+
+            modelBuilder.Entity<DetallePedido>(entity =>
+            {
+                entity.Property(e => e.CostoUnitario).HasPrecision(18, 2);
+            });
+
+
         }
+
+
     }
 }

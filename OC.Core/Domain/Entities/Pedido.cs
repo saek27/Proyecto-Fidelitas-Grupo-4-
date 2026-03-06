@@ -4,6 +4,8 @@ namespace OC.Core.Domain.Entities
 {
     public class Pedido
     {
+        public ICollection<DetallePedido> Detalles { get; set; } = new List<DetallePedido>();
+
         public int Id { get; set; }
 
         [Required]

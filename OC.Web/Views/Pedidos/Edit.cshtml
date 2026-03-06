@@ -1,40 +1,114 @@
-﻿@model OC.Core.Domain.Entities.Pedido
+﻿@model OC.Web.ViewModels.PedidoEditViewModel
 @using OC.Core.Domain.Entities
+@{
+    ViewData["Title"] = "Editar Pedido";
+}
 
-<form asp-action="Edit" method="post">
+<h2>Editar Pedido</h2>
 
+<form asp-action="Edit" method="post" id="pedidoForm">
     <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="FechaPedido" />
 
-    <div class="mb-3">
-        <label>Fecha Entrega Estimada</label>
-        <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="ProveedorId" class="form-label"></label>
+                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select">
+                    <option value="">Seleccione un proveedor</option>
+                </select>
+                <span asp-validation-for="ProveedorId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="FechaEntregaEstimada" class="form-label"></label>
+                <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
+                <span asp-validation-for="FechaEntregaEstimada" class="text-danger"></span>
+            </div>
+        </div>
     </div>
 
     <div class="mb-3">
-        <label>Proveedor</label>
-        <select asp-for="ProveedorId" class="form-select">
-            @foreach (var p in ViewBag.Proveedores)
-            {
-                <option value="@p.Id">@p.Nombre</option>
-            }
-        </select>
+        <label asp-for="Descripcion" class="form-label"></label>
+        <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Descripcion" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label>Descripción</label>
-        <textarea asp-for="Descripcion" class="form-control"></textarea>
+        <label asp-for="Estado" class="form-label"></label>
+        <select asp-for="Estado" class="form-select" asp-items="Html.GetEnumSelectList<EstadoPedido>()"></select>
+        <span asp-validation-for="Estado" class="text-danger"></span>
+    </div>
+
+    <h4>Productos</h4>
+    <div id="productos-container">
+        @for (int i = 0; i < Model.Detalles.Count; i++)
+        {
+            <div class="row mb-2 producto-item">
+                <div class="col-md-5">
+                    <select name="Detalles[@i].ProductoId" class="form-select">
+                        <option value="">Seleccione un producto</option>
+                        @foreach (var prod in Model.Productos)
+                        {
+                            if (prod.Value == Model.Detalles[i].ProductoId.ToString())
+                            {
+                                <option value="@prod.Value" selected>@prod.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@prod.Value">@prod.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="Detalles[@i].Cantidad" class="form-control" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" />
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-product">Eliminar</button>
+                </div>
+            </div>
+        }
     </div>
 
     <div class="mb-3">
-        <label>Estado</label>
-        <select asp-for="Estado" class="form-select"
-                asp-items="Html.GetEnumSelectList<EstadoPedido>()">
-        </select>
+        <button type="button" id="add-product" class="btn btn-info">Agregar producto</button>
     </div>
 
-    <button type="submit" class="btn btn-primary">
-        Guardar Cambios
-    </button>
-
+    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Cancelar</a>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var productIndex = @Model.Detalles.Count;
+        $('#add-product').click(function () {
+            var newRow = `
+                <div class="row mb-2 producto-item">
+                    <div class="col-md-5">
+                        <select name="Detalles[${productIndex}].ProductoId" class="form-select">
+                            <option value="">Seleccione un producto</option>
+                            @foreach (var prod in Model.Productos)
+                            {
+                                    <option value="@prod.Value">@prod.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" name="Detalles[${productIndex}].Cantidad" class="form-control" placeholder="Cantidad" min="1" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger btn-sm remove-product">Eliminar</button>
+                    </div>
+                </div>
+            `;
+            $('#productos-container').append(newRow);
+            productIndex++;
+        });
+
+        $(document).on('click', '.remove-product', function () {
+            $(this).closest('.producto-item').remove();
+        });
+    </script>
+}

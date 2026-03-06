@@ -35,8 +35,8 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 //Valor Clinico
 builder.Services.AddScoped<IGenericRepository<ValorClinico>, GenericRepository<ValorClinico>>();
 
-
-
+//Detalle Pedido
+builder.Services.AddScoped<IGenericRepository<DetallePedido>, GenericRepository<DetallePedido>>();
 //Documento
 builder.Services.AddScoped<IGenericRepository<DocumentoExpediente>, GenericRepository<DocumentoExpediente>>();
 
