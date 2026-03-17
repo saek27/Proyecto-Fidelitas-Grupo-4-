@@ -6,7 +6,7 @@ using OC.Web.ViewModels;
 
 namespace OC.Web.Controllers
 {
-    [Authorize(Roles = "Optometrista")]
+    [Authorize(Roles = "Admin,Optometrista,Recepcion")]
     public class ExpedientessController : Controller
     {
         private readonly IGenericRepository<Expediente> _expedienteRepo;
@@ -19,13 +19,13 @@ namespace OC.Web.Controllers
             IGenericRepository<Expediente> expedienteRepo,
             IGenericRepository<Cita> citaRepo,
             IGenericRepository<ValorClinico> valorClinicoRepo,
-            IGenericRepository<DocumentoExpediente> documentoRepo,  // ✅ nombre correcto
+            IGenericRepository<DocumentoExpediente> documentoRepo, 
             ILogger<ExpedientessController> logger)
         {
             _expedienteRepo = expedienteRepo;
             _citaRepo = citaRepo;
             _valorClinicoRepo = valorClinicoRepo;
-            _documentoRepo = documentoRepo;  // ✅ asignación correcta
+            _documentoRepo = documentoRepo;  
             _logger = logger;
         }
 

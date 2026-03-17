@@ -66,6 +66,17 @@
                             <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
+
+                            @if (User.IsInRole("Admin") || User.IsInRole("Optometrista") || User.IsInRole("Recepcion"))
+                            {
+                                <a asp-controller="CitasPublicas"
+                                   asp-action="HistorialPaciente"
+                                   asp-route-pacienteId="@p.Id"
+                                   class="btn btn-sm btn-info">
+                                    Ver Historial
+                                </a>
+                            }
+
                         </td>
                     </tr>
                     @if (!string.IsNullOrEmpty(ViewBag.SearchTerm) && p.Citas != null && p.Citas.Any(c => c.Expediente != null))

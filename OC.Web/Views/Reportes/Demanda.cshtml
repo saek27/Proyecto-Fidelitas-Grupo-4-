@@ -1,0 +1,231 @@
+﻿@model OC.Web.ViewModels.ReporteDemandaViewModel
+@{
+    ViewData["Title"] = "Reporte de Demanda";
+    var labMes = System.Text.Json.JsonSerializer.Serialize(Model.EtiquetasMes);
+    var datAt = System.Text.Json.JsonSerializer.Serialize(Model.AtendidaPorMes);
+    var datCan = System.Text.Json.JsonSerializer.Serialize(Model.CanceladaPorMes);
+    var datPen = System.Text.Json.JsonSerializer.Serialize(Model.PendientePorMes);
+}
+
+<div class="card-dashboard">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <span class="fs-5 fw-bold"><i class="bi bi-calendar-check me-2 text-warning"></i>Reporte de Demanda y Citas</span>
+        </div>
+        <a asp-action="ExportarDemandaExcel"
+           asp-route-desde="@Model.Desde?.ToString("yyyy-MM-dd")"
+           asp-route-hasta="@Model.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-sucursalId="@Model.SucursalId"
+           class="btn btn-sm btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+    </div>
+
+    @* ── Filtros ──────────────────────────────────────────────────────────── *@
+    <form method="get" asp-action="Demanda" class="card bg-light border-0 mb-4">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Desde</label>
+                    <input type="date" name="desde" class="form-control form-control-sm"
+                           value="@Model.Desde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Hasta</label>
+                    <input type="date" name="hasta" class="form-control form-control-sm"
+                           value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm mb-1">Sucursal</label>
+                    <select name="sucursalId" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        @foreach (var s in Model.Sucursales)
+                        {
+                            <option value="@s.Id" selected="@(Model.SucursalId == s.Id)">@s.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @* ── KPIs ─────────────────────────────────────────────────────────────── *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-secondary text-white text-center py-3">
+                <div class="fs-2 fw-bold">@Model.TotalAgendadas</div>
+                <div class="small opacity-75">Total agendadas</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white text-center py-3">
+                <div class="fs-2 fw-bold">@Model.TotalAtendidas</div>
+                <div class="small opacity-75">Atendidas</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-danger text-white text-center py-3">
+                <div class="fs-2 fw-bold">@Model.TotalCanceladas</div>
+                <div class="small opacity-75">Canceladas</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-dark text-center py-3">
+                <div class="fs-2 fw-bold">@Model.TotalPendientes</div>
+                <div class="small opacity-75">Pendientes / Confirmadas</div>
+            </div>
+        </div>
+    </div>
+
+    @* Tasa de atención *@
+    @if (Model.TotalAgendadas > 0)
+    {
+        var tasaAtencion = (double)Model.TotalAtendidas / Model.TotalAgendadas * 100;
+        var tasaCancelacion = (double)Model.TotalCanceladas / Model.TotalAgendadas * 100;
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-bold">Tasa de atención</small>
+                        <small class="text-success fw-bold">@tasaAtencion.ToString("N1")%</small>
+                    </div>
+                    <div class="progress" style="height:10px;">
+                        <div class="progress-bar bg-success" style="width:@tasaAtencion.ToString("N1")%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-bold">Tasa de cancelación</small>
+                        <small class="text-danger fw-bold">@tasaCancelacion.ToString("N1")%</small>
+                    </div>
+                    <div class="progress" style="height:10px;">
+                        <div class="progress-bar bg-danger" style="width:@tasaCancelacion.ToString("N1")%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ── Gráfica de barras apiladas por mes ────────────────────────────────── *@
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <h6 class="fw-bold mb-3">Citas por mes y estado</h6>
+        @if (Model.EtiquetasMes.Any())
+        {
+            <canvas id="chartDemanda" height="80"></canvas>
+        }
+        else
+        {
+            <p class="text-muted text-center py-3">No hay datos para el período seleccionado.</p>
+        }
+    </div>
+
+    @* ── Pie: distribución de estados ──────────────────────────────────────── *@
+    @if (Model.TotalAgendadas > 0)
+    {
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3">
+                    <h6 class="fw-bold mb-3">Distribución de estados</h6>
+                    <canvas id="chartEstados"></canvas>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm p-3">
+                    <h6 class="fw-bold mb-3">Resumen por mes</h6>
+                    <table class="table table-sm table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Mes</th>
+                                <th class="text-center text-success">Atendidas</th>
+                                <th class="text-center text-danger">Canceladas</th>
+                                <th class="text-center text-warning">Pendientes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.EtiquetasMes.Count; i++)
+                            {
+                                <tr>
+                                    <td>@Model.EtiquetasMes[i]</td>
+                                    <td class="text-center">@Model.AtendidaPorMes[i]</td>
+                                    <td class="text-center">@Model.CanceladaPorMes[i]</td>
+                                    <td class="text-center">@Model.PendientePorMes[i]</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        @if (Model.EtiquetasMes.Any())
+        {
+                <text>
+                new Chart(document.getElementById('chartDemanda'), {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(labMes),
+                        datasets: [
+                            {
+                                label: 'Atendidas',
+                                data: @Html.Raw(datAt),
+                                backgroundColor: '#28a745'
+                            },
+                            {
+                                label: 'Canceladas',
+                                data: @Html.Raw(datCan),
+                                backgroundColor: '#dc3545'
+                            },
+                            {
+                                label: 'Pendientes',
+                                data: @Html.Raw(datPen),
+                                backgroundColor: '#ffc107'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'top' } },
+                        scales: { x: { stacked: true }, y: { stacked: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+                </text>
+        }
+
+        @if (Model.TotalAgendadas > 0)
+        {
+                <text>
+                new Chart(document.getElementById('chartEstados'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Atendidas','Canceladas','Pendientes'],
+                        datasets: [{
+                            data: [@Model.TotalAtendidas, @Model.TotalCanceladas, @Model.TotalPendientes],
+                            backgroundColor: ['#28a745','#dc3545','#ffc107']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+                </text>
+        }
+    </script>
+}

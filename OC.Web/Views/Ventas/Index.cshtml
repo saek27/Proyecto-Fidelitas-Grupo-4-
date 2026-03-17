@@ -1,0 +1,228 @@
+﻿@model IEnumerable<OC.Core.Domain.Entities.Venta>
+@{
+    ViewData["Title"] = "Ventas";
+}
+
+<div class="card-dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="bi bi-receipt me-2"></i>Ventas</h4>
+        <a asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Venta
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @*  ── Resumen dinámico ───────────────────────────────────────────────── *@
+ @*    <div class="row g-2 mb-3">
+        <div class="col-sm-4">
+            <div class="border rounded p-3 text-center bg-light">
+                <div class="fs-4 fw-bold text-primary" id="resumenConteo">@Model.Count()</div>
+                <div class="text-muted small">Ventas mostradas</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="border rounded p-3 text-center bg-light">
+                <div class="fs-4 fw-bold text-success" id="resumenTotal">
+                    ₡ @Model.Sum(v => v.Total).ToString("N2")
+                </div>
+                <div class="text-muted small">Monto acumulado</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="border rounded p-3 text-center bg-light">
+                <div class="fs-4 fw-bold text-secondary" id="resumenPromedio">
+                    ₡ @(Model.Any() ? Model.Average(v => v.Total).ToString("N2") : "0.00")
+                </div>
+                <div class="text-muted small">Promedio por venta</div>
+            </div>
+        </div>
+    </div>  *@
+
+    @* ── Filtros ────────────────────────────────────────────────────────── *@
+    <div class="card mb-3 border-0 bg-light">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Paciente o cajero</label>
+                    <input type="text" id="filtroBusqueda" class="form-control form-control-sm"
+                           placeholder="Nombre, cédula...">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm mb-1">Método de pago</label>
+                    <select id="filtroMetodo" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="SINPE">SINPE</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm mb-1">Desde</label>
+                    <input type="date" id="filtroDesde" class="form-control form-control-sm">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm mb-1">Hasta</label>
+                    <input type="date" id="filtroHasta" class="form-control form-control-sm">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm mb-1">Ordenar por total</label>
+                    <select id="filtroOrden" class="form-select form-select-sm">
+                        <option value="">Sin ordenar</option>
+                        <option value="asc">Menor → Mayor</option>
+                        <option value="desc">Mayor → Menor</option>
+                    </select>
+                </div>
+
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" id="btnLimpiar"
+                            class="btn btn-outline-secondary btn-sm w-100"
+                            title="Limpiar filtros">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    @* ── Tabla ──────────────────────────────────────────────────────────── *@
+    <table class="table table-hover table-sm" id="tablaVentas">
+        <thead class="table-light">
+            <tr>
+                <th>Factura</th>
+                <th>Fecha</th>
+                <th>Paciente</th>
+                <th>Cajero</th>
+                <th>Método</th>
+                <th class="text-end">Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tablaBody">
+            @foreach (var v in Model)
+            {
+                <tr class="fila-venta"
+                    data-paciente="@v.Paciente?.NombreCompleto?.ToLower() @v.Paciente?.Cedula"
+                    data-cajero="@v.Usuario?.Nombre?.ToLower()"
+                    data-metodo="@v.MetodoPago.ToString()"
+                    data-fecha="@v.FechaVenta.ToString("yyyy-MM-dd")"
+                    data-total="@v.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                    <td><span class="badge bg-secondary">@v.NumeroFactura</span></td>
+                    <td>@v.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@v.Paciente?.NombreCompleto</td>
+                    <td>@v.Usuario?.Nombre</td>
+                    <td>
+                        @switch (v.MetodoPago)
+                        {
+                            case OC.Core.Domain.Enums.MetodoPago.Efectivo:
+                                <span class="badge bg-success">Efectivo</span>
+                                break;
+                            case OC.Core.Domain.Enums.MetodoPago.SINPE:
+                                <span class="badge bg-info text-dark">SINPE</span>
+                                break;
+                            case OC.Core.Domain.Enums.MetodoPago.Tarjeta:
+                                <span class="badge bg-primary">Tarjeta</span>
+                                break;
+                        }
+                    </td>
+                    <td class="text-end fw-semibold">₡ @v.Total.ToString("N2")</td>
+                    <td>
+                        <a asp-action="Factura" asp-route-id="@v.Id"
+                           class="btn btn-sm btn-outline-secondary" title="Ver factura">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div id="sinResultados" class="text-center text-muted py-4" style="display:none;">
+        <i class="bi bi-search me-1"></i> No hay ventas que coincidan con los filtros.
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const filas = Array.from(document.querySelectorAll('.fila-venta'));
+
+        function aplicarFiltros() {
+            const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const metodo   = document.getElementById('filtroMetodo').value;
+            const desde    = document.getElementById('filtroDesde').value;
+            const hasta    = document.getElementById('filtroHasta').value;
+            const orden    = document.getElementById('filtroOrden').value;
+
+            let visibles = filas.filter(fila => {
+                const textoBusqueda = (fila.dataset.paciente + ' ' + fila.dataset.cajero);
+                const fecha         = fila.dataset.fecha;
+
+                if (busqueda && !textoBusqueda.includes(busqueda)) return false;
+                if (metodo   && fila.dataset.metodo !== metodo)    return false;
+                if (desde    && fecha < desde)                     return false;
+                if (hasta    && fecha > hasta)                     return false;
+                return true;
+            });
+
+            @* Ordenar si aplica *@
+            if (orden === 'asc') {
+                visibles.sort((a, b) => parseFloat(a.dataset.total) - parseFloat(b.dataset.total));
+            } else if (orden === 'desc') {
+                visibles.sort((a, b) => parseFloat(b.dataset.total) - parseFloat(a.dataset.total));
+            }
+
+            @* Ocultar todas y mostrar solo las visibles en orden *@
+            filas.forEach(f => f.style.display = 'none');
+
+            const tbody = document.getElementById('tablaBody');
+            visibles.forEach(f => {
+                f.style.display = '';
+                tbody.appendChild(f); @* reordena en DOM según sort *@
+            });
+
+            @* Actualizar resumen *@
+            const totales  = visibles.map(f => parseFloat(f.dataset.total));
+            const suma     = totales.reduce((a, b) => a + b, 0);
+            const promedio = totales.length ? suma / totales.length : 0;
+
+            document.getElementById('resumenConteo').textContent  = visibles.length;
+            document.getElementById('resumenTotal').textContent   = '₡ ' + suma.toLocaleString('es-CR', { minimumFractionDigits: 2 });
+            document.getElementById('resumenPromedio').textContent = '₡ ' + promedio.toLocaleString('es-CR', { minimumFractionDigits: 2 });
+
+            document.getElementById('sinResultados').style.display = visibles.length ? 'none' : 'block';
+        }
+
+        @* Escuchar todos los controles *@
+        ['filtroBusqueda', 'filtroMetodo', 'filtroDesde', 'filtroHasta', 'filtroOrden']
+            .forEach(id => document.getElementById(id)
+                .addEventListener('input', aplicarFiltros));
+
+        document.getElementById('btnLimpiar').addEventListener('click', () => {
+            document.getElementById('filtroBusqueda').value = '';
+            document.getElementById('filtroMetodo').value   = '';
+            document.getElementById('filtroDesde').value    = '';
+            document.getElementById('filtroHasta').value    = '';
+            document.getElementById('filtroOrden').value    = '';
+            aplicarFiltros();
+        });
+    </script>
+}

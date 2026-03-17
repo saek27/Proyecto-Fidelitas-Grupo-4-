@@ -215,7 +215,7 @@ namespace OC.Web.Controllers
         }
 
         // NUEVA ACCIÓN: Historial de expedientes (misma URL, pero ahora devuelve expedientes)
-        [Authorize(Roles = "Optometrista,Admin")]
+        [Authorize(Roles = "Optometrista,Admin,Recepcion")]
         public async Task<IActionResult> HistorialPaciente(int pacienteId)
         {
             var expedientes = await _expedienteRepo.GetPagedAsync(
