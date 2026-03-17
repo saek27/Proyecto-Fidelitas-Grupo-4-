@@ -1,0 +1,264 @@
+﻿@model OC.Web.ViewModels.ReporteVentasViewModel
+@{
+    ViewData["Title"] = "Reporte de Ventas";
+    var labFecha = System.Text.Json.JsonSerializer.Serialize(Model.EtiquetasFecha);
+    var datFecha = System.Text.Json.JsonSerializer.Serialize(Model.TotalesPorFecha);
+    var labSuc = System.Text.Json.JsonSerializer.Serialize(Model.EtiquetasSucursal);
+    var datSuc = System.Text.Json.JsonSerializer.Serialize(Model.TotalesPorSucursal);
+    var labMetodo = System.Text.Json.JsonSerializer.Serialize(Model.EtiquetasMetodo);
+    var datMetodo = System.Text.Json.JsonSerializer.Serialize(Model.ConteosPorMetodo);
+    var labTop = System.Text.Json.JsonSerializer.Serialize(Model.TopProductos.Select(x => x.Nombre).ToList());
+    var datTop = System.Text.Json.JsonSerializer.Serialize(Model.TopProductos.Select(x => x.TotalGenerado).ToList());
+}
+
+<div class="card-dashboard">
+
+    @* ── Encabezado ────────────────────────────────────────────────────────── *@
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <span class="fs-5 fw-bold"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Reporte de Ventas</span>
+        </div>
+        <a asp-action="ExportarVentasExcel"
+           asp-route-desde="@Model.Desde?.ToString("yyyy-MM-dd")"
+           asp-route-hasta="@Model.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-sucursalId="@Model.SucursalId"
+           class="btn btn-sm btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ── Filtros ────────────────────────────────────────────────────────────── *@
+    <form method="get" asp-action="Ventas" class="card bg-light border-0 mb-4">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Desde</label>
+                    <input type="date" name="desde" class="form-control form-control-sm"
+                           value="@Model.Desde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Hasta</label>
+                    <input type="date" name="hasta" class="form-control form-control-sm"
+                           value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm mb-1">Sucursal</label>
+                    <select name="sucursalId" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        @foreach (var s in Model.Sucursales)
+                        {
+                            <option value="@s.Id" selected="@(Model.SucursalId == s.Id)">@s.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @* ── KPIs ───────────────────────────────────────────────────────────────── *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 bg-primary text-white text-center py-3">
+                <div class="fs-3 fw-bold">₡ @Model.TotalGeneral.ToString("N2")</div>
+                <div class="small opacity-75">Ingresos totales</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-success text-white text-center py-3">
+                <div class="fs-3 fw-bold">@Model.TotalTransacciones</div>
+                <div class="small opacity-75">Ventas realizadas</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-info text-white text-center py-3">
+                <div class="fs-3 fw-bold">₡ @Model.PromedioVenta.ToString("N2")</div>
+                <div class="small opacity-75">Promedio por venta</div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Gráfica de tendencia ───────────────────────────────────────────────── *@
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-3">
+                <h6 class="fw-bold mb-3">Tendencia de ingresos por día</h6>
+                <canvas id="chartTendencia" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        @* Pie: método de pago *@
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <h6 class="fw-bold mb-3">Ventas por método de pago</h6>
+                <canvas id="chartMetodo"></canvas>
+            </div>
+        </div>
+
+        @* Barras: por sucursal *@
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <h6 class="fw-bold mb-3">Ingresos por sucursal</h6>
+                <canvas id="chartSucursal" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    @* ── Top productos ──────────────────────────────────────────────────────── *@
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <h6 class="fw-bold mb-3">Top 10 productos por ingreso generado</h6>
+        <canvas id="chartTop" height="80"></canvas>
+    </div>
+
+    @* ── Tabla top ──────────────────────────────────────────────────────────── *@
+    @if (Model.TopProductos.Any())
+    {
+        <div class="card border-0 shadow-sm p-3">
+            <h6 class="fw-bold mb-3">Detalle top productos</h6>
+            <table class="table table-sm table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th class="text-center">Unidades</th>
+                        <th class="text-end">Total generado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int rank = 1;
+                    }
+                    @foreach (var p in Model.TopProductos)
+                    {
+                        <tr>
+                            <td><span class="badge bg-secondary">@rank</span></td>
+                            <td>@p.Nombre</td>
+                            <td class="text-center">@p.CantidadVendida</td>
+                            <td class="text-end fw-semibold">₡ @p.TotalGenerado.ToString("N2")</td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            No hay datos para el período seleccionado.
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        const palette = ['#1a3c6e','#28a745','#ffc107','#dc3545','#17a2b8','#6f42c1','#fd7e14'];
+
+        @* Tendencia *@
+        new Chart(document.getElementById('chartTendencia'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(labFecha),
+                datasets: [{
+                    label: 'Ingresos (₡)',
+                    data: @Html.Raw(datFecha),
+                    borderColor: '#1a3c6e',
+                    backgroundColor: 'rgba(26,60,110,.08)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#1a3c6e',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { callback: v => '₡' + v.toLocaleString('es-CR') } }
+                }
+            }
+        });
+
+        @* Pie: método de pago *@
+        new Chart(document.getElementById('chartMetodo'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(labMetodo),
+                datasets: [{ data: @Html.Raw(datMetodo), backgroundColor: palette }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed} ventas`
+                        }
+                    }
+                }
+            }
+        });
+
+        @* Barras: por sucursal *@
+        new Chart(document.getElementById('chartSucursal'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(labSuc),
+                datasets: [{
+                    label: 'Ingresos (₡)',
+                    data: @Html.Raw(datSuc),
+                    backgroundColor: palette
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { callback: v => '₡' + v.toLocaleString('es-CR') } }
+                }
+            }
+        });
+
+        @* Barras horizontales: top productos *@
+        new Chart(document.getElementById('chartTop'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(labTop),
+                datasets: [{
+                    label: 'Total generado (₡)',
+                    data: @Html.Raw(datTop),
+                    backgroundColor: '#1a3c6e'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { callback: v => '₡' + v.toLocaleString('es-CR') } }
+                }
+            }
+        });
+    </script>
+}

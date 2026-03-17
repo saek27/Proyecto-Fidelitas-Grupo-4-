@@ -13,7 +13,7 @@ namespace OC.Core.Domain.Entities
         public string Contrasena { get; set; } = string.Empty; // En producción esto será un Hash
         public bool Activo { get; set; } = true;
 
-        // Claves Foráneas (Foreign Keys)
+        // (Foreign Keys)
         public int RolId { get; set; }
         public Rol Rol { get; set; } = null!;
 

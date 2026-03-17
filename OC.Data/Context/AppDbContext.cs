@@ -42,6 +42,10 @@ namespace OC.Data.Context
         public DbSet<ComentarioTicket> ComentarioTickets { get; set; }
 
 
+        //facturacion
+        public DbSet<Venta> Ventas { get; set; }
+        public DbSet<DetalleVenta> DetalleVentas { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -113,6 +117,52 @@ namespace OC.Data.Context
                     .OnDelete(DeleteBehavior.SetNull);
 
                 t.Property(t => t.NumeroSeguimiento).HasMaxLength(20);
+            });
+
+            //facturacion
+
+            modelBuilder.Entity<Venta>(entity =>
+            {
+                entity.Property(e => e.Total).HasPrecision(18, 2);
+                entity.Property(e => e.NumeroFactura).HasMaxLength(20);
+
+                entity.HasOne(v => v.Paciente)
+                      .WithMany()
+                      .HasForeignKey(v => v.PacienteId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(v => v.Usuario)
+                      .WithMany()
+                      .HasForeignKey(v => v.UsuarioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(v => v.ValorClinico)
+                      .WithMany()
+                      .HasForeignKey(v => v.ValorClinicoId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(v => v.Sucursal)
+                      .WithMany()
+                      .HasForeignKey(v => v.SucursalId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<DetalleVenta>(entity =>
+            {
+                entity.Property(e => e.PrecioUnitario).HasPrecision(18, 2);
+                entity.Property(e => e.Subtotal).HasPrecision(18, 2);
+
+                entity.HasOne(d => d.Venta)
+                      .WithMany(v => v.Detalles)
+                      .HasForeignKey(d => d.VentaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Producto)
+                      .WithMany()
+                      .HasForeignKey(d => d.ProductoId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
             });
 
 

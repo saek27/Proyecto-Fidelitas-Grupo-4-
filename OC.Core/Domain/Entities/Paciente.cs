@@ -11,7 +11,7 @@ namespace OC.Core.Domain.Entities
         public string Cedula { get; set; } = string.Empty;
         public string? Telefono { get; set; }
         public string? Email { get; set; }
-        public string Contrasena { get; set; } = string.Empty; // Contraseña hasheada
+        public string Contrasena { get; set; } = string.Empty; 
         public DateTime FechaNacimiento { get; set; }
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 

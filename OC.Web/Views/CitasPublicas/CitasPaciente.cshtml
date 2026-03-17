@@ -69,7 +69,8 @@
                             <a asp-action="Editar" asp-route-id="@cita.Id" class="btn btn-sm btn-primary">Editar</a>
                         </td>
                         <td>@(cita.MotivoConsulta ?? "Sin Motivo de Consulta")</td>
-                        @if (User.IsInRole("Admin") || User.IsInRole("Optometrista"))
+
+                        @if (User.IsInRole("Admin") || User.IsInRole("Optometrista") || User.IsInRole("Recepcion"))
                         {
                             <td>
                                 <a asp-controller="CitasPublicas"

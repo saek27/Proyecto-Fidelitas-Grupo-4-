@@ -31,7 +31,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
 //Valor Clinico
 builder.Services.AddScoped<IGenericRepository<ValorClinico>, GenericRepository<ValorClinico>>();
 

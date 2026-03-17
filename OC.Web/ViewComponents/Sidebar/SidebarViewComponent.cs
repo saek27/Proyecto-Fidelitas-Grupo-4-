@@ -22,12 +22,12 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
-                menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
-                menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reportes", Icon = "bi-graph-up" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/Historial/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Proveedores", Url = "/Proveedores", Icon = "bi-truck" });
                 menuItems.Add(new MenuItem { Title = "Historial de Pedidos", Url = "/Pedidos/Historial", Icon = "bi-clock-history" });
                 menuItems.Add(new MenuItem { Title = "Nuevo Pedido", Url = "/Pedidos/Create", Icon = "bi-plus-circle" });
+                menuItems.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi bi-receipt" });
 
                 // Opciones de Mesa de Ayuda (se agruparán en el menú desplegable)
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
@@ -41,7 +41,6 @@ namespace OC.Web.ViewComponents.Sidebar
             if (user.IsInRole("Optometrista"))
             {
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
-                menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
 
@@ -54,10 +53,8 @@ namespace OC.Web.ViewComponents.Sidebar
             if (user.IsInRole("Recepcion"))
             {
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
-                menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reports", Icon = "bi-graph-up" });
-                menuItems.Add(new MenuItem { Title = "Consultas", Url = "/Consultations", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
-
+                menuItems.Add(new MenuItem { Title = "Ventas",Url = "/Ventas",Icon = "bi bi-receipt"});
                 // Mesa de Ayuda para Recepcion
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
                 menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
