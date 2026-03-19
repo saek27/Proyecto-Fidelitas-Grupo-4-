@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
@@ -59,8 +59,82 @@ namespace OC.Web.Controllers
                 var pacientes = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Email == model.Email);
                 var paciente = pacientes.Items.FirstOrDefault();
 
-                if (paciente != null && !string.IsNullOrEmpty(paciente.Contrasena) && BCrypt.Net.BCrypt.Verify(model.Password, paciente.Contrasena))
+                var nowUtc = DateTime.UtcNow;
+                if (paciente?.BloqueadoPermanentemente == true)
                 {
+                    ViewBag.IsLockedPermanent = true;
+                    ModelState.AddModelError(string.Empty, "Cuenta bloqueada. Contacte al administrador para desbloquearla.");
+                    return View(model);
+                }
+
+                if (paciente?.BloqueadoHastaUtc.HasValue == true && paciente.BloqueadoHastaUtc.Value > nowUtc)
+                {
+                    var restante = paciente.BloqueadoHastaUtc.Value - nowUtc;
+                    var segundos = Math.Max(0, (int)Math.Ceiling(restante.TotalSeconds));
+                    ViewBag.LockoutSeconds = segundos;
+                    ModelState.AddModelError(string.Empty, "Usuario bloqueado temporalmente. Espere a que finalice el tiempo de bloqueo.");
+                    return View(model);
+                }
+
+                var credencialesOk = paciente != null
+                    && !string.IsNullOrEmpty(paciente.Contrasena)
+                    && BCrypt.Net.BCrypt.Verify(model.Password, paciente.Contrasena);
+
+                if (!credencialesOk)
+                {
+                    if (paciente != null)
+                    {
+                        paciente.IntentosFallidosLogin++;
+
+                        // A partir del 3er fallo se bloquea: 5,10,15,20,25 (máx). En el 5º fallo se bloquea permanentemente.
+                        if (paciente.IntentosFallidosLogin >= 3)
+                        {
+                            var minutosBloqueo = Math.Min(25, (paciente.IntentosFallidosLogin - 2) * 5);
+                            paciente.BloqueadoHastaUtc = nowUtc.AddMinutes(minutosBloqueo);
+
+                            // Desde el 5º fallo: ya no permitir más intentos, requiere admin
+                            if (paciente.IntentosFallidosLogin >= 5)
+                            {
+                                paciente.BloqueadoPermanentemente = true;
+                                paciente.BloqueadoHastaUtc = null;
+                            }
+
+                            await _pacientesRepo.UpdateAsync(paciente);
+
+                            if (paciente.BloqueadoPermanentemente)
+                            {
+                                ViewBag.IsLockedPermanent = true;
+                                ModelState.AddModelError(string.Empty, "Cuenta bloqueada. Contacte al administrador para desbloquearla y asignar una nueva contraseña. Si necesita ayuda, llame al 2222-3333.");
+                                return View(model);
+                            }
+
+                            ViewBag.LockoutSeconds = minutosBloqueo * 60;
+                            var mensaje = $"Usuario bloqueado. Tiempo de espera: {minutosBloqueo} minuto(s).";
+                            if (paciente.IntentosFallidosLogin >= 5)
+                                mensaje += " Si necesita ayuda, llame al 2222-3333.";
+                            ModelState.AddModelError(string.Empty, mensaje);
+                            return View(model);
+                        }
+
+                        await _pacientesRepo.UpdateAsync(paciente);
+                        ViewBag.AttemptsLeft = 3 - paciente.IntentosFallidosLogin;
+                    }
+
+                    ModelState.AddModelError(string.Empty,
+                        ViewBag.AttemptsLeft != null
+                            ? $"Credenciales incorrectas. Tiene {ViewBag.AttemptsLeft} intento(s) más."
+                            : "Credenciales incorrectas.");
+                    return View(model);
+                }
+
+                // Login exitoso como Paciente: resetear contadores/bloqueos
+                if (paciente!.IntentosFallidosLogin != 0 || paciente.BloqueadoHastaUtc.HasValue || paciente.BloqueadoPermanentemente)
+                {
+                    paciente.IntentosFallidosLogin = 0;
+                    paciente.BloqueadoHastaUtc = null;
+                    paciente.BloqueadoPermanentemente = false;
+                    await _pacientesRepo.UpdateAsync(paciente);
+
                     // Login exitoso como Paciente
                     var claims = new List<Claim>
                     {

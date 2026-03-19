@@ -3,6 +3,18 @@
 <div class="card-dashboard">
     <h4>Editar Paciente</h4>
 
+    @if (User.IsInRole("Admin"))
+    {
+        <form asp-action="Desbloquear" method="post" class="mb-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-warning">
+                <i class="bi bi-unlock"></i> Desbloquear paciente
+            </button>
+            <small class="text-muted ms-2">Reinicia intentos y elimina bloqueos.</small>
+        </form>
+    }
+
     <form asp-action="Edit" method="post">
         <input type="hidden" asp-for="Id" />
 

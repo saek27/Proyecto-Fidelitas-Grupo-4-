@@ -18,6 +18,11 @@ namespace OC.Core.Domain.Entities
         public string? TokenRecuperacion { get; set; }
         public DateTime? FechaExpiracionToken { get; set; }
 
+        // WEB-HU-028: bloqueo temporal por intentos fallidos
+        public int IntentosFallidosLogin { get; set; } = 0;
+        public DateTime? BloqueadoHastaUtc { get; set; }
+        public bool BloqueadoPermanentemente { get; set; } = false;
+
         // Propiedad calculada (útil para la UI)
         public string NombreCompleto => $"{Nombres} {Apellidos}";
 

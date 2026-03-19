@@ -108,6 +108,40 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>WEB-HU-028: asegura columnas para bloqueo por intentos fallidos en Pacientes.</summary>
+        public static void EnsurePacienteLockoutColumns(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Pacientes','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Pacientes') AND name = 'IntentosFallidosLogin'
+    )
+    BEGIN
+        ALTER TABLE Pacientes ADD IntentosFallidosLogin int NOT NULL CONSTRAINT DF_Pacientes_IntentosFallidosLogin DEFAULT (0);
+    END
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Pacientes') AND name = 'BloqueadoHastaUtc'
+    )
+    BEGIN
+        ALTER TABLE Pacientes ADD BloqueadoHastaUtc datetime2 NULL;
+    END
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Pacientes') AND name = 'BloqueadoPermanentemente'
+    )
+    BEGIN
+        ALTER TABLE Pacientes ADD BloqueadoPermanentemente bit NOT NULL CONSTRAINT DF_Pacientes_BloqueadoPermanentemente DEFAULT (0);
+    END
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

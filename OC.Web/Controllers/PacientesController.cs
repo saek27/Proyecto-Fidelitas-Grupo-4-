@@ -255,5 +255,22 @@ namespace OC.Web.Controllers
             TempData["Success"] = "Paciente actualizado exitosamente";
             return RedirectToAction(nameof(Index));
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Desbloquear(int id)
+        {
+            var entity = await _pacientesRepo.GetByIdAsync(id);
+            if (entity == null) return NotFound();
+
+            entity.IntentosFallidosLogin = 0;
+            entity.BloqueadoHastaUtc = null;
+            entity.BloqueadoPermanentemente = false;
+            await _pacientesRepo.UpdateAsync(entity);
+
+            TempData["Success"] = "Paciente desbloqueado correctamente.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
     }
 }
