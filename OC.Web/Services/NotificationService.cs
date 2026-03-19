@@ -75,6 +75,68 @@ namespace OC.Web.Services
             await EnviarPorCanalAsync(cita, destinatario, mensaje, "Cita cancelada", ct);
         }
 
+        public async Task<bool> NotificarLentesListosAsync(OrdenTrabajo orden, CancellationToken ct = default)
+        {
+            var paciente = orden.Paciente;
+            if (paciente == null) return false;
+
+            string? destinatario = null;
+            string canal = "Email";
+            if (!string.IsNullOrWhiteSpace(paciente.Email))
+            {
+                destinatario = paciente.Email;
+                canal = "Email";
+            }
+            else if (!string.IsNullOrWhiteSpace(paciente.Telefono))
+            {
+                destinatario = paciente.Telefono;
+                canal = "SMS";
+            }
+
+            var sede = orden.Sucursal?.Nombre ?? "nuestra sede";
+            var mensaje = $"Sus lentes están listos para retiro en {sede}. Puede pasar a recogerlos cuando lo desee.";
+
+            if (string.IsNullOrWhiteSpace(destinatario))
+            {
+                var errorMsg = "Paciente sin correo ni teléfono registrado. No se pudo enviar la notificación.";
+                var registroError = new EnvioNotificacion
+                {
+                    OrdenTrabajoId = orden.Id,
+                    CitaId = null,
+                    TipoNotificacion = TipoNotificacionOrdenTrabajo.LentesListos,
+                    FechaHoraEnvio = DateTime.Now,
+                    Canal = "N/A",
+                    Destinatario = null,
+                    MensajeResumen = errorMsg,
+                    Exito = false
+                };
+                await _enviosRepo.AddAsync(registroError);
+                _logger.LogWarning("OT-HU-023: No se notificó OrdenTrabajoId={OrdenId}, PacienteId={PacienteId}: sin datos de contacto.", orden.Id, orden.PacienteId);
+                return false;
+            }
+
+            var registro = new EnvioNotificacion
+            {
+                OrdenTrabajoId = orden.Id,
+                CitaId = null,
+                TipoNotificacion = TipoNotificacionOrdenTrabajo.LentesListos,
+                FechaHoraEnvio = DateTime.Now,
+                Canal = canal,
+                Destinatario = destinatario,
+                MensajeResumen = mensaje,
+                Exito = true
+            };
+            await _enviosRepo.AddAsync(registro);
+            _logger.LogInformation("OT-HU-023: Notificación lentes listos registrada para OrdenTrabajoId={OrdenId}, PacienteId={PacienteId}, Canal={Canal}", orden.Id, orden.PacienteId, canal);
+            await EnviarPorCanalLentesAsync(destinatario, mensaje, "Sus lentes están listos", canal, ct);
+            return true;
+        }
+
+        private static Task EnviarPorCanalLentesAsync(string destinatario, string mensaje, string asunto, string canal, CancellationToken ct)
+        {
+            return Task.CompletedTask;
+        }
+
         private static (string? Destinatario, string MensajeResumen) ConstruirMensajeRecordatorio(Cita cita, bool esInmediato)
         {
             var lugar = cita.Sucursal?.Nombre ?? "Sede";

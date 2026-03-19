@@ -1,0 +1,57 @@
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.OrdenTrabajo>
+
+<div class="card-dashboard">
+    <h4>Órdenes de trabajo (lentes)</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["Success"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <a asp-action="Create" class="btn btn-primary mb-3">
+        <i class="bi bi-plus-circle"></i> Nueva orden
+    </a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Paciente</th>
+                <th>Sucursal</th>
+                <th>Estado</th>
+                <th>Referencia</th>
+                <th>Fecha creación</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model.Items)
+            {
+                <tr>
+                    <td>@o.Id</td>
+                    <td>@(o.Paciente?.NombreCompleto ?? "—")</td>
+                    <td>@(o.Sucursal?.Nombre ?? "—")</td>
+                    <td>
+                        @if (o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.Lista)
+                        { <span class="badge bg-success">Lista</span> }
+                        else if (o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.Entregada)
+                        { <span class="badge bg-secondary">Entregada</span> }
+                        else if (o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.EnProceso)
+                        { <span class="badge bg-info">En proceso</span> }
+                        else
+                        { <span class="badge bg-warning text-dark">Pendiente</span> }
+                    </td>
+                    <td>@(o.Referencia ?? "—")</td>
+                    <td>@o.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@o.Id" class="btn btn-sm btn-outline-primary">Cambiar estado</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

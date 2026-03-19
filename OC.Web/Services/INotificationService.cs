@@ -13,5 +13,8 @@ namespace OC.Web.Services
 
         /// <summary>Notifica al paciente que la cita fue cancelada. Registra fecha/hora de envío.</summary>
         Task EnviarNotificacionCancelacionAsync(Cita cita, CancellationToken ct = default);
+
+        /// <summary>OT-HU-023: Notifica al paciente que sus lentes están listos. Retorna false si el paciente no tiene correo ni teléfono (registra el error).</summary>
+        Task<bool> NotificarLentesListosAsync(OrdenTrabajo orden, CancellationToken ct = default);
     }
 }

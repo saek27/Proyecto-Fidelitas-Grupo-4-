@@ -10,12 +10,19 @@ namespace OC.Core.Domain.Entities
         public const string Cancelacion = "Cancelacion";
     }
 
-    /// <summary>Registro de cada envío de notificación. Se registra fecha y hora de envío.</summary>
+    /// <summary>Tipos de notificación para órdenes de trabajo (OT-HU-023).</summary>
+    public static class TipoNotificacionOrdenTrabajo
+    {
+        public const string LentesListos = "LentesListos";
+    }
+
+    /// <summary>Registro de cada envío de notificación. Se registra fecha y hora de envío. CitaId o OrdenTrabajoId según el tipo.</summary>
     public class EnvioNotificacion
     {
         public int Id { get; set; }
-        public int CitaId { get; set; }
-        /// <summary>RecordatorioPrevio, RecordatorioInmediato, Cancelacion</summary>
+        public int? CitaId { get; set; }
+        public int? OrdenTrabajoId { get; set; }
+        /// <summary>RecordatorioPrevio, RecordatorioInmediato, Cancelacion, LentesListos</summary>
         public string TipoNotificacion { get; set; } = string.Empty;
         public DateTime FechaHoraEnvio { get; set; } = DateTime.Now;
         public string Canal { get; set; } = "Email";
@@ -23,6 +30,7 @@ namespace OC.Core.Domain.Entities
         public string? MensajeResumen { get; set; }
         public bool Exito { get; set; } = true;
 
-        public Cita Cita { get; set; } = null!;
+        public Cita? Cita { get; set; }
+        public OrdenTrabajo? OrdenTrabajo { get; set; }
     }
 }

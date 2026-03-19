@@ -19,6 +19,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
+        private readonly IGenericRepository<EnvioNotificacion> _enviosRepo;
         private readonly INotificationService _notificationService;
         private readonly RecordatorioCitasOptions _recordatorioOptions;
 
@@ -27,6 +28,7 @@ namespace OC.Web.Controllers
             IGenericRepository<Cita> citasRepo,
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Sucursal> sucursalesRepo,
+            IGenericRepository<EnvioNotificacion> enviosRepo,
             INotificationService notificationService,
             IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
@@ -34,6 +36,7 @@ namespace OC.Web.Controllers
             _citasRepo = citasRepo;
             _solicitudesRepo = solicitudesRepo;
             _sucursalesRepo = sucursalesRepo;
+            _enviosRepo = enviosRepo;
             _notificationService = notificationService;
             _recordatorioOptions = recordatorioOptions.Value;
         }
@@ -100,6 +103,27 @@ namespace OC.Web.Controllers
             }
 
             return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Notificaciones()
+        {
+            // Obtener el ID del paciente desde los Claims
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            // Traer notificaciones de OT (lentes listos) asociadas al paciente
+            // Nota: filtramos por navegación OrdenTrabajo.PacienteId (include para mostrar datos).
+            var envios = await _enviosRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 200,
+                filter: e => e.OrdenTrabajoId != null && e.OrdenTrabajo.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(e => e.FechaHoraEnvio),
+                includeProperties: "OrdenTrabajo,OrdenTrabajo.Sucursal"
+            );
+
+            return View(envios.Items);
         }
 
         // Horarios disponibles (slots 30 min) por sede y fecha

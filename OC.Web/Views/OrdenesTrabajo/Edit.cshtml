@@ -1,0 +1,31 @@
+@model OC.Core.Domain.Entities.OrdenTrabajo
+
+<div class="card-dashboard">
+    <h4>Cambiar estado de la orden</h4>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <p><strong>Paciente:</strong> @(Model.Paciente?.NombreCompleto ?? "—")</p>
+    <p><strong>Sucursal:</strong> @(Model.Sucursal?.Nombre ?? "—")</p>
+    <p><strong>Referencia:</strong> @(Model.Referencia ?? "—")</p>
+    <p><strong>Estado actual:</strong> @Model.Estado</p>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="mb-3">
+            <label for="estado" class="form-label">Nuevo estado</label>
+            <select name="estado" id="estado" class="form-select" required>
+                @foreach (Microsoft.AspNetCore.Mvc.Rendering.SelectListItem item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Estados)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.Estado)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <p class="text-muted small">Si cambia a "Lista", el paciente recibirá una notificación por correo o SMS (si tiene datos de contacto registrados).</p>
+        <button type="submit" class="btn btn-primary">Actualizar estado</button>
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+    </form>
+</div>

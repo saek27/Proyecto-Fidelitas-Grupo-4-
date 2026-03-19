@@ -34,6 +34,7 @@ namespace OC.Data.Context
         public DbSet<ValorClinico> ValoresClinicos { get; set; }
         public DbSet<DocumentoExpediente> DocumentosExpediente { get; set; }
         public DbSet<EnvioNotificacion> EnviosNotificacion { get; set; }
+        public DbSet<OrdenTrabajo> OrdenesTrabajo { get; set; }
 
         public DbSet<DetallePedido> DetallePedidos { get; set; }
 

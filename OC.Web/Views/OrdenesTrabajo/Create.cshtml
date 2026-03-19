@@ -1,0 +1,39 @@
+@model OC.Web.ViewModels.OrdenTrabajoViewModel
+
+<div class="card-dashboard">
+    <h4>Nueva orden de trabajo</h4>
+    <p class="text-muted">Registre una orden de trabajo (lentes) para un paciente. Luego podrá cambiar el estado a "Lista" y el paciente recibirá una notificación.</p>
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="PacienteId" class="form-label"></label>
+            <select asp-for="PacienteId" asp-items="ViewBag.Pacientes" class="form-select">
+                <option value="">-- Seleccione paciente --</option>
+            </select>
+            <span asp-validation-for="PacienteId" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="SucursalId" class="form-label"></label>
+            <select asp-for="SucursalId" asp-items="ViewBag.Sucursales" class="form-select">
+                <option value="">-- Seleccione sucursal --</option>
+            </select>
+            <span asp-validation-for="SucursalId" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="VentaId" class="form-label"></label>
+            <select asp-for="VentaId" asp-items="ViewBag.Ventas" class="form-select">
+                <option value="">-- Sin venta asociada --</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Referencia" class="form-label"></label>
+            <input asp-for="Referencia" class="form-control" placeholder="Ej: Lente progresivo" />
+        </div>
+        <button type="submit" class="btn btn-primary">Crear orden</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
