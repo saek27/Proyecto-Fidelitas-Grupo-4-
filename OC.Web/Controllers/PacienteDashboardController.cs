@@ -19,6 +19,9 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
+        private readonly IGenericRepository<EnvioNotificacion> _enviosRepo;
+        private readonly IGenericRepository<Venta> _ventasRepo;
+        private readonly IGenericRepository<OrdenTrabajo> _ordenesRepo;
         private readonly INotificationService _notificationService;
         private readonly RecordatorioCitasOptions _recordatorioOptions;
 
@@ -27,6 +30,9 @@ namespace OC.Web.Controllers
             IGenericRepository<Cita> citasRepo,
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Sucursal> sucursalesRepo,
+            IGenericRepository<EnvioNotificacion> enviosRepo,
+            IGenericRepository<Venta> ventasRepo,
+            IGenericRepository<OrdenTrabajo> ordenesRepo,
             INotificationService notificationService,
             IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
@@ -34,6 +40,9 @@ namespace OC.Web.Controllers
             _citasRepo = citasRepo;
             _solicitudesRepo = solicitudesRepo;
             _sucursalesRepo = sucursalesRepo;
+            _enviosRepo = enviosRepo;
+            _ventasRepo = ventasRepo;
+            _ordenesRepo = ordenesRepo;
             _notificationService = notificationService;
             _recordatorioOptions = recordatorioOptions.Value;
         }
@@ -102,6 +111,87 @@ namespace OC.Web.Controllers
             return View();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Notificaciones()
+        {
+            // Obtener el ID del paciente desde los Claims
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            // Traer notificaciones de OT (lentes listos) asociadas al paciente
+            // Nota: filtramos por navegación OrdenTrabajo.PacienteId (include para mostrar datos).
+            var envios = await _enviosRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 200,
+                filter: e => e.OrdenTrabajoId != null && e.OrdenTrabajo.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(e => e.FechaHoraEnvio),
+                includeProperties: "OrdenTrabajo,OrdenTrabajo.Sucursal"
+            );
+
+            return View(envios.Items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MisFacturas()
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var ventas = await _ventasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 200,
+                filter: v => v.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(v => v.FechaVenta)
+            );
+
+            return View(ventas.Items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EstadoOrden()
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            // Escenario 1: al entrar al módulo, mostrar órdenes del paciente y su estado actualizado.
+            var ordenes = await _ordenesRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 100,
+                filter: o => o.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(o => o.FechaCreacion),
+                includeProperties: "Sucursal"
+            );
+
+            ViewBag.Ordenes = ordenes.Items;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EstadoOrdenDetalle(int id)
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var ordenResult = await _ordenesRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 1,
+                filter: o => o.Id == id && o.PacienteId == pacienteId,
+                includeProperties: "Sucursal"
+            );
+            var orden = ordenResult.Items.FirstOrDefault();
+            if (orden == null)
+            {
+                TempData["Error"] = "La orden no está lista o no existe.";
+                return RedirectToAction(nameof(EstadoOrden));
+            }
+
+            return View("EstadoOrdenDetalle", orden);
+        }
+
         // Horarios disponibles (slots 30 min) por sede y fecha
         [HttpGet]
         public async Task<IActionResult> ObtenerHorasDisponibles(int sucursalId, string fecha)
@@ -139,6 +229,13 @@ namespace OC.Web.Controllers
         {
             var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
             ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            ViewBag.ServiciosList = new[]
+            {
+                new SelectListItem { Value = "Examen visual", Text = "Examen visual" },
+                new SelectListItem { Value = "Control de lentes", Text = "Control de lentes" },
+                new SelectListItem { Value = "Adaptación de lentes de contacto", Text = "Adaptación de lentes de contacto" },
+                new SelectListItem { Value = "Consulta general", Text = "Consulta general" }
+            };
             ViewBag.EsSolicitarCita = true;
             return View("AgendarCita");
         }
@@ -148,20 +245,38 @@ namespace OC.Web.Controllers
         {
             var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
             ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            ViewBag.ServiciosList = new[]
+            {
+                new SelectListItem { Value = "Examen visual", Text = "Examen visual" },
+                new SelectListItem { Value = "Control de lentes", Text = "Control de lentes" },
+                new SelectListItem { Value = "Adaptación de lentes de contacto", Text = "Adaptación de lentes de contacto" },
+                new SelectListItem { Value = "Consulta general", Text = "Consulta general" }
+            };
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AgendarCita(int sucursalId, string fecha, string hora, string? motivo)
+        public async Task<IActionResult> AgendarCita(int sucursalId, string fecha, string hora, string servicio, string? motivo)
         {
             var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
             if (!int.TryParse(pacienteIdClaim, out int pacienteId))
                 return RedirectToAction("Login", "PacienteAccount");
 
-            if (!DateTime.TryParse(fecha, out var date) || string.IsNullOrWhiteSpace(hora))
+            var faltantes = new List<string>();
+            if (sucursalId <= 0) faltantes.Add("sede");
+            if (string.IsNullOrWhiteSpace(fecha)) faltantes.Add("fecha");
+            if (string.IsNullOrWhiteSpace(hora)) faltantes.Add("horario");
+            if (string.IsNullOrWhiteSpace(servicio)) faltantes.Add("servicio");
+            if (faltantes.Any())
             {
-                TempData["Error"] = "Seleccione fecha y hora.";
+                TempData["Error"] = $"Complete los campos requeridos: {string.Join(", ", faltantes)}.";
+                return RedirectToAction(nameof(AgendarCita));
+            }
+
+            if (!DateTime.TryParse(fecha, out var date))
+            {
+                TempData["Error"] = "La fecha ingresada no es válida.";
                 return RedirectToAction(nameof(AgendarCita));
             }
 
@@ -186,7 +301,7 @@ namespace OC.Web.Controllers
             );
             if (ocupado.Items.Any())
             {
-                TempData["Error"] = "Ese horario ya no está disponible. Elija otro slot.";
+                TempData["Error"] = "El horario seleccionado ya no está disponible.";
                 return RedirectToAction(nameof(AgendarCita));
             }
 
@@ -205,7 +320,7 @@ namespace OC.Web.Controllers
                 SolicitudCitaId = solicitud.Id,
                 SucursalId = sucursalId,
                 FechaHora = fechaHora,
-                MotivoConsulta = motivo,
+                MotivoConsulta = string.IsNullOrWhiteSpace(motivo) ? servicio : $"{servicio}. {motivo}",
                 Estado = EstadoCita.Confirmada,
                 FechaCreacion = DateTime.Now
             };
@@ -220,7 +335,7 @@ namespace OC.Web.Controllers
                     await _notificationService.EnviarRecordatorioInmediatoAsync(citaConIncludes);
             }
 
-            TempData["Success"] = "Cita agendada correctamente. El slot quedó reservado a su nombre.";
+            TempData["Success"] = $"Cita agendada correctamente para el {fechaHora:dd/MM/yyyy HH:mm}.";
             return RedirectToAction(nameof(Index));
         }
 

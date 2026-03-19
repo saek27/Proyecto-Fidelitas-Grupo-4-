@@ -20,7 +20,14 @@ namespace OC.Data.Configurations
             builder.HasOne(x => x.Cita)
                 .WithMany(c => c.EnviosNotificacion)
                 .HasForeignKey(x => x.CitaId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+
+            builder.HasOne(x => x.OrdenTrabajo)
+                .WithMany(o => o.EnviosNotificacion)
+                .HasForeignKey(x => x.OrdenTrabajoId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
         }
     }
 }

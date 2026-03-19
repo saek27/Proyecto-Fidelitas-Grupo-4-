@@ -3,6 +3,25 @@
 <div class="card-dashboard">
     <h4>Editar Paciente</h4>
 
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <form asp-action="ToggleBloqueo" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           id="p_lock"
+                           checked="@(ViewBag.Bloqueado == true)"
+                           onchange="this.form.submit()">
+                    <label class="form-check-label" for="p_lock">
+                        @(ViewBag.Bloqueado == true ? "Bloqueado" : "Desbloqueado")
+                    </label>
+                </div>
+            </form>
+        </div>
+    }
+
     <form asp-action="Edit" method="post">
         <input type="hidden" asp-for="Id" />
 

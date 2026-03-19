@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -50,6 +50,14 @@ namespace OC.Data.Configurations
             builder.Property(x => x.Contrasena)
                 .IsRequired()
                 .HasMaxLength(255);
+
+            builder.Property(x => x.IntentosFallidosLogin)
+                .HasDefaultValue(0);
+
+            builder.Property(x => x.BloqueadoHastaUtc);
+
+            builder.Property(x => x.BloqueadoPermanentemente)
+                .HasDefaultValue(false);
         }
     }
 }

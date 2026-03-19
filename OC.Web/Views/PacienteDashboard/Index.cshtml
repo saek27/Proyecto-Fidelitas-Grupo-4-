@@ -24,7 +24,7 @@
 
     @if (canceladasRecientes.Any())
     {
-        <div class="alert alert-danger alert-dismissible fade show border-2 border-dark" role="alert">
+        <div class="alert alert-warning alert-dismissible fade show border-2 border-dark" style="background-color:#ffb74d;border-color:#f57c00;color:#3e2723;" role="alert">
             <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Atención:</strong>
             La(s) siguiente(s) cita(s) fue(ron) cancelada(s) y ya no se realizará(n). Si desea, puede reservar una nueva:
             @foreach (var c in canceladasRecientes.Take(5))

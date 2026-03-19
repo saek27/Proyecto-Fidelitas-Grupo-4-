@@ -45,10 +45,80 @@ namespace OC.Web.Controllers
                 filter: p => p.Cedula == cedulaNorm
             );
             var paciente = pacientes.Items.FirstOrDefault();
-            if (paciente == null || string.IsNullOrEmpty(paciente.Contrasena) || !BCrypt.Net.BCrypt.Verify(contrasena, paciente.Contrasena))
+
+            if (paciente?.BloqueadoPermanentemente == true)
             {
-                ModelState.AddModelError("", "Cédula o contraseña incorrectos. Si olvidó su contraseña, use \"Recuperar contraseña\".");
+                ViewBag.IsLockedPermanent = true;
+                ModelState.AddModelError("", "Cuenta bloqueada. Contacte al administrador para desbloquearla y asignar una nueva contraseña. Si necesita ayuda, llame al 2222-3333.");
                 return View();
+            }
+
+            // WEB-HU-028 Escenario 3: bloqueo temporal por intentos fallidos
+            var nowUtc = DateTime.UtcNow;
+            if (paciente?.BloqueadoHastaUtc.HasValue == true && paciente.BloqueadoHastaUtc.Value > nowUtc)
+            {
+                var restante = paciente.BloqueadoHastaUtc.Value - nowUtc;
+                var segundos = Math.Max(0, (int)Math.Ceiling(restante.TotalSeconds));
+                ViewBag.LockoutSeconds = segundos;
+                ModelState.AddModelError("", "Usuario bloqueado temporalmente. Espere a que finalice el tiempo de bloqueo.");
+                return View();
+            }
+
+            var credencialesOk = paciente != null
+                && !string.IsNullOrEmpty(paciente.Contrasena)
+                && BCrypt.Net.BCrypt.Verify(contrasena, paciente.Contrasena);
+
+            if (!credencialesOk)
+            {
+                if (paciente != null)
+                {
+                    paciente.IntentosFallidosLogin++;
+                    if (paciente.IntentosFallidosLogin >= 3)
+                    {
+                        // 3er fallo: 5 min, 4to: 10, 5to: 15, ... hasta 25 (máx). Luego bloqueo permanente.
+                        var minutosBloqueo = Math.Min(25, (paciente.IntentosFallidosLogin - 2) * 5);
+                        paciente.BloqueadoHastaUtc = nowUtc.AddMinutes(minutosBloqueo);
+
+                        if (paciente.IntentosFallidosLogin >= 5)
+                        {
+                            paciente.BloqueadoPermanentemente = true;
+                            paciente.BloqueadoHastaUtc = null;
+                        }
+                        await _pacientesRepo.UpdateAsync(paciente);
+
+                        if (paciente.BloqueadoPermanentemente)
+                        {
+                            ViewBag.IsLockedPermanent = true;
+                            ModelState.AddModelError("", "Cuenta bloqueada. Contacte al administrador para desbloquearla y asignar una nueva contraseña. Si necesita ayuda, llame al 2222-3333.");
+                            return View();
+                        }
+
+                        ViewBag.LockoutSeconds = minutosBloqueo * 60;
+                        var mensaje = $"Usuario bloqueado. Tiempo de espera: {minutosBloqueo} minuto(s).";
+                        if (paciente.IntentosFallidosLogin >= 5)
+                            mensaje += " Si necesita ayuda, llame al 2222-3333.";
+                        ModelState.AddModelError("", mensaje);
+                        return View();
+                    }
+
+                    await _pacientesRepo.UpdateAsync(paciente);
+                    ViewBag.AttemptsLeft = 3 - paciente.IntentosFallidosLogin;
+                }
+
+                // WEB-HU-028 Escenario 2: credenciales incorrectas
+                ModelState.AddModelError("", ViewBag.AttemptsLeft != null
+                    ? $"Credenciales incorrectas. Tiene {ViewBag.AttemptsLeft} intento(s) más."
+                    : "Credenciales incorrectas.");
+                return View();
+            }
+
+            // Login exitoso: resetear contador y bloqueo
+            if (paciente!.IntentosFallidosLogin != 0 || paciente.BloqueadoHastaUtc.HasValue || paciente.BloqueadoPermanentemente)
+            {
+                paciente.IntentosFallidosLogin = 0;
+                paciente.BloqueadoHastaUtc = null;
+                paciente.BloqueadoPermanentemente = false;
+                await _pacientesRepo.UpdateAsync(paciente);
             }
 
             var claims = new List<Claim>

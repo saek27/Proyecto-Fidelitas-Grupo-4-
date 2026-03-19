@@ -19,6 +19,20 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (ViewBag.AttemptsLeft != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            Tiene <strong>@ViewBag.AttemptsLeft</strong> intento(s) restante(s) antes del bloqueo.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (ViewBag.LockoutSeconds != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            Usuario bloqueado. Espere <strong id="lockoutTimer"></strong>.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <p class="text-muted">Ingrese su cédula en formato X-XXXX-XXXX y contraseña para acceder.</p>
 
@@ -32,7 +46,7 @@
             <input type="password" name="contrasena" id="contrasena" class="form-control" required />
         </div>
 
-        <button type="submit" class="btn btn-brand">
+        <button type="submit" class="btn btn-brand" @(ViewBag.LockoutSeconds != null || ViewBag.IsLockedPermanent == true ? "disabled" : "")>
             <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
         </button>
         <a asp-controller="Pacientes" asp-action="Registro" class="btn btn-outline-primary">
@@ -41,3 +55,33 @@
         <a asp-action="RecuperarContrasena" class="btn btn-link">¿Olvidó su contraseña?</a>
     </form>
 </div>
+
+@if (ViewBag.LockoutSeconds != null)
+{
+    <script>
+        (function () {
+            var seconds = parseInt("@ViewBag.LockoutSeconds", 10);
+            if (isNaN(seconds) || seconds <= 0) return;
+
+            function fmt(s) {
+                var m = Math.floor(s / 60);
+                var r = s % 60;
+                return m + ":" + (r < 10 ? "0" + r : r);
+            }
+
+            var el = document.getElementById("lockoutTimer");
+            if (!el) return;
+            el.textContent = fmt(seconds);
+
+            var t = setInterval(function () {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(t);
+                    el.textContent = "0:00";
+                    return;
+                }
+                el.textContent = fmt(seconds);
+            }, 1000);
+        })();
+    </script>
+}

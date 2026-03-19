@@ -2,12 +2,12 @@
 
 <div class="card-dashboard">
 
-    <h4>Mi Historial Clínico</h4>
+    <h4>Historial de citas</h4>
 
     @if (!Model.Any())
     {
         <div class="alert alert-info">
-            Aún no tienes consultas atendidas.
+            No hay registros disponibles
         </div>
     }
     else
@@ -17,7 +17,9 @@
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Resultado Clínico</th>
+                    <th>Estado</th>
+                    <th>Tratamiento</th>
+                    <th></th>
                 </tr>
             </thead>
 
@@ -26,13 +28,25 @@
                 {
                     <tr>
                         <td>
-                            @cita.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                            @cita.FechaHora.ToString("dd/MM/yyyy HH:mm")
                         </td>
 
                         <td>
-                            @(string.IsNullOrEmpty(cita.ObservacionesEspecialista)
-                                ? "Sin registro clínico"
-                                : cita.ObservacionesEspecialista)
+                            @cita.Estado
+                        </td>
+
+                        <td>
+                            @(
+                                cita.Expediente != null && !string.IsNullOrWhiteSpace(cita.Expediente.MotivoConsulta)
+                                    ? cita.Expediente.MotivoConsulta
+                                    : (string.IsNullOrWhiteSpace(cita.MotivoConsulta) ? "—" : cita.MotivoConsulta)
+                             )
+                        </td>
+
+                        <td class="text-end">
+                            <a asp-action="DetalleHistorial" asp-route-id="@cita.Id" class="btn btn-sm btn-outline-primary">
+                                Ver detalle
+                            </a>
                         </td>
                     </tr>
                 }

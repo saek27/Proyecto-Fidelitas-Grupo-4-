@@ -26,6 +26,19 @@
                         <form asp-action="Login" method="post">
                             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+                            @if (ViewBag.AttemptsLeft != null)
+                            {
+                                <div class="alert alert-warning py-2 small">
+                                    Tiene <strong>@ViewBag.AttemptsLeft</strong> intento(s) restante(s) antes del bloqueo.
+                                </div>
+                            }
+                            @if (ViewBag.LockoutSeconds != null)
+                            {
+                                <div class="alert alert-danger py-2 small">
+                                    Usuario bloqueado. Espere <strong id="lockoutTimer"></strong>.
+                                </div>
+                            }
+
                             <div class="mb-3">
                                 <label asp-for="Email" class="form-label">Correo</label>
                                 <input asp-for="Email" class="form-control" placeholder=" " />
@@ -46,7 +59,9 @@
                             </div>
 
                             <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-brand text-white btn-lg">Entrar</button>
+                                <button type="submit" class="btn btn-brand text-white btn-lg" @(ViewBag.LockoutSeconds != null || ViewBag.IsLockedPermanent == true ? "disabled" : "")>
+                                    Entrar
+                                </button>
                             </div>
 
                             <div class="text-center">
@@ -62,5 +77,35 @@
             </div>
         </div>
     </div>
+
+    @if (ViewBag.LockoutSeconds != null)
+    {
+        <script>
+            (function () {
+                var seconds = parseInt("@ViewBag.LockoutSeconds", 10);
+                if (isNaN(seconds) || seconds <= 0) return;
+
+                function fmt(s) {
+                    var m = Math.floor(s / 60);
+                    var r = s % 60;
+                    return m + ":" + (r < 10 ? "0" + r : r);
+                }
+
+                var el = document.getElementById("lockoutTimer");
+                if (!el) return;
+                el.textContent = fmt(seconds);
+
+                var t = setInterval(function () {
+                    seconds--;
+                    if (seconds <= 0) {
+                        clearInterval(t);
+                        el.textContent = "0:00";
+                        return;
+                    }
+                    el.textContent = fmt(seconds);
+                }, 1000);
+            })();
+        </script>
+    }
 </body>
 </html>
