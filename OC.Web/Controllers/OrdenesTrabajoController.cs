@@ -8,7 +8,7 @@ using OC.Web.ViewModels;
 
 namespace OC.Web.Controllers
 {
-    [Authorize(Roles = "Admin,Recepcion")]
+    [Authorize(Roles = "Admin,Recepcion,Optometrista")]
     public class OrdenesTrabajoController : Controller
     {
         private readonly IGenericRepository<OrdenTrabajo> _ordenesRepo;
