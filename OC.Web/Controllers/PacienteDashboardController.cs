@@ -21,6 +21,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
         private readonly IGenericRepository<EnvioNotificacion> _enviosRepo;
         private readonly IGenericRepository<Venta> _ventasRepo;
+        private readonly IGenericRepository<OrdenTrabajo> _ordenesRepo;
         private readonly INotificationService _notificationService;
         private readonly RecordatorioCitasOptions _recordatorioOptions;
 
@@ -31,6 +32,7 @@ namespace OC.Web.Controllers
             IGenericRepository<Sucursal> sucursalesRepo,
             IGenericRepository<EnvioNotificacion> enviosRepo,
             IGenericRepository<Venta> ventasRepo,
+            IGenericRepository<OrdenTrabajo> ordenesRepo,
             INotificationService notificationService,
             IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
@@ -40,6 +42,7 @@ namespace OC.Web.Controllers
             _sucursalesRepo = sucursalesRepo;
             _enviosRepo = enviosRepo;
             _ventasRepo = ventasRepo;
+            _ordenesRepo = ordenesRepo;
             _notificationService = notificationService;
             _recordatorioOptions = recordatorioOptions.Value;
         }
@@ -144,6 +147,49 @@ namespace OC.Web.Controllers
             );
 
             return View(ventas.Items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EstadoOrden()
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            // Escenario 1: al entrar al módulo, mostrar órdenes del paciente y su estado actualizado.
+            var ordenes = await _ordenesRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 100,
+                filter: o => o.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(o => o.FechaCreacion),
+                includeProperties: "Sucursal"
+            );
+
+            ViewBag.Ordenes = ordenes.Items;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EstadoOrdenDetalle(int id)
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var ordenResult = await _ordenesRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 1,
+                filter: o => o.Id == id && o.PacienteId == pacienteId,
+                includeProperties: "Sucursal"
+            );
+            var orden = ordenResult.Items.FirstOrDefault();
+            if (orden == null)
+            {
+                TempData["Error"] = "La orden no está lista o no existe.";
+                return RedirectToAction(nameof(EstadoOrden));
+            }
+
+            return View("EstadoOrdenDetalle", orden);
         }
 
         // Horarios disponibles (slots 30 min) por sede y fecha
