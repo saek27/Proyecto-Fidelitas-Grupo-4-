@@ -20,6 +20,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Sucursal> _sucursalesRepo;
         private readonly IGenericRepository<EnvioNotificacion> _enviosRepo;
+        private readonly IGenericRepository<Venta> _ventasRepo;
         private readonly INotificationService _notificationService;
         private readonly RecordatorioCitasOptions _recordatorioOptions;
 
@@ -29,6 +30,7 @@ namespace OC.Web.Controllers
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Sucursal> sucursalesRepo,
             IGenericRepository<EnvioNotificacion> enviosRepo,
+            IGenericRepository<Venta> ventasRepo,
             INotificationService notificationService,
             IOptions<RecordatorioCitasOptions> recordatorioOptions)
         {
@@ -37,6 +39,7 @@ namespace OC.Web.Controllers
             _solicitudesRepo = solicitudesRepo;
             _sucursalesRepo = sucursalesRepo;
             _enviosRepo = enviosRepo;
+            _ventasRepo = ventasRepo;
             _notificationService = notificationService;
             _recordatorioOptions = recordatorioOptions.Value;
         }
@@ -124,6 +127,23 @@ namespace OC.Web.Controllers
             );
 
             return View(envios.Items);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MisFacturas()
+        {
+            var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
+            if (!int.TryParse(pacienteIdClaim, out int pacienteId))
+                return RedirectToAction("Login", "PacienteAccount");
+
+            var ventas = await _ventasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 200,
+                filter: v => v.PacienteId == pacienteId,
+                orderBy: q => q.OrderByDescending(v => v.FechaVenta)
+            );
+
+            return View(ventas.Items);
         }
 
         // Horarios disponibles (slots 30 min) por sede y fecha

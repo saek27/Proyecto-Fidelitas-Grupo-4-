@@ -78,6 +78,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Mis Citas", Url = "/PacienteDashboard", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Solicitar Cita", Url = "/PacienteDashboard/SolicitarCita", Icon = "bi-calendar-plus" });
                 menuItems.Add(new MenuItem { Title = "Notificaciones", Url = "/PacienteDashboard/Notificaciones", Icon = "bi-bell" });
+                menuItems.Add(new MenuItem { Title = "Mis facturas", Url = "/PacienteDashboard/MisFacturas", Icon = "bi-receipt" });
             }
 
             return View(menuItems);

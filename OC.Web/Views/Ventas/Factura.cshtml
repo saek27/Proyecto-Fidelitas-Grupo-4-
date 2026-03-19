@@ -1,8 +1,9 @@
-﻿@model OC.Web.ViewModels.FacturaViewModel
+@model OC.Web.ViewModels.FacturaViewModel
 @{
     Layout = null; @* Sin sidebar ni navbar — es un documento *@
     var venta = Model.Venta;
     var vc    = Model.ValorClinico;
+    var volverUrl = User.IsInRole("Paciente") ? "/PacienteDashboard/MisFacturas" : "/Ventas";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -280,7 +281,7 @@
 <body>
 
     <div class="acciones">
-        <a href="/Ventas" class="btn-accion btn-volver">← Volver</a>
+        <a href="@volverUrl" class="btn-accion btn-volver">← Volver</a>
         <button onclick="window.print()" class="btn-accion btn-print">🖨 Imprimir / Guardar PDF</button>
     </div>
 
