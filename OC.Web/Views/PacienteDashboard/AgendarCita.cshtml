@@ -2,6 +2,7 @@
     var esSolicitar = ViewBag.EsSolicitarCita == true;
     ViewData["Title"] = esSolicitar ? "Solicitar Nueva Cita" : "Reservar mi cita";
     var sucursalesList = ViewBag.SucursalesList as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var serviciosList = ViewBag.ServiciosList as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 }
 
 <div class="card-dashboard">
@@ -17,7 +18,9 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label for="sucursalId">Sede</label>
-                <select name="sucursalId" id="sucursalId" class="form-select" required>
+                <select name="sucursalId" id="sucursalId" class="form-select" required
+                        oninvalid="this.setCustomValidity('Seleccione una sede.')"
+                        oninput="this.setCustomValidity('')">
                     <option value="">Seleccione una sede</option>
                     @foreach (var s in sucursalesList)
                     {
@@ -27,21 +30,38 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label for="fecha">Fecha</label>
-                <input type="date" name="fecha" id="fecha" class="form-control" required />
+                <input type="date" name="fecha" id="fecha" class="form-control" required
+                       oninvalid="this.setCustomValidity('Seleccione una fecha.')"
+                       oninput="this.setCustomValidity('')" />
             </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="servicio">Servicio</label>
+            <select name="servicio" id="servicio" class="form-select" required
+                    oninvalid="this.setCustomValidity('Seleccione un servicio.')"
+                    oninput="this.setCustomValidity('')">
+                <option value="">Seleccione un servicio</option>
+                @foreach (var s in serviciosList)
+                {
+                    <option value="@s.Value">@s.Text</option>
+                }
+            </select>
         </div>
 
         <div class="mb-3" id="bloqueHorario" style="display: none;">
             <label class="d-block mb-2">Horario</label>
             <p class="text-muted small mb-2">Elija un horario disponible para el día seleccionado:</p>
-            <input type="hidden" name="hora" id="hora" required />
+            <input type="hidden" name="hora" id="hora" required
+                   oninvalid="this.setCustomValidity('Seleccione un horario disponible.')"
+                   oninput="this.setCustomValidity('')" />
             <div id="slotsContainer" class="d-flex flex-wrap gap-2"></div>
             <div id="slotsCargando" class="text-muted small" style="display: none;">Cargando horarios...</div>
             <div id="slotsVacios" class="text-muted small" style="display: none;">No hay horarios disponibles para esta fecha en la sede elegida.</div>
         </div>
 
         <div class="mb-3">
-            <label for="motivo">Motivo (opcional)</label>
+            <label for="motivo">Notas (opcional)</label>
             <input type="text" name="motivo" id="motivo" class="form-control" placeholder="Ej: revisión de lentes" maxlength="500" />
         </div>
 

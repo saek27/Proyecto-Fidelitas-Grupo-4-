@@ -183,6 +183,13 @@ namespace OC.Web.Controllers
         {
             var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
             ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            ViewBag.ServiciosList = new[]
+            {
+                new SelectListItem { Value = "Examen visual", Text = "Examen visual" },
+                new SelectListItem { Value = "Control de lentes", Text = "Control de lentes" },
+                new SelectListItem { Value = "Adaptación de lentes de contacto", Text = "Adaptación de lentes de contacto" },
+                new SelectListItem { Value = "Consulta general", Text = "Consulta general" }
+            };
             ViewBag.EsSolicitarCita = true;
             return View("AgendarCita");
         }
@@ -192,20 +199,38 @@ namespace OC.Web.Controllers
         {
             var sucursales = await _sucursalesRepo.GetPagedAsync(pageIndex: 1, pageSize: 100, filter: s => s.Activo);
             ViewBag.SucursalesList = sucursales.Items.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Nombre }).ToList();
+            ViewBag.ServiciosList = new[]
+            {
+                new SelectListItem { Value = "Examen visual", Text = "Examen visual" },
+                new SelectListItem { Value = "Control de lentes", Text = "Control de lentes" },
+                new SelectListItem { Value = "Adaptación de lentes de contacto", Text = "Adaptación de lentes de contacto" },
+                new SelectListItem { Value = "Consulta general", Text = "Consulta general" }
+            };
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AgendarCita(int sucursalId, string fecha, string hora, string? motivo)
+        public async Task<IActionResult> AgendarCita(int sucursalId, string fecha, string hora, string servicio, string? motivo)
         {
             var pacienteIdClaim = User.FindFirst("PacienteId")?.Value;
             if (!int.TryParse(pacienteIdClaim, out int pacienteId))
                 return RedirectToAction("Login", "PacienteAccount");
 
-            if (!DateTime.TryParse(fecha, out var date) || string.IsNullOrWhiteSpace(hora))
+            var faltantes = new List<string>();
+            if (sucursalId <= 0) faltantes.Add("sede");
+            if (string.IsNullOrWhiteSpace(fecha)) faltantes.Add("fecha");
+            if (string.IsNullOrWhiteSpace(hora)) faltantes.Add("horario");
+            if (string.IsNullOrWhiteSpace(servicio)) faltantes.Add("servicio");
+            if (faltantes.Any())
             {
-                TempData["Error"] = "Seleccione fecha y hora.";
+                TempData["Error"] = $"Complete los campos requeridos: {string.Join(", ", faltantes)}.";
+                return RedirectToAction(nameof(AgendarCita));
+            }
+
+            if (!DateTime.TryParse(fecha, out var date))
+            {
+                TempData["Error"] = "La fecha ingresada no es válida.";
                 return RedirectToAction(nameof(AgendarCita));
             }
 
@@ -230,7 +255,7 @@ namespace OC.Web.Controllers
             );
             if (ocupado.Items.Any())
             {
-                TempData["Error"] = "Ese horario ya no está disponible. Elija otro slot.";
+                TempData["Error"] = "El horario seleccionado ya no está disponible.";
                 return RedirectToAction(nameof(AgendarCita));
             }
 
@@ -249,7 +274,7 @@ namespace OC.Web.Controllers
                 SolicitudCitaId = solicitud.Id,
                 SucursalId = sucursalId,
                 FechaHora = fechaHora,
-                MotivoConsulta = motivo,
+                MotivoConsulta = string.IsNullOrWhiteSpace(motivo) ? servicio : $"{servicio}. {motivo}",
                 Estado = EstadoCita.Confirmada,
                 FechaCreacion = DateTime.Now
             };
@@ -264,7 +289,7 @@ namespace OC.Web.Controllers
                     await _notificationService.EnviarRecordatorioInmediatoAsync(citaConIncludes);
             }
 
-            TempData["Success"] = "Cita agendada correctamente. El slot quedó reservado a su nombre.";
+            TempData["Success"] = $"Cita agendada correctamente para el {fechaHora:dd/MM/yyyy HH:mm}.";
             return RedirectToAction(nameof(Index));
         }
 
