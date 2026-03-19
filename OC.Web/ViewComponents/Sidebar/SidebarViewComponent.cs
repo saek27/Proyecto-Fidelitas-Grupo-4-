@@ -44,6 +44,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
+                menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
 
                 // Mesa de Ayuda para Optometrista
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });

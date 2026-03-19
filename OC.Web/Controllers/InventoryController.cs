@@ -17,6 +17,7 @@ namespace OC.Web.Controllers
         }
 
         // Lista solo productos activos (catálogo disponible)
+        /*
         public async Task<IActionResult> Index(int page = 1)
         {
             var result = await _productoRepo.GetPagedAsync(
@@ -27,7 +28,29 @@ namespace OC.Web.Controllers
             );
             return View(result);
         }
+        */
 
+
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
+        {
+            var result = await _productoRepo.GetPagedAsync(
+                page,
+                pageSize,
+                p => p.Activo,
+                q => q.OrderBy(p => p.Nombre)
+            );
+
+            // 🔻 Productos con bajo stock
+            var lowStock = await _productoRepo.GetAllAsync(
+                p => p.Activo && p.Stock < 6
+            );
+
+            ViewBag.PageSize = pageSize;
+
+            ViewBag.LowStock = lowStock;
+
+            return View(result);
+        }
         public IActionResult Create()
         {
             return View(new Producto());

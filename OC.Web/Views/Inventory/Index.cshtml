@@ -12,6 +12,17 @@
 
 <a asp-action="Create" class="btn btn-primary mb-3">Nuevo producto</a>
 
+<form method="get">
+    <label>Mostrar:</label>
+    <select name="pageSize" onchange="this.form.submit()">
+        <option value="5" selected="@(ViewBag.PageSize == 5)">5</option>
+        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+        <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+    </select>
+</form>
+
 <table class="table table-striped">
     <thead>
         <tr>
@@ -42,3 +53,27 @@
         }
     </tbody>
 </table>
+
+@if (((IEnumerable<OC.Core.Domain.Entities.Producto>)ViewBag.LowStock).Any())
+{
+    <h3 class="mt-4 text-danger">⚠ Productos con bajo stock</h3>
+
+    <table class="table table-danger">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in (IEnumerable<OC.Core.Domain.Entities.Producto>)ViewBag.LowStock)
+            {
+                <tr>
+                    <td>@item.Nombre</td>
+                    <td>@item.Stock</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+

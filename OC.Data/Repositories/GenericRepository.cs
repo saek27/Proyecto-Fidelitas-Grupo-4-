@@ -90,5 +90,19 @@ namespace OC.Data.Repositories
 
             return new PagedResult<T>(items, totalCount, pageIndex, pageSize);
         }
+
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null)
+        {
+            IQueryable<T> query = _dbSet;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }
