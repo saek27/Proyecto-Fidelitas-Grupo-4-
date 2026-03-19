@@ -46,7 +46,7 @@
             <input type="password" name="contrasena" id="contrasena" class="form-control" required />
         </div>
 
-        <button type="submit" class="btn btn-brand">
+        <button type="submit" class="btn btn-brand" @(ViewBag.LockoutSeconds != null || ViewBag.IsLockedPermanent == true ? "disabled" : "")>
             <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
         </button>
         <a asp-controller="Pacientes" asp-action="Registro" class="btn btn-outline-primary">

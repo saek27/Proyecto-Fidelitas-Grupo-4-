@@ -1,4 +1,4 @@
-﻿@using OC.Core.Common
+@using OC.Core.Common
 @using OC.Core.Domain.Entities
 @model PagedResult<Usuario>
 
@@ -40,14 +40,18 @@
                         <td><span class="badge bg-info text-dark">@item.Rol.Nombre</span></td>
                         <td>@item.Sucursal.Nombre</td>
                         <td>
-                            @if (item.Activo)
-                            {
-                                <span class="badge bg-success">Activo</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger">Inactivo</span>
-                            }
+                            <div class="form-check form-switch m-0">
+                                <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                           id="u_@item.Id"
+                                           checked="@(item.Activo)"
+                                           onchange="this.form.submit()">
+                                    <label class="form-check-label small" for="u_@item.Id">
+                                        @(item.Activo ? "Desbloqueado" : "Bloqueado")
+                                    </label>
+                                </form>
+                            </div>
                         </td>
                         <td>
                             <!-- Editar... -->
@@ -55,23 +59,6 @@
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-
-                                <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" style="display:inline;"
-                                      onsubmit="return confirm('¿Estás seguro de cambiar el estado de este usuario?');">
-
-                                    @if (item.Activo)
-                                    {
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
-                                            <i class="bi bi-person-x"></i>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
-                                            <i class="bi bi-person-check"></i>
-                                        </button>
-                                    }
-                                </form>
                             </div>
                         </td>
                     </tr>

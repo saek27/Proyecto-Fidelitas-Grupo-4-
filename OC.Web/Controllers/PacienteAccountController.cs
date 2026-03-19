@@ -49,7 +49,7 @@ namespace OC.Web.Controllers
             if (paciente?.BloqueadoPermanentemente == true)
             {
                 ViewBag.IsLockedPermanent = true;
-                ModelState.AddModelError("", "Cuenta bloqueada. Contacte al administrador para desbloquearla.");
+                ModelState.AddModelError("", "Cuenta bloqueada. Contacte al administrador para desbloquearla y asignar una nueva contraseña. Si necesita ayuda, llame al 2222-3333.");
                 return View();
             }
 

@@ -185,6 +185,8 @@ namespace OC.Web.Controllers
             var entity = await _pacientesRepo.GetByIdAsync(id);
             if (entity == null) return NotFound();
 
+            ViewBag.Bloqueado = entity.BloqueadoPermanentemente || (entity.BloqueadoHastaUtc.HasValue && entity.BloqueadoHastaUtc.Value > DateTime.UtcNow);
+
             return View(new PacienteViewModel
             {
                 Id = entity.Id,
@@ -270,6 +272,33 @@ namespace OC.Web.Controllers
             await _pacientesRepo.UpdateAsync(entity);
 
             TempData["Success"] = "Paciente desbloqueado correctamente.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleBloqueo(int id)
+        {
+            var entity = await _pacientesRepo.GetByIdAsync(id);
+            if (entity == null) return NotFound();
+
+            // Toggle: apagado = desbloqueado, encendido = bloqueado
+            var ahoraBloqueado = !(entity.BloqueadoPermanentemente || (entity.BloqueadoHastaUtc.HasValue && entity.BloqueadoHastaUtc.Value > DateTime.UtcNow));
+            if (ahoraBloqueado)
+            {
+                entity.BloqueadoPermanentemente = true;
+                entity.BloqueadoHastaUtc = null;
+            }
+            else
+            {
+                entity.IntentosFallidosLogin = 0;
+                entity.BloqueadoHastaUtc = null;
+                entity.BloqueadoPermanentemente = false;
+            }
+
+            await _pacientesRepo.UpdateAsync(entity);
+            TempData["Success"] = ahoraBloqueado ? "Paciente bloqueado." : "Paciente desbloqueado.";
             return RedirectToAction(nameof(Edit), new { id });
         }
     }
