@@ -209,9 +209,34 @@ namespace OC.Web.Controllers
                 1, 200,
                 filter: c => c.PacienteId == paciente.Id && c.Estado == EstadoCita.Atendida,
                 orderBy: q => q.OrderByDescending(c => c.FechaHora),
-                includeProperties: "Paciente"
+                includeProperties: "Paciente,UsuarioAsignado,Expediente"
             );
             return View(citas.Items);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> DetalleHistorial(int id)
+        {
+            var userCedula = User.FindFirst("Cedula")?.Value;
+            var paciente = (await _pacientesRepo.GetPagedAsync(
+                1, 1,
+                filter: p => p.Cedula == userCedula
+            )).Items.FirstOrDefault();
+
+            if (paciente == null)
+                return RedirectToAction("Index", "Home");
+
+            var citaResult = await _citasRepo.GetPagedAsync(
+                pageIndex: 1,
+                pageSize: 1,
+                filter: c => c.Id == id && c.PacienteId == paciente.Id,
+                includeProperties: "Sucursal,UsuarioAsignado,Expediente,Expediente.ValoresClinicos,Expediente.Documentos"
+            );
+            var cita = citaResult.Items.FirstOrDefault();
+            if (cita == null) return NotFound();
+
+            return View("DetalleHistorial", cita);
         }
 
         // NUEVA ACCIÓN: Historial de expedientes (misma URL, pero ahora devuelve expedientes)
