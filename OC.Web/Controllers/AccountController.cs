@@ -127,31 +127,31 @@ namespace OC.Web.Controllers
                     return View(model);
                 }
 
-                // Login exitoso como Paciente: resetear contadores/bloqueos
+                // Login exitoso como Paciente: resetear contadores/bloqueos (si aplica)
                 if (paciente!.IntentosFallidosLogin != 0 || paciente.BloqueadoHastaUtc.HasValue || paciente.BloqueadoPermanentemente)
                 {
                     paciente.IntentosFallidosLogin = 0;
                     paciente.BloqueadoHastaUtc = null;
                     paciente.BloqueadoPermanentemente = false;
                     await _pacientesRepo.UpdateAsync(paciente);
-
-                    // Login exitoso como Paciente
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, paciente.NombreCompleto),
-                        new Claim(ClaimTypes.Email, paciente.Email ?? ""),
-                        new Claim(ClaimTypes.Role, "Paciente"),
-                        new Claim("PacienteId", paciente.Id.ToString()),
-                        new Claim("Cedula", paciente.Cedula)
-                    };
-
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(claimsIdentity),
-                        new AuthenticationProperties { IsPersistent = model.RememberMe });
-
-                    return RedirectToAction("Index", "PacienteDashboard");
                 }
+
+                // Login exitoso como Paciente
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, paciente.NombreCompleto),
+                    new Claim(ClaimTypes.Email, paciente.Email ?? ""),
+                    new Claim(ClaimTypes.Role, "Paciente"),
+                    new Claim("PacienteId", paciente.Id.ToString()),
+                    new Claim("Cedula", paciente.Cedula)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    new AuthenticationProperties { IsPersistent = model.RememberMe });
+
+                return RedirectToAction("Index", "PacienteDashboard");
             }
             catch
             {
