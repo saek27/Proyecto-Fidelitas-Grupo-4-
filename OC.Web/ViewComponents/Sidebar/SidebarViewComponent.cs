@@ -29,6 +29,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Nuevo Pedido", Url = "/Pedidos/Create", Icon = "bi-plus-circle" });
                 menuItems.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi bi-receipt" });
                 menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                menuItems.Add(new MenuItem { Title = "Planillas", Url = "/Planillas", Icon = "bi-calculator" });
 
                 // Opciones de Mesa de Ayuda (se agruparán en el menú desplegable)
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
@@ -45,6 +46,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
                 menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
 
                 // Mesa de Ayuda para Optometrista
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
@@ -58,6 +60,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
                 menuItems.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi bi-receipt" });
                 menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
                 // Mesa de Ayuda para Recepcion
                 menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
                 menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
@@ -71,6 +74,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
                 menuItems.Add(new MenuItem { Title = "Panel Técnico", Url = "/Tickets/PanelTecnico", Icon = "bi-tools", IsHelpDeskItem = true });
                 menuItems.Add(new MenuItem { Title = "Equipos TI", Url = "/Equipos", Icon = "bi-pc-display", IsHelpDeskItem = true });
+                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
             }
 
             // Paciente

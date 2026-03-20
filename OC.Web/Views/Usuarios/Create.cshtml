@@ -23,6 +23,12 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label asp-for="Cedula" class="form-label fw-bold">Cédula</label>
+                        <input asp-for="Cedula" class="form-control" placeholder="Ej: 123456789" />
+                        <span asp-validation-for="Cedula" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
                         <label asp-for="Email" class="form-label fw-bold">Correo Electrónico</label>
                         <input asp-for="Email" class="form-control" placeholder="nombre@optica.com" />
                         <span asp-validation-for="Email" class="text-danger"></span>
@@ -49,6 +55,27 @@
                         </select>
                         <span asp-validation-for="SucursalId" class="text-danger"></span>
                     </div>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="col-md-6">
+                            <label asp-for="SalarioBase" class="form-label fw-bold">Salario Base (₡)</label>
+                            <input asp-for="SalarioBase" class="form-control" placeholder="Ej: 1500000" />
+                            <span asp-validation-for="SalarioBase" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="FechaContratacion" class="form-label fw-bold">Fecha de Contratación</label>
+                            <input asp-for="FechaContratacion" type="date" class="form-control" />
+                            <span asp-validation-for="FechaContratacion" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="NumeroCuentaIBAN" class="form-label fw-bold">Número de Cuenta IBAN</label>
+                            <input asp-for="NumeroCuentaIBAN" class="form-control" placeholder="Ej: CR12345678901234567890" />
+                            <span asp-validation-for="NumeroCuentaIBAN" class="text-danger"></span>
+                        </div>
+                    }
                 </div>
 
                 <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">

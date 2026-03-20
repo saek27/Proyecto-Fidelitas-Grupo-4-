@@ -193,10 +193,13 @@ END
                 {
                     Nombre = "Administrador",
                     Correo = "admin@optica.com",
+                    Cedula = "123456789",
                     Contrasena = BCrypt.Net.BCrypt.HashPassword("123456"),
                     Activo = true,
                     RolId = rolAdmin.Id,
-                    SucursalId = sucursal.Id
+                    SucursalId = sucursal.Id,
+                    SalarioBase = 350000,
+                    FechaContratacion = DateTime.Now.AddYears(-3)
                 });
                 context.SaveChanges();
             }

@@ -1,0 +1,305 @@
+﻿@model OC.Web.ViewModels.PlanillaCreateViewModel
+
+<div class="card-dashboard">
+    <h4>Editar Planilla</h4>
+
+    <form asp-action="Edit" method="post" id="planillaForm">
+        <input type="hidden" asp-for="Id" />
+
+        <!-- ... mismo contenido que Create.cshtml ... -->
+
+        <div class="mb-3">
+            <label for="empleadoSearch" class="form-label">Empleado</label>
+            <select id="empleadoSearch" class="form-select" style="width:100%"></select>
+            <input type="hidden" asp-for="UsuarioId" id="UsuarioId" />
+            <span asp-validation-for="UsuarioId" class="text-danger"></span>
+        </div>
+
+        <!-- Datos del empleado (autocompletados) -->
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label asp-for="Cedula" class="form-label"></label>
+                <input asp-for="Cedula" class="form-control" readonly />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="NombreEmpleado" class="form-label"></label>
+                <input asp-for="NombreEmpleado" class="form-control" readonly />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="SalarioBase" class="form-label"></label>
+                <input asp-for="SalarioBase" class="form-control" readonly />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label asp-for="Mes" class="form-label"></label>
+                <select asp-for="Mes" class="form-select">
+                    <option value="Enero">Enero</option>
+                    <option value="Febrero">Febrero</option>
+                    <option value="Marzo">Marzo</option>
+                    <option value="Abril">Abril</option>
+                    <option value="Mayo">Mayo</option>
+                    <option value="Junio">Junio</option>
+                    <option value="Julio">Julio</option>
+                    <option value="Agosto">Agosto</option>
+                    <option value="Septiembre">Septiembre</option>
+                    <option value="Octubre">Octubre</option>
+                    <option value="Noviembre">Noviembre</option>
+                    <option value="Diciembre">Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="Año" class="form-label"></label>
+                <input asp-for="Año" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="NumeroComprobante" class="form-label"></label>
+                <input asp-for="NumeroComprobante" class="form-control" readonly placeholder="Se genera automáticamente" />
+            </div>
+        </div>
+
+        <h5 class="mt-3">Horas Trabajadas</h5>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasBase" class="form-label"></label>
+                <input asp-for="HorasBase" class="form-control horas" />
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasVacaciones" class="form-label"></label>
+                <input asp-for="HorasVacaciones" class="form-control horas" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasIncapacidadParcial" class="form-label"></label>
+                <input asp-for="HorasIncapacidadParcial" class="form-control horas" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasIncapacidadTotal" class="form-label"></label>
+                <input asp-for="HorasIncapacidadTotal" class="form-control horas" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasPermiso" class="form-label"></label>
+                <input asp-for="HorasPermiso" class="form-control horas" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasExtras" class="form-label"></label>
+                <input asp-for="HorasExtras" class="form-control horas" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label asp-for="HorasDobles" class="form-label"></label>
+                <input asp-for="HorasDobles" class="form-control horas" />
+            </div>
+        </div>
+
+        <h5 class="mt-3">Otros Conceptos</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label asp-for="Comisiones" class="form-label"></label>
+                <input asp-for="Comisiones" class="form-control montos" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="Prestamos" class="form-label"></label>
+                <input asp-for="Prestamos" class="form-control montos" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="EmbargosPensiones" class="form-label"></label>
+                <input asp-for="EmbargosPensiones" class="form-control montos" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="CuentasPorCobrar" class="form-label"></label>
+                <input asp-for="CuentasPorCobrar" class="form-control montos" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="PorcentajeCCSS" class="form-label">% CCSS</label>
+                <input asp-for="PorcentajeCCSS" class="form-control porcentajes" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="PorcentajeSolidarista" class="form-label">% Solidarista</label>
+                <input asp-for="PorcentajeSolidarista" class="form-control porcentajes" />
+            </div>
+        </div>
+
+        <!-- Campo oculto para adelanto (se calcula automáticamente) -->
+        <input type="hidden" asp-for="AdelantoQuincena" id="AdelantoQuincena" />
+
+        <!-- Campos ocultos para valores calculados -->
+        <input type="hidden" asp-for="SalarioOrdinario" id="SalarioOrdinario" />
+        <input type="hidden" asp-for="ValorHorasExtras" id="ValorHorasExtras" />
+        <input type="hidden" asp-for="ValorHorasDobles" id="ValorHorasDobles" />
+        <input type="hidden" asp-for="ValorVacaciones" id="ValorVacaciones" />
+        <input type="hidden" asp-for="ValorIncapacidadParcial" id="ValorIncapacidadParcial" />
+        <input type="hidden" asp-for="ValorIncapacidadTotal" id="ValorIncapacidadTotal" />
+        <input type="hidden" asp-for="MontoCCSS" id="MontoCCSS" />
+        <input type="hidden" asp-for="MontoImpuestoRenta" id="MontoImpuestoRenta" />
+        <input type="hidden" asp-for="MontoSolidarista" id="MontoSolidarista" />
+        <input type="hidden" asp-for="TotalIngresos" id="TotalIngresos" />
+        <input type="hidden" asp-for="TotalDeducciones" id="TotalDeducciones" />
+        <input type="hidden" asp-for="SalarioNeto" id="SalarioNeto" />
+
+        <!-- Tabla de resultados -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Ingresos</h5>
+                <table class="table table-sm table-bordered">
+                    <tr><td>Salario Ordinario</td><td class="text-end" id="displaySalarioOrdinario">₡0.00</td></tr>
+                    <tr><td>Horas Extras Comunes</td><td class="text-end" id="displayValorHorasExtras">₡0.00</td></tr>
+                    <tr><td>Horas Extras Dobles</td><td class="text-end" id="displayValorHorasDobles">₡0.00</td></tr>
+                    <tr><td>Vacaciones</td><td class="text-end" id="displayValorVacaciones">₡0.00</td></tr>
+                    <tr><td>Incapacidad Parcial</td><td class="text-end" id="displayValorIncapacidadParcial">₡0.00</td></tr>
+                    <tr><td>Incapacidad Total</td><td class="text-end" id="displayValorIncapacidadTotal">₡0.00</td></tr>
+                    <tr><td>Comisiones</td><td class="text-end" id="displayComisiones">₡0.00</td></tr>
+                    <tr class="table-primary"><th>Total Ingresos</th><th class="text-end" id="displayTotalIngresos">₡0.00</th></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5>Deducciones</h5>
+                <table class="table table-sm table-bordered">
+                    <tr><td>CCSS</td><td class="text-end" id="displayMontoCCSS">₡0.00</td></tr>
+                    <tr><td>Préstamos</td><td class="text-end" id="displayPrestamos">₡0.00</td></tr>
+                    <tr><td>Embargos y Pensiones</td><td class="text-end" id="displayEmbargos">₡0.00</td></tr>
+                    <tr><td>Impuesto sobre la Renta</td><td class="text-end" id="displayImpuestoRenta">₡0.00</td></tr>
+                    <tr><td>Cuentas por Cobrar</td><td class="text-end" id="displayCuentas">₡0.00</td></tr>
+                    <tr><td>Asociación Solidarista</td><td class="text-end" id="displaySolidarista">₡0.00</td></tr>
+                    <tr><td>Adelanto de Quincena</td><td class="text-end" id="displayAdelantoQuincena">₡0.00</td></tr>
+                    <tr class="table-danger"><th>Total Deducciones</th><th class="text-end" id="displayTotalDeducciones">₡0.00</th></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h4 class="text-end">Salario Neto: <span id="displaySalarioNeto">₡0.00</span></h4>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar y Generar Comprobante</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+            // Select2 para búsqueda de empleados
+            $('#empleadoSearch').select2({
+                ajax: {
+                    url: '@Url.Action("BuscarEmpleados", "Planillas")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { term: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data };
+                    }
+                },
+                placeholder: 'Buscar empleado por nombre o cédula',
+                minimumInputLength: 2
+            }).on('select2:select', function (e) {
+                var data = e.params.data;
+                $('#UsuarioId').val(data.id);
+                $('#Cedula').val(data.cedula);
+                $('#NombreEmpleado').val(data.nombre);
+                $('#SalarioBase').val(data.salarioBase);
+                recalcular();
+            });
+
+            // Recalcular al cambiar cualquier campo de entrada
+            $('.horas, .montos, .porcentajes').on('input', recalcular);
+
+        function recalcular() {
+            console.log("Recalculando...");
+
+            var salarioBase = parseFloat($('#SalarioBase').val()) || 0;
+            var valorHora = salarioBase / 240;
+
+            var horasBase = parseFloat($('#HorasBase').val()) || 0;
+            var horasExtras = parseFloat($('#HorasExtras').val()) || 0;
+            var horasDobles = parseFloat($('#HorasDobles').val()) || 0;
+            var horasVacaciones = parseFloat($('#HorasVacaciones').val()) || 0;
+            var horasIncParcial = parseFloat($('#HorasIncapacidadParcial').val()) || 0;
+            var horasIncTotal = parseFloat($('#HorasIncapacidadTotal').val()) || 0;
+            var comisiones = parseFloat($('#Comisiones').val()) || 0;
+            var prestamos = parseFloat($('#Prestamos').val()) || 0;
+            var embargos = parseFloat($('#EmbargosPensiones').val()) || 0;
+            var cuentas = parseFloat($('#CuentasPorCobrar').val()) || 0;
+            var porcCCSS = parseFloat($('#PorcentajeCCSS').val()) || 0;
+            var porcSolid = parseFloat($('#PorcentajeSolidarista').val()) || 0;
+
+            // Ingresos (sin adelanto)
+            var salOrdinario = valorHora * horasBase;
+            var valHorasExtras = valorHora * 1.5 * horasExtras;
+            var valHorasDobles = valorHora * 2 * horasDobles;
+            var valVacaciones = valorHora * horasVacaciones;
+            var valIncParcial = valorHora * horasIncParcial;
+            var valIncTotal = valorHora * horasIncTotal;
+
+            var totalIngresos = salOrdinario + valHorasExtras + valHorasDobles + valVacaciones + valIncParcial + valIncTotal + comisiones;
+
+            // Adelanto neto (50% del salario base con CCSS aplicada)
+            var adelantoBruto = salarioBase * 0.5;
+            var adelantoNeto = adelantoBruto * (1 - porcCCSS / 100);
+            $('#AdelantoQuincena').val(adelantoNeto.toFixed(2));
+
+            // Deducciones
+            var montoCCSS = totalIngresos * (porcCCSS / 100);
+            var montoSolid = totalIngresos * (porcSolid / 100);
+            var baseImponible = totalIngresos - montoCCSS;
+            var impuestoRenta = calcularImpuestoRenta(baseImponible);
+
+            var totalDeducciones = montoCCSS + prestamos + embargos + impuestoRenta + cuentas + montoSolid + adelantoNeto;
+
+            var salarioNeto = totalIngresos - totalDeducciones;
+
+            // Actualizar UI - Ingresos
+            $('#displaySalarioOrdinario').text('₡' + salOrdinario.toFixed(2));
+            $('#displayValorHorasExtras').text('₡' + valHorasExtras.toFixed(2));
+            $('#displayValorHorasDobles').text('₡' + valHorasDobles.toFixed(2));
+            $('#displayValorVacaciones').text('₡' + valVacaciones.toFixed(2));
+            $('#displayValorIncapacidadParcial').text('₡' + valIncParcial.toFixed(2));
+            $('#displayValorIncapacidadTotal').text('₡' + valIncTotal.toFixed(2));
+            $('#displayComisiones').text('₡' + comisiones.toFixed(2));
+            $('#displayTotalIngresos').text('₡' + totalIngresos.toFixed(2));
+
+            // Actualizar UI - Deducciones
+            $('#displayMontoCCSS').text('₡' + montoCCSS.toFixed(2));
+            $('#displayPrestamos').text('₡' + prestamos.toFixed(2));
+            $('#displayEmbargos').text('₡' + embargos.toFixed(2));
+            $('#displayImpuestoRenta').text('₡' + impuestoRenta.toFixed(2));
+            $('#displayCuentas').text('₡' + cuentas.toFixed(2));
+            $('#displaySolidarista').text('₡' + montoSolid.toFixed(2));
+            $('#displayAdelantoQuincena').text('₡' + adelantoNeto.toFixed(2));
+            $('#displayTotalDeducciones').text('₡' + totalDeducciones.toFixed(2));
+
+            $('#displaySalarioNeto').text('₡' + salarioNeto.toFixed(2));
+
+            // Asignar a los hidden del modelo
+            $('#SalarioOrdinario').val(salOrdinario);
+            $('#ValorHorasExtras').val(valHorasExtras);
+            $('#ValorHorasDobles').val(valHorasDobles);
+            $('#ValorVacaciones').val(valVacaciones);
+            $('#ValorIncapacidadParcial').val(valIncParcial);
+            $('#ValorIncapacidadTotal').val(valIncTotal);
+            $('#MontoCCSS').val(montoCCSS);
+            $('#MontoImpuestoRenta').val(impuestoRenta);
+            $('#MontoSolidarista').val(montoSolid);
+            $('#TotalIngresos').val(totalIngresos);
+            $('#TotalDeducciones').val(totalDeducciones);
+            $('#SalarioNeto').val(salarioNeto);
+        }
+
+
+            function calcularImpuestoRenta(base) {
+                if (base <= 918000) return 0;
+                if (base <= 1347000) return (base - 918000) * 0.10;
+                if (base <= 2364000) return (1347000 - 918000) * 0.10 + (base - 1347000) * 0.15;
+                if (base <= 4727000) return (1347000 - 918000) * 0.10 + (2364000 - 1347000) * 0.15 + (base - 2364000) * 0.20;
+                return (1347000 - 918000) * 0.10 + (2364000 - 1347000) * 0.15 + (4727000 - 2364000) * 0.20 + (base - 4727000) * 0.25;
+            }
+        });
+    </script>
+}
