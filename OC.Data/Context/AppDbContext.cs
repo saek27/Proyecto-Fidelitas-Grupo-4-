@@ -47,7 +47,8 @@ namespace OC.Data.Context
         public DbSet<Venta> Ventas { get; set; }
         public DbSet<DetalleVenta> DetalleVentas { get; set; }
 
-
+        //RH
+        public DbSet<Planilla> Planillas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -164,6 +165,37 @@ namespace OC.Data.Context
                       .HasForeignKey(d => d.ProductoId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .IsRequired(false);
+            });
+
+            //RH
+
+            modelBuilder.Entity<Usuario>(entity =>
+            {
+                entity.Property(e => e.SalarioBase).HasPrecision(18, 2);
+                entity.HasIndex(e => e.Cedula).IsUnique();  // ← Evita duplicados de cédula
+            });
+
+            modelBuilder.Entity<Planilla>(entity =>
+            {
+                entity.Property(e => e.SalarioOrdinario).HasPrecision(18, 2);
+                entity.Property(e => e.ValorHorasExtras).HasPrecision(18, 2);
+                entity.Property(e => e.ValorHorasDobles).HasPrecision(18, 2);
+                entity.Property(e => e.ValorVacaciones).HasPrecision(18, 2);
+                entity.Property(e => e.ValorIncapacidadParcial).HasPrecision(18, 2);
+                entity.Property(e => e.ValorIncapacidadTotal).HasPrecision(18, 2);
+                entity.Property(e => e.TotalIngresos).HasPrecision(18, 2);
+                entity.Property(e => e.MontoCCSS).HasPrecision(18, 2);
+                entity.Property(e => e.MontoImpuestoRenta).HasPrecision(18, 2);
+                entity.Property(e => e.MontoSolidarista).HasPrecision(18, 2);
+                entity.Property(e => e.TotalDeducciones).HasPrecision(18, 2);
+                entity.Property(e => e.SalarioNeto).HasPrecision(18, 2);
+                entity.Property(e => e.Comisiones).HasPrecision(18, 2);
+                entity.Property(e => e.Prestamos).HasPrecision(18, 2);
+                entity.Property(e => e.EmbargosPensiones).HasPrecision(18, 2);
+                entity.Property(e => e.CuentasPorCobrar).HasPrecision(18, 2);
+                entity.Property(e => e.AdelantoQuincena).HasPrecision(18, 2);
+                entity.Property(e => e.PorcentajeCCSS).HasPrecision(5, 2);
+                entity.Property(e => e.PorcentajeSolidarista).HasPrecision(5, 2);
             });
 
 

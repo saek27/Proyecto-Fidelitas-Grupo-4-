@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OC.Data.Context;
 
@@ -11,9 +12,11 @@ using OC.Data.Context;
 namespace OC.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260319211454_AddCedulaToUsuario")]
+    partial class AddCedulaToUsuario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -562,139 +565,6 @@ namespace OC.Data.Migrations
                     b.HasIndex("ProveedorId");
 
                     b.ToTable("Pedidos");
-                });
-
-            modelBuilder.Entity("OC.Core.Domain.Entities.Planilla", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AdelantoQuincena")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Año")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Comisiones")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("CuentasPorCobrar")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("EmbargosPensiones")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("FechaCalculo")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("HorasBase")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasDobles")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasExtras")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasIncapacidadParcial")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasIncapacidadTotal")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasPermiso")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HorasVacaciones")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Mes")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal>("MontoCCSS")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MontoImpuestoRenta")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MontoSolidarista")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("NumeroComprobante")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<decimal>("PorcentajeCCSS")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<decimal>("PorcentajeSolidarista")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<decimal>("Prestamos")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SalarioNeto")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SalarioOrdinario")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalDeducciones")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("TotalHoras")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotalIngresos")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ValorHorasDobles")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ValorHorasExtras")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ValorIncapacidadParcial")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ValorIncapacidadTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ValorVacaciones")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Planillas");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Producto", b =>
@@ -1268,17 +1138,6 @@ namespace OC.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Proveedor");
-                });
-
-            modelBuilder.Entity("OC.Core.Domain.Entities.Planilla", b =>
-                {
-                    b.HasOne("OC.Core.Domain.Entities.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.SolicitudCita", b =>

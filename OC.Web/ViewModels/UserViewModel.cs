@@ -29,6 +29,25 @@ namespace OC.Web.ViewModels
         [Required(ErrorMessage = "Debe seleccionar una Sucursal")]
         public int SucursalId { get; set; }
 
+        // ===== NUEVOS CAMPOS =====
+        [Required(ErrorMessage = "La cédula es obligatoria")]
+        [MaxLength(20)]
+        [Display(Name = "Cédula")]
+        public string Cedula { get; set; } = string.Empty;
+
+        [Display(Name = "Salario Base (₡)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El salario debe ser mayor o igual a 0")]
+        public decimal? SalarioBase { get; set; }
+
+        [Display(Name = "Fecha de Contratación")]
+        [DataType(DataType.Date)]
+        public DateTime? FechaContratacion { get; set; }
+
+        [Display(Name = "Número de Cuenta IBAN")]
+        [MaxLength(50)]
+        public string? NumeroCuentaIBAN { get; set; }
+        // =========================
+
         // Listas para los Dropdowns (<select>)
         public IEnumerable<SelectListItem>? RolesList { get; set; }
         public IEnumerable<SelectListItem>? SucursalesList { get; set; }

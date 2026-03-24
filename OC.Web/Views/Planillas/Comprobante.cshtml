@@ -1,0 +1,211 @@
+﻿@model OC.Core.Domain.Entities.Planilla
+@{
+    Layout = null;
+    // Si el modelo o el usuario son nulos, mostramos un mensaje claro
+    if (Model == null)
+    {
+        <h1 style="color: red;">Error: No se encontró la planilla.</h1>
+        <p>La planilla no existe o no se pudo cargar.</p>
+        <a href="/Planillas/Index">Volver al listado</a>
+        return;
+    }
+    if (Model.Usuario == null)
+    {
+        <h1 style="color: red;">Error: La planilla no tiene información del empleado.</h1>
+        <p>Es posible que el empleado haya sido eliminado o no se haya cargado correctamente. Asegúrate de que en el controlador se use <code>includeProperties: "Usuario"</code>.</p>
+        <a href="/Planillas/Index">Volver al listado</a>
+        return;
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Comprobante de Salario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .header h1 {
+                margin: 0;
+                font-size: 24px;
+            }
+
+            .header h2 {
+                margin: 0;
+                font-size: 20px;
+                color: #555;
+            }
+
+        .concepto {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .datos-empleado {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+            .datos-empleado p {
+                margin: 5px 0;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .resumen {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .resumen-item {
+            width: 48%;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+
+        .total-final {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .print-btn {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @@media print {
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-btn">
+        <button onclick="window.print()">Imprimir Comprobante</button>
+    </div>
+
+    <div class="header">
+        <h1>Óptica Comunal</h1>
+        <h2>Comprobante de Salario Acreditado</h2>
+    </div>
+
+    <div class="concepto">
+        Concepto: Planilla Mes @Model.Mes, @Model.Año
+    </div>
+
+    <div class="datos-empleado">
+        <p><strong>Cédula:</strong> @(Model.Usuario.Cedula ?? "No especificada")</p>
+        <p><strong>Nombre del Empleado:</strong> @Model.Usuario.Nombre</p>
+        <p><strong>Salario Mensual Base:</strong> ₡@(Model.Usuario.SalarioBase?.ToString("N2") ?? "0.00")</p>
+        <p><strong>Número de Comprobante:</strong> @(Model.NumeroComprobante ?? "Sin asignar")</p>
+    </div>
+
+    <h4>Horas Registradas</h4>
+    <table>
+        <tr>
+            <th>Horas Base</th>
+            <th>Total Horas</th>
+            <th>Vacaciones</th>
+            <th>Incapacidad Parcial</th>
+            <th>Incapacidad Total</th>
+            <th>Permiso</th>
+            <th>Extras</th>
+            <th>Dobles</th>
+        </tr>
+        <tr>
+            <td>@Model.HorasBase</td>
+            <td>@Model.TotalHoras</td>
+            <td>@Model.HorasVacaciones</td>
+            <td>@Model.HorasIncapacidadParcial</td>
+            <td>@Model.HorasIncapacidadTotal</td>
+            <td>@Model.HorasPermiso</td>
+            <td>@Model.HorasExtras</td>
+            <td>@Model.HorasDobles</td>
+        </tr>
+    </table>
+
+    <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            <table>
+                <tr><th colspan="2">Ingresos</th></tr>
+                <tr><td>Salario Ordinario</td><td class="text-right">₡@Model.SalarioOrdinario.ToString("N2")</td></tr>
+                <tr><td>Horas Extras Comunes</td><td class="text-right">₡@Model.ValorHorasExtras.ToString("N2")</td></tr>
+                <tr><td>Horas Extras Dobles</td><td class="text-right">₡@Model.ValorHorasDobles.ToString("N2")</td></tr>
+                <tr><td>Vacaciones</td><td class="text-right">₡@Model.ValorVacaciones.ToString("N2")</td></tr>
+                <tr><td>Incapacidad Parcial</td><td class="text-right">₡@Model.ValorIncapacidadParcial.ToString("N2")</td></tr>
+                <tr><td>Incapacidad Total</td><td class="text-right">₡@Model.ValorIncapacidadTotal.ToString("N2")</td></tr>
+                <tr><td>Comisiones</td><td class="text-right">₡@Model.Comisiones.ToString("N2")</td></tr>
+                <tr style="font-weight: bold;"><td>Total Ingresos</td><td class="text-right">₡@Model.TotalIngresos.ToString("N2")</td></tr>
+            </table>
+        </div>
+        <div style="flex: 1;">
+            <table>
+                <tr><th colspan="2">Deducciones</th></tr>
+                <tr><td>C.C.S.S</td><td class="text-right">₡@Model.MontoCCSS.ToString("N2")</td></tr>
+                <tr><td>Préstamos</td><td class="text-right">₡@Model.Prestamos.ToString("N2")</td></tr>
+                <tr><td>Embargos y Pensiones</td><td class="text-right">₡@Model.EmbargosPensiones.ToString("N2")</td></tr>
+                <tr><td>Impuesto sobre la Renta</td><td class="text-right">₡@Model.MontoImpuestoRenta.ToString("N2")</td></tr>
+                <tr><td>Cuentas por Cobrar</td><td class="text-right">₡@Model.CuentasPorCobrar.ToString("N2")</td></tr>
+                <tr><td>Asociación Solidarista</td><td class="text-right">₡@Model.MontoSolidarista.ToString("N2")</td></tr>
+                <tr><td>Adelanto de Quincena</td><td class="text-right">₡@Model.AdelantoQuincena.ToString("N2")</td></tr>
+                <tr style="font-weight: bold;"><td>Total Deducciones</td><td class="text-right">₡@Model.TotalDeducciones.ToString("N2")</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-top: 20px; font-weight: bold;">
+        <div>Total Ingresos: ₡@Model.TotalIngresos.ToString("N2")</div>
+        <div>Total Deducciones: ₡@Model.TotalDeducciones.ToString("N2")</div>
+        <div>Salario Neto: ₡@Model.SalarioNeto.ToString("N2")</div>
+    </div>
+
+    <p style="margin-top: 30px;">__________________________</p>
+    <p>Firma del Empleado</p>
+
+
+
+
+    <!-- Botón de regreso, oculto al imprimir -->
+    <div class="back-btn no-print">
+        <a href="@ViewBag.ReturnUrl">Volver a Planillas</a>
+    </div>
+</body>
+</html>
+
+

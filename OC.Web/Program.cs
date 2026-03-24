@@ -1,13 +1,23 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Data.Context;
 using OC.Data.Repositories;
 using OC.Web.Services;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Forzar cultura invariante para toda la aplicación
+var culture = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+// ... resto de servicios
 
 // --- 1. REGISTRO DE SERVICIOS (Antes de builder.Build) ---
 
@@ -29,7 +39,21 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddMvcOptions(options =>
+    {
+        // Forzar model binding con cultura invariante
+        options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(x => $"El valor '{x}' no es válido.");
+    });
+
+//Decimales de CR
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { new CultureInfo("en-US") };
+    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+});
 
 
 //Valor Clinico

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,5 +20,25 @@ namespace OC.Core.Domain.Entities
 
         public int SucursalId { get; set; }
         public Sucursal Sucursal { get; set; } = null!;
+
+        // ===== NUEVOS CAMPOS PARA RH =====
+
+        [Required, MaxLength(20)]
+        [Display(Name = "Cédula")]
+        public string Cedula { get; set; } = string.Empty;  
+
+
+        [Display(Name = "Salario Base (₡)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El salario debe ser mayor o igual a 0")]
+        public decimal? SalarioBase { get; set; }  // Nullable porque algunos usuarios (ej. pacientes) no aplican
+
+        [Display(Name = "Fecha de Contratación")]
+        [DataType(DataType.Date)]
+        public DateTime? FechaContratacion { get; set; }
+
+        [Display(Name = "Número de Cuenta IBAN")]
+        [MaxLength(50)]
+        public string? NumeroCuentaIBAN { get; set; }
+        // ==================================
     }
 }
