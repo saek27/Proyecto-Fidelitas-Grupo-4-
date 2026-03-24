@@ -1,9 +1,176 @@
-﻿@{
+﻿@using OC.Web.Controllers
+@{
     ViewData["Title"] = "Dashboard";
+    var userName = User.Identity?.Name ?? "Usuario";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+    var hora = DateTime.Now.Hour;
+    var saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
+    var modulos = ViewBag.Modulos as List<ModuloItem> ?? new List<ModuloItem>();
 }
 
-<div class="card-dashboard">
-    <h1 class="display-5 text-primary">Bienvenido, @User.Identity!.Name</h1>
-    <p class="lead text-secondary">Sistema de Gestión - Óptica Comunal</p>
+<style>
+    .dashboard-home {
+        min-height: calc(100vh - 56px);
+        background: linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #1e40af 100%);
+        padding: 40px 24px 60px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .dashboard-home::before {
+            content: '';
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(96,165,250,.15) 0%, transparent 65%);
+            top: -200px;
+            right: -150px;
+            pointer-events: none;
+        }
+
+        .dashboard-home::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6,182,212,.1) 0%, transparent 65%);
+            bottom: -100px;
+            left: -100px;
+            pointer-events: none;
+        }
+
+    .welcome-block {
+        position: relative;
+        z-index: 2;
+        max-width: 1100px;
+        margin: 0 auto 40px;
+    }
+
+        .welcome-block h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -.5px;
+            margin-bottom: 8px;
+        }
+
+        .welcome-block p {
+            color: rgba(255,255,255,.55);
+            font-size: 14px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 12px;
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.15);
+        border-radius: 20px;
+        font-size: 12px;
+        color: rgba(255,255,255,.8);
+        font-weight: 500;
+    }
+
+    .modules-grid {
+        position: relative;
+        z-index: 2;
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+        gap: 14px;
+    }
+
+    .module-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 28px 16px 24px;
+        background: rgba(255,255,255,.07);
+        border: 1px solid rgba(255,255,255,.13);
+        border-radius: 16px;
+        text-decoration: none;
+        color: #fff;
+        text-align: center;
+        backdrop-filter: blur(8px);
+        transition: all .22s cubic-bezier(.4,0,.2,1);
+        animation: fadeInUp .35s ease both;
+    }
+
+        .module-card:hover {
+            color: #fff;
+            background: rgba(255,255,255,.13);
+            border-color: rgba(255,255,255,.28);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,.28);
+        }
+
+    .mc-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: all .22s ease;
+    }
+
+    .module-card:hover .mc-icon {
+        transform: scale(1.1);
+    }
+
+    .mc-label {
+        font-size: 13.5px;
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+
+    .mc-sub {
+        font-size: 11px;
+        color: rgba(255,255,255,.5);
+        line-height: 1.3;
+    }
+</style>
+
+<div class="dashboard-home">
+
+    <div class="welcome-block animate-fade-up">
+        <h2>@saludo, @userName 👋</h2>
+        <p>
+            <span class="status-dot"></span>
+            <span class="role-badge">
+                <i class="bi bi-person-check"></i>@userRole
+            </span>
+            @DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy",
+            new System.Globalization.CultureInfo("es-CR"))
+        </p>
+    </div>
+
+    <div class="modules-grid">
+        @foreach (var (m, i) in modulos.Select((m, i) => (m, i)))
+        {
+            <a href="@m.Url" class="module-card"
+               style="animation-delay:@(i * 0.045)s">
+                <div class="mc-icon" style="background:@m.Bg; color:@m.Color;">
+                    <i class="bi @m.Icon"></i>
+                </div>
+                <div>
+                    <div class="mc-label">@m.Label</div>
+                    <div class="mc-sub">@m.Sub</div>
+                </div>
+            </a>
+        }
+    </div>
 
 </div>

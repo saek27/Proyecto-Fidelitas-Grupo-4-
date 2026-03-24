@@ -1,111 +1,362 @@
 @model OC.Web.ViewModels.LoginViewModel
 @{
-    Layout = null; 
+    Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Óptica Comunal</title>
+    <title>Iniciar Sesión — Óptica Comunal</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #1e40af 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        .login-bg-circle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+            .login-bg-circle.c1 {
+                width: 600px;
+                height: 600px;
+                background: radial-gradient(circle, rgba(59,130,246,.15) 0%, transparent 65%);
+                top: -150px;
+                right: -100px;
+                animation: float 9s ease-in-out infinite;
+            }
+
+            .login-bg-circle.c2 {
+                width: 400px;
+                height: 400px;
+                background: radial-gradient(circle, rgba(6,182,212,.1) 0%, transparent 65%);
+                bottom: -80px;
+                left: -80px;
+                animation: float 11s ease-in-out infinite reverse;
+            }
+
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-18px) scale(1.04);
+            }
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp .5s ease both;
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: rgba(255,255,255,.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 20px;
+            padding: 44px 40px 36px;
+            box-shadow: 0 24px 64px rgba(0,0,0,.35);
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(59,130,246,.4);
+        }
+
+        .login-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 4px;
+            letter-spacing: -.4px;
+        }
+
+        .login-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,.45);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: rgba(255,255,255,.7);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .login-input {
+            width: 100%;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 10px;
+            color: #fff;
+            padding: 11px 14px;
+            font-size: 14px;
+            transition: all .2s ease;
+            outline: none;
+        }
+
+            .login-input::placeholder {
+                color: rgba(255,255,255,.3);
+            }
+
+            .login-input:focus {
+                border-color: rgba(59,130,246,.7);
+                background: rgba(255,255,255,.11);
+                box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+            }
+
+            .login-input:-webkit-autofill,
+            .login-input:-webkit-autofill:focus {
+                -webkit-box-shadow: 0 0 0 100px #1e3a8a inset;
+                -webkit-text-fill-color: #fff;
+            }
+
+        .login-check-label {
+            font-size: 13px;
+            color: rgba(255,255,255,.55);
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .login-forgot {
+            font-size: 12.5px;
+            color: rgba(255,255,255,.45);
+            text-decoration: none;
+            transition: color .2s;
+        }
+
+            .login-forgot:hover {
+                color: rgba(255,255,255,.8);
+            }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s ease;
+            box-shadow: 0 4px 16px rgba(59,130,246,.4);
+            letter-spacing: .2px;
+        }
+
+            .login-btn:hover {
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                box-shadow: 0 6px 20px rgba(59,130,246,.5);
+                transform: translateY(-1px);
+            }
+
+            .login-btn:active {
+                transform: translateY(0);
+            }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0 20px;
+        }
+
+            .login-divider::before,
+            .login-divider::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: rgba(255,255,255,.1);
+            }
+
+            .login-divider span {
+                font-size: 12px;
+                color: rgba(255,255,255,.3);
+                white-space: nowrap;
+            }
+
+        .login-register-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 10px;
+            color: rgba(255,255,255,.7);
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all .2s ease;
+        }
+
+            .login-register-btn:hover {
+                background: rgba(255,255,255,.11);
+                border-color: rgba(255,255,255,.22);
+                color: #fff;
+            }
+
+        .validation-error {
+            background: rgba(239,68,68,.15);
+            border: 1px solid rgba(239,68,68,.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #fca5a5;
+            margin-bottom: 20px;
+        }
+
+        .toggle-pw {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255,255,255,.4);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color .2s;
+        }
+
+            .toggle-pw:hover {
+                color: rgba(255,255,255,.7);
+            }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container">
-        <div class="row justify-content-center align-items-center vh-100">
-            <div class="col-md-4">
-                <div class="card shadow-lg border-0">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <h2 class="text-primary fw-bold">Óptica Comunal</h2>
-                            <p class="text-muted">Inicia sesión para continuar</p>
-                        </div>
+<body>
 
-                        <form asp-action="Login" method="post">
-                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="login-bg-circle c1"></div>
+    <div class="login-bg-circle c2"></div>
 
-                            @if (ViewBag.AttemptsLeft != null)
-                            {
-                                <div class="alert alert-warning py-2 small">
-                                    Tiene <strong>@ViewBag.AttemptsLeft</strong> intento(s) restante(s) antes del bloqueo.
-                                </div>
-                            }
-                            @if (ViewBag.LockoutSeconds != null)
-                            {
-                                <div class="alert alert-danger py-2 small">
-                                    Usuario bloqueado. Espere <strong id="lockoutTimer"></strong>.
-                                </div>
-                            }
+    <div class="login-box">
+        <div class="login-card">
 
-                            <div class="mb-3">
-                                <label asp-for="Email" class="form-label">Correo</label>
-                                <input asp-for="Email" class="form-control" placeholder=" " />
-                            </div>
+            <div class="login-logo"><i class="bi bi-eye-fill"></i></div>
+            <div class="login-title">Óptica Comunal</div>
+            <div class="login-sub">Iniciá sesión para continuar</div>
 
-                            <div class="mb-3">
-                                <label asp-for="Password" class="form-label">Contraseña</label>
-                                <input asp-for="Password" type="password" class="form-control" />
-                            </div>
+            <form asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
 
-                            <div class="mb-3 form-check">
-                                <input asp-for="RememberMe" class="form-check-input" />
-                                <label class="form-check-label" asp-for="RememberMe">Recordarme</label>
-                            </div>
-
-                            <div class="mb-3">
-                                <a asp-controller="PacienteAccount" asp-action="RecuperarContrasena" class="small text-muted">¿Olvidó su contraseña?</a>
-                            </div>
-
-                            <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-brand text-white btn-lg" @(ViewBag.LockoutSeconds != null || ViewBag.IsLockedPermanent == true ? "disabled" : "")>
-                                    Entrar
-                                </button>
-                            </div>
-
-                            <div class="text-center">
-                                <hr class="my-3" />
-                                <p class="text-muted mb-2">¿Eres paciente y no tienes cuenta?</p>
-                                <a asp-controller="Pacientes" asp-action="Registro" class="btn btn-outline-primary">
-                                    <i class="bi bi-person-plus"></i> Registrarse como Paciente
-                                </a>
-                            </div>
-                        </form>
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="validation-error">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <span asp-validation-summary="ModelOnly"></span>
                     </div>
+                }
+
+                <div style="margin-bottom:18px;">
+                    <label class="login-label">Correo electrónico</label>
+                    <input asp-for="Email" type="email" class="login-input"
+                           placeholder="correo@ejemplo.com" autocomplete="email" />
+                    <span asp-validation-for="Email"
+                          style="font-size:12px;color:#fca5a5;margin-top:4px;display:block;"></span>
                 </div>
-            </div>
+
+                <div style="margin-bottom:8px; position:relative;">
+                    <label class="login-label">Contraseña</label>
+                    <div style="position:relative;">
+                        <input asp-for="Password" type="password" id="inputPassword"
+                               class="login-input" placeholder="••••••••"
+                               autocomplete="current-password" style="padding-right:42px;" />
+                        <button type="button" class="toggle-pw" onclick="togglePassword()"
+                                tabindex="-1" title="Mostrar/ocultar contraseña">
+                            <i class="bi bi-eye" id="pwIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password"
+                          style="font-size:12px;color:#fca5a5;margin-top:4px;display:block;"></span>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input asp-for="RememberMe" type="checkbox"
+                               style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;" />
+                        <span class="login-check-label">Recordarme</span>
+                    </label>
+                    <a asp-controller="PacienteAccount" asp-action="RecuperarContrasena"
+                       class="login-forgot">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+                </button>
+
+                <div class="login-divider"><span>¿Primera vez?</span></div>
+
+                <a asp-controller="Pacientes" asp-action="Registro" class="login-register-btn">
+                    <i class="bi bi-person-plus"></i>
+                    Registrarse como Paciente
+                </a>
+            </form>
+
         </div>
     </div>
 
-    @if (ViewBag.LockoutSeconds != null)
-    {
-        <script>
-            (function () {
-                var seconds = parseInt("@ViewBag.LockoutSeconds", 10);
-                if (isNaN(seconds) || seconds <= 0) return;
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('inputPassword');
+            const icon  = document.getElementById('pwIcon');
+            if (input.type === 'password') {
+                input.type   = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type   = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+    </script>
 
-                function fmt(s) {
-                    var m = Math.floor(s / 60);
-                    var r = s % 60;
-                    return m + ":" + (r < 10 ? "0" + r : r);
-                }
-
-                var el = document.getElementById("lockoutTimer");
-                if (!el) return;
-                el.textContent = fmt(seconds);
-
-                var t = setInterval(function () {
-                    seconds--;
-                    if (seconds <= 0) {
-                        clearInterval(t);
-                        el.textContent = "0:00";
-                        return;
-                    }
-                    el.textContent = fmt(seconds);
-                }, 1000);
-            })();
-        </script>
-    }
 </body>
 </html>

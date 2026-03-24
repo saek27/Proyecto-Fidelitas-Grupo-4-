@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Security.Claims;
 
 namespace OC.Web.ViewComponents.Sidebar
 {
@@ -9,93 +8,93 @@ namespace OC.Web.ViewComponents.Sidebar
         public IViewComponentResult Invoke()
         {
             var user = HttpContext.User;
-            var menuItems = new List<MenuItem>();
+            var items = new List<MenuItem>();
+            var helpDesk = new List<MenuItem>();
 
-            // Menú común para todos los autenticados
-            menuItems.Add(new MenuItem { Title = "Inicio", Url = "/", Icon = "bi-speedometer2" });
+            items.Add(new MenuItem { Title = "Inicio", Url = "/", Icon = "bi-speedometer2" });
 
-            // Admin
             if (user.IsInRole("Admin"))
             {
-                menuItems.Add(new MenuItem { Title = "Sucursales", Url = "/Sucursales", Icon = "bi-building" });
-                menuItems.Add(new MenuItem { Title = "Gestión Usuarios", Url = "/Usuarios", Icon = "bi-people-fill" });
-                menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
-                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
-                menuItems.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
-                menuItems.Add(new MenuItem { Title = "Reportes Financieros", Url = "/Reportes", Icon = "bi-graph-up" });
-                menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/Historial/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
-                menuItems.Add(new MenuItem { Title = "Proveedores", Url = "/Proveedores", Icon = "bi-truck" });
-                menuItems.Add(new MenuItem { Title = "Historial de Pedidos", Url = "/Pedidos/Historial", Icon = "bi-clock-history" });
-                menuItems.Add(new MenuItem { Title = "Nuevo Pedido", Url = "/Pedidos/Create", Icon = "bi-plus-circle" });
-                menuItems.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi bi-receipt" });
-                menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
-                menuItems.Add(new MenuItem { Title = "Planillas", Url = "/Planillas", Icon = "bi-calculator" });
+                items.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
+                items.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
+                items.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi-receipt" });
+                items.Add(new MenuItem { Title = "Inventario", Url = "/Inventory", Icon = "bi-box-seam" });
+                items.Add(new MenuItem { Title = "Pedidos", Url = "/Pedidos", Icon = "bi-truck" });
 
-                // Opciones de Mesa de Ayuda (se agruparán en el menú desplegable)
-                menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Panel Técnico", Url = "/Tickets/PanelTecnico", Icon = "bi-tools", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Gestionar Tickets", Url = "/Tickets/Index", Icon = "bi-gear", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Equipos TI", Url = "/Equipos", Icon = "bi-pc-display", IsHelpDeskItem = true });
+                items.Add(new MenuItem { Title = "Proveedores", Url = "/Proveedores", Icon = "bi-building-check" });
+                items.Add(new MenuItem { Title = "Empleados", Url = "/Empleados", Icon = "bi-person-badge" });
+                items.Add(new MenuItem { Title = "Sucursales", Url = "/Sucursales", Icon = "bi-geo-alt" });
+                items.Add(new MenuItem { Title = "Usuarios", Url = "/Usuarios", Icon = "bi-shield-lock" });
+                items.Add(new MenuItem { Title = "Reportes", Url = "/Reportes", Icon = "bi-bar-chart-line" });
+                items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                items.Add(new MenuItem { Title = "Planillas", Url = "/Planillas", Icon = "bi-calculator" });
+
+                helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
+                helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
+                helpDesk.Add(new MenuItem { Title = "Panel Técnico", Url = "/Tickets/PanelTecnico", Icon = "bi-tools" });
+                helpDesk.Add(new MenuItem { Title = "Gestionar Tickets", Url = "/Tickets", Icon = "bi-gear" });
+                helpDesk.Add(new MenuItem { Title = "Equipos TI", Url = "/Equipos", Icon = "bi-pc-display" });
             }
 
-            // Optometrista
             if (user.IsInRole("Optometrista"))
             {
-                menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
-                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
-                menuItems.Add(new MenuItem { Title = "Historial Médico", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
-                menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
-                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+                items.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
+                items.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
+                items.Add(new MenuItem { Title = "Expedientes", Url = "/Expedientess", Icon = "bi-folder2-open" });
+                items.Add(new MenuItem { Title = "Historial", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
+                items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
 
-                // Mesa de Ayuda para Optometrista
-                menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
+                helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
+                helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
             }
 
-            // Recepcion
             if (user.IsInRole("Recepcion"))
             {
-                menuItems.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
-                menuItems.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
-                menuItems.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi bi-receipt" });
-                menuItems.Add(new MenuItem { Title = "Órdenes de trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
-                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
-                // Mesa de Ayuda para Recepcion
-                menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
+                items.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
+                items.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
+                items.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi-receipt" });
+                items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
+                items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+
+                helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
+                helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
             }
 
-            // Tecnico
             if (user.IsInRole("Tecnico"))
             {
-                // Mesa de Ayuda para Técnico
-                menuItems.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Panel Técnico", Url = "/Tickets/PanelTecnico", Icon = "bi-tools", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Equipos TI", Url = "/Equipos", Icon = "bi-pc-display", IsHelpDeskItem = true });
-                menuItems.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+                items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+
+                helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
+                helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
+                helpDesk.Add(new MenuItem { Title = "Panel Técnico", Url = "/Tickets/PanelTecnico", Icon = "bi-tools" });
+                helpDesk.Add(new MenuItem { Title = "Equipos TI", Url = "/Equipos", Icon = "bi-pc-display" });
             }
 
-            // Paciente
             if (user.IsInRole("Paciente"))
             {
-                menuItems.Add(new MenuItem { Title = "Mis Citas", Url = "/PacienteDashboard", Icon = "bi-calendar-event" });
-                menuItems.Add(new MenuItem { Title = "Solicitar Cita", Url = "/PacienteDashboard/SolicitarCita", Icon = "bi-calendar-plus" });
-                menuItems.Add(new MenuItem { Title = "Estado de orden", Url = "/PacienteDashboard/EstadoOrden", Icon = "bi-eyeglasses" });
-                menuItems.Add(new MenuItem { Title = "Notificaciones", Url = "/PacienteDashboard/Notificaciones", Icon = "bi-bell" });
-                menuItems.Add(new MenuItem { Title = "Mis facturas", Url = "/PacienteDashboard/MisFacturas", Icon = "bi-receipt" });
+                items.Add(new MenuItem { Title = "Mis Citas", Url = "/PacienteDashboard", Icon = "bi-calendar-event" });
+                items.Add(new MenuItem { Title = "Solicitar Cita", Url = "/PacienteDashboard/AgendarCita", Icon = "bi-calendar-plus" });
+                items.Add(new MenuItem { Title = "Estado de Orden", Url = "/PacienteDashboard/EstadoOrden", Icon = "bi-eyeglasses" });
+                items.Add(new MenuItem { Title = "Mis Facturas", Url = "/PacienteDashboard/MisFacturas", Icon = "bi-receipt" });
+                items.Add(new MenuItem { Title = "Notificaciones", Url = "/PacienteDashboard/Notificaciones", Icon = "bi-bell" });
             }
 
-            return View(menuItems);
+            return View(new SidebarViewModel { Items = items, HelpDeskItems = helpDesk });
         }
     }
 
     public class MenuItem
     {
-        public string Title { get; set; }
-        public string Url { get; set; }
-        public string Icon { get; set; }
-        public bool IsHelpDeskItem { get; set; } // Nueva propiedad para identificar ítems de Mesa de Ayuda
+        public string Title { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public bool IsHelpDeskItem { get; set; }
+    }
+
+    public class SidebarViewModel
+    {
+        public List<MenuItem> Items { get; set; } = new();
+        public List<MenuItem> HelpDeskItems { get; set; } = new();
     }
 }

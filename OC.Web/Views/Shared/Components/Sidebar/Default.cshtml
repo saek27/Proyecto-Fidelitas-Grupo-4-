@@ -1,57 +1,59 @@
 ﻿@using OC.Web.ViewComponents.Sidebar
-@model List<MenuItem>
+@model SidebarViewModel
 
-<nav id="sidebar">
-    <div class="sidebar-header">
-        <h3><i class="bi bi-eyeglasses"></i> OC Visión</h3>
-        <small class="text-light opacity-50">Sistema Óptica Comunal</small>
-    </div>
+@{
+    var currentUrl = Context.Request.Path.ToString();
+}
 
-    <ul class="list-unstyled components">
-        @{
-            // Separar items normales de los de Mesa de Ayuda
-            var helpDeskItems = Model.Where(m => m.IsHelpDeskItem).ToList();
-            var regularItems = Model.Where(m => !m.IsHelpDeskItem).ToList();
-        }
+<ul class="components">
+    @foreach (var item in Model.Items)
+    {
+        var isActive = item.Url == "/"
+        ? currentUrl == "/"
+        : currentUrl.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
 
-        @foreach (var item in regularItems)
-        {
-            <li>
-                <a href="@item.Url">
-                    <i class="bi @item.Icon me-2"></i> @item.Title
-                </a>
-            </li>
-        }
+        <li class="@(isActive ? "active" : "")">
+            <a href="@item.Url">
+                <i class="bi @item.Icon"></i>
+                @item.Title
+            </a>
+        </li>
+    }
 
-        @if (helpDeskItems.Any())
-        {
-            <!-- Separador visual (opcional) -->
-            <li class="mt-2" style="border-top: 1px solid rgba(255,255,255,0.2);"></li>
+    @if (Model.HelpDeskItems.Any())
+    {
+        var helpActive = Model.HelpDeskItems.Any(h =>
+        currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase));
 
-            <!-- Menú desplegable de Mesa de Ayuda -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                    <i class="bi bi-headset me-2"></i> Mesa de Ayuda
-                </a>
-                <ul class="dropdown-menu">
-                    @foreach (var item in helpDeskItems)
+        <li>
+            <a class="dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#helpDeskMenu"
+               role="button"
+               aria-expanded="@(helpActive ? "true" : "false")">
+                <i class="bi bi-headset"></i>
+                Mesa de Ayuda
+            </a>
+            <div class="collapse @(helpActive ? "show" : "")" id="helpDeskMenu">
+                <ul class="list-unstyled" style="padding:4px 0 4px 12px;">
+                    @foreach (var h in Model.HelpDeskItems)
                     {
+                        var hActive = currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase);
                         <li>
-                            <a class="dropdown-item" href="@item.Url">
-                                <i class="bi @item.Icon me-2"></i> @item.Title
+                            <a href="@h.Url"
+                               style="padding:9px 14px; font-size:13px; display:flex; align-items:center; gap:8px;
+                                              color:rgba(255,255,255,.7); text-decoration:none; border-radius:6px;
+                                              background:@(hActive ? "rgba(59,130,246,.3)" : "transparent");
+                                              transition:all .2s ease;"
+                               onmouseover="this.style.background='rgba(255,255,255,.09)';this.style.color='#fff'"
+                               onmouseout="this.style.background='@(hActive ? "rgba(59,130,246,.3)" : "transparent")';this.style.color='rgba(255,255,255,.7)'">
+                                <i class="bi @h.Icon" style="font-size:14px;width:16px;text-align:center;"></i>
+                                @h.Title
                             </a>
                         </li>
                     }
                 </ul>
-            </li>
-        }
-    </ul>
-
-    <div class="mt-auto p-3">
-        <a asp-controller="Account" asp-action="Logout"
-           class="btn btn-danger w-100 btn-sm d-flex align-items-center justify-content-center">
-            <i class="bi bi-box-arrow-left me-2"></i> Salir
-        </a>
-    </div>
-</nav>
-
+            </div>
+        </li>
+    }
+</ul>
