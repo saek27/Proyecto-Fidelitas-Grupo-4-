@@ -22,7 +22,6 @@ namespace OC.Web.ViewComponents.Sidebar
                 items.Add(new MenuItem { Title = "Pedidos", Url = "/Pedidos", Icon = "bi-truck" });
 
                 items.Add(new MenuItem { Title = "Proveedores", Url = "/Proveedores", Icon = "bi-building-check" });
-                items.Add(new MenuItem { Title = "Empleados", Url = "/Empleados", Icon = "bi-person-badge" });
                 items.Add(new MenuItem { Title = "Sucursales", Url = "/Sucursales", Icon = "bi-geo-alt" });
                 items.Add(new MenuItem { Title = "Usuarios", Url = "/Usuarios", Icon = "bi-shield-lock" });
                 items.Add(new MenuItem { Title = "Reportes", Url = "/Reportes", Icon = "bi-bar-chart-line" });
