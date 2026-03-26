@@ -19,7 +19,6 @@ namespace OC.Core.Domain.Entities
 
 
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
-        public ICollection<Empleado> Empleados { get; set; } = new List<Empleado>();
         public ICollection<Cita> Citas { get; set; } = new List<Cita>();
     }
 }

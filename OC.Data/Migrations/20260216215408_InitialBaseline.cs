@@ -61,30 +61,7 @@ namespace OC.Data.Migrations
                     table.PrimaryKey("PK_Sucursales", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Empleados",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Apellidos = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Cedula = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Telefono = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Puesto = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SucursalId = table.Column<int>(type: "int", nullable: false),
-                    Activo = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Empleados", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Empleados_Sucursales_SucursalId",
-                        column: x => x.SucursalId,
-                        principalTable: "Sucursales",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            
 
             migrationBuilder.CreateTable(
                 name: "Usuarios",
@@ -199,10 +176,6 @@ namespace OC.Data.Migrations
                 table: "Citas",
                 column: "UsuarioAsignadoId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Empleados_SucursalId",
-                table: "Empleados",
-                column: "SucursalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Pacientes_Cedula",
@@ -249,8 +222,7 @@ namespace OC.Data.Migrations
             migrationBuilder.DropTable(
                 name: "Citas");
 
-            migrationBuilder.DropTable(
-                name: "Empleados");
+
 
             migrationBuilder.DropTable(
                 name: "SolicitudesCitas");

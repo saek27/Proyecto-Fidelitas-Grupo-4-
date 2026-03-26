@@ -283,5 +283,26 @@ namespace OC.Web.Controllers
             model.Productos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                 .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
         }
+
+        // GET: Pedidos/Index (página principal de pedidos)
+        public async Task<IActionResult> Index(int page = 1)
+        {
+            int pageSize = 10;
+            var result = await _pedidoRepo.GetPagedAsync(
+                page,
+                pageSize,
+                filter: p => p.Activo,
+                orderBy: q => q.OrderByDescending(p => p.FechaPedido),
+                includeProperties: "Proveedor"
+            );
+
+            // Pasar datos de paginación a la vista mediante ViewBag
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize);
+            ViewBag.HasPreviousPage = page > 1;
+            ViewBag.HasNextPage = page < ViewBag.TotalPages;
+
+            return View(result);
+        }
     }
 }

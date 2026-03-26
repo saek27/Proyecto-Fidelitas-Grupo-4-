@@ -2,155 +2,210 @@
 @{
     ViewData["Title"] = "Dashboard";
     var userName = User.Identity?.Name ?? "Usuario";
-    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+    var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(r => r.Value).ToList();
+    var userRole = roles.Any() ? string.Join(", ", roles) : "Sin rol";
     var hora = DateTime.Now.Hour;
     var saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
     var modulos = ViewBag.Modulos as List<ModuloItem> ?? new List<ModuloItem>();
 }
 
 <style>
+    /* ============================================
+           Dashboard Home - Estilos específicos
+           ============================================ */
+
     .dashboard-home {
         min-height: calc(100vh - 56px);
-        background: linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #1e40af 100%);
-        padding: 40px 24px 60px;
+        background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 55%, #1e40af 100%);
         position: relative;
         overflow: hidden;
+        padding: 40px 24px 60px;
     }
 
-        .dashboard-home::before {
-            content: '';
-            position: absolute;
-            width: 700px;
-            height: 700px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(96,165,250,.15) 0%, transparent 65%);
-            top: -200px;
-            right: -150px;
-            pointer-events: none;
-        }
+    /* Canvas 3D de fondo */
+    #home-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+    }
 
-        .dashboard-home::after {
-            content: '';
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(6,182,212,.1) 0%, transparent 65%);
-            bottom: -100px;
-            left: -100px;
-            pointer-events: none;
-        }
-
+    /* Sección de bienvenida */
     .welcome-block {
         position: relative;
         z-index: 2;
         max-width: 1100px;
-        margin: 0 auto 40px;
+        margin: 0 auto 48px;
+        text-align: center;
     }
 
         .welcome-block h2 {
-            font-size: 28px;
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
             font-weight: 700;
-            color: #fff;
-            letter-spacing: -.5px;
-            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, rgba(255,255,255,0.85));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
         }
 
         .welcome-block p {
-            color: rgba(255,255,255,.55);
-            font-size: 14px;
-            margin: 0;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
     .role-badge {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 3px 12px;
-        background: rgba(255,255,255,.1);
-        border: 1px solid rgba(255,255,255,.15);
-        border-radius: 20px;
-        font-size: 12px;
-        color: rgba(255,255,255,.8);
+        gap: 6px;
+        padding: 4px 14px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 40px;
+        font-size: 0.75rem;
         font-weight: 500;
+        color: rgba(255,255,255,0.9);
     }
 
+    /* Grid de módulos */
     .modules-grid {
         position: relative;
         z-index: 2;
         max-width: 1100px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
     }
 
+    /* Tarjeta de módulo (con efecto 3D) */
     .module-card {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+        gap: 16px;
         padding: 28px 16px 24px;
-        background: rgba(255,255,255,.07);
-        border: 1px solid rgba(255,255,255,.13);
-        border-radius: 16px;
+        background: rgba(255,255,255,0.06);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 24px;
         text-decoration: none;
         color: #fff;
         text-align: center;
-        backdrop-filter: blur(8px);
-        transition: all .22s cubic-bezier(.4,0,.2,1);
-        animation: fadeInUp .35s ease both;
+        transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        position: relative;
+        overflow: hidden;
+        transform-style: preserve-3d;
+        perspective: 500px;
+        will-change: transform;
     }
 
+        .module-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .module-card:hover::after {
+            opacity: 1;
+        }
+
         .module-card:hover {
-            color: #fff;
-            background: rgba(255,255,255,.13);
-            border-color: rgba(255,255,255,.28);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0,0,0,.28);
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-6px) rotateX(3deg) rotateY(2deg);
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.35);
         }
 
     .mc-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        transition: all .22s ease;
+        font-size: 26px;
+        transition: transform 0.2s ease;
     }
 
     .module-card:hover .mc-icon {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 
     .mc-label {
-        font-size: 13.5px;
+        font-size: 0.9rem;
         font-weight: 600;
-        margin-bottom: 3px;
+        letter-spacing: -0.2px;
+        margin-bottom: 4px;
     }
 
     .mc-sub {
-        font-size: 11px;
-        color: rgba(255,255,255,.5);
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.6);
         line-height: 1.3;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-home {
+            padding: 24px 16px 40px;
+        }
+
+        .welcome-block {
+            margin-bottom: 32px;
+        }
+
+        .modules-grid {
+            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .module-card {
+            padding: 20px 12px;
+        }
+
+        .mc-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 22px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .modules-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 </style>
 
+<div id="home-canvas"></div>
+
 <div class="dashboard-home">
 
-    <div class="welcome-block animate-fade-up">
-        <h2>@saludo, @userName 👋</h2>
+    <div class="welcome-block animate-on-scroll" data-delay="0">
+        <h2>@saludo, @userName</h2>
         <p>
             <span class="status-dot"></span>
             <span class="role-badge">
-                <i class="bi bi-person-check"></i>@userRole
+                <i class="bi bi-person-check"></i> @userRole
             </span>
             @DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy",
             new System.Globalization.CultureInfo("es-CR"))
@@ -160,9 +215,8 @@
     <div class="modules-grid">
         @foreach (var (m, i) in modulos.Select((m, i) => (m, i)))
         {
-            <a href="@m.Url" class="module-card"
-               style="animation-delay:@(i * 0.045)s">
-                <div class="mc-icon" style="background:@m.Bg; color:@m.Color;">
+            <a href="@m.Url" class="module-card" data-delay="@(i * 50)">
+                <div class="mc-icon" style="background: @m.Bg; color: @m.Color;">
                     <i class="bi @m.Icon"></i>
                 </div>
                 <div>
@@ -174,3 +228,139 @@
     </div>
 
 </div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+        }
+    }
+</script>
+<script type="module">
+    import * as THREE from 'three';
+
+    // Configurar el fondo 3D con esfera de puntos
+    const container = document.getElementById('home-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
+
+    // Crear una esfera con puntos
+    const geometry = new THREE.SphereGeometry(5, 64, 64);
+    const material = new THREE.PointsMaterial({
+        color: 0x3b82f6,
+        size: 0.08,
+        transparent: true,
+        blending: THREE.AdditiveBlending
+    });
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    // Añadir un segundo anillo de partículas para más dinamismo
+    const ringGeometry = new THREE.BufferGeometry();
+    const ringCount = 800;
+    const ringPositions = new Float32Array(ringCount * 3);
+    for (let i = 0; i < ringCount; i++) {
+        const angle = (i / ringCount) * Math.PI * 2;
+        const radius = 6.5;
+        ringPositions[i*3] = Math.cos(angle) * radius;
+        ringPositions[i*3+1] = Math.sin(angle) * radius * 0.5;
+        ringPositions[i*3+2] = Math.sin(angle) * radius * 0.8;
+    }
+    ringGeometry.setAttribute('position', new THREE.BufferAttribute(ringPositions, 3));
+    const ringMaterial = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.06, transparent: true, blending: THREE.AdditiveBlending });
+    const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
+    scene.add(ringPoints);
+
+    camera.position.z = 12;
+
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+    });
+
+    let time = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.005;
+
+        // Rotación de la esfera
+        points.rotation.y = time * 0.3;
+        points.rotation.x = Math.sin(time * 0.2) * 0.2;
+        points.rotation.z = Math.cos(time * 0.15) * 0.1;
+
+        // Rotación del anillo
+        ringPoints.rotation.y = time * 0.4;
+        ringPoints.rotation.x = Math.sin(time * 0.25) * 0.1;
+
+        // Seguir el mouse suavemente
+        points.rotation.x += (mouseY * 0.8 - points.rotation.x) * 0.05;
+        points.rotation.y += (mouseX * 0.8 - points.rotation.y) * 0.05;
+        ringPoints.rotation.x += (mouseY * 0.6 - ringPoints.rotation.x) * 0.05;
+        ringPoints.rotation.y += (mouseX * 0.6 - ringPoints.rotation.y) * 0.05;
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+<script>
+    // Animación de entrada de las tarjetas con anime.js (si está disponible)
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof anime !== 'undefined') {
+            const cards = document.querySelectorAll('.module-card');
+            if (cards.length) {
+                anime({
+                    targets: cards,
+                    opacity: [0, 1],
+                    translateY: [30, 0],
+                    rotateX: [15, 0],
+                    delay: function(el, i) {
+                        return parseInt(el.getAttribute('data-delay') || i * 50);
+                    },
+                    duration: 700,
+                    easing: 'easeOutElastic(1, .6)'
+                });
+            }
+        }
+    });
+
+
+        // Dentro de tu script en Index.cshtml (o en site.js)
+    if (typeof anime !== 'undefined') {
+        const cards = document.querySelectorAll('.module-card');
+        anime({
+            targets: cards,
+            opacity: [0, 1],
+            translateY: [30, 0],
+            rotateX: [15, 0],
+            delay: function(el, i) { return i * 50; },
+            duration: 700,
+            easing: 'easeOutElastic(1, .6)',
+            begin: function() {
+                // Opcional: también animar los iconos internos
+                cards.forEach(card => {
+                    const icon = card.querySelector('.mc-icon i');
+                    if (icon) {
+                        anime({
+                            targets: icon,
+                            scale: [0.8, 1],
+                            rotateY: [45, 0],
+                            duration: 500,
+                            easing: 'easeOutQuad'
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>
