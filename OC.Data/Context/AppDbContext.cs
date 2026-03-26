@@ -53,6 +53,9 @@ namespace OC.Data.Context
 
         //Asistencia
         public DbSet<Asistencia> Asistencias { get; set; }
+
+        //Permisos
+        public DbSet<Permiso> Permisos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -201,6 +204,18 @@ namespace OC.Data.Context
                 entity.Property(e => e.PorcentajeSolidarista).HasPrecision(5, 2);
             });
 
+            //Permisos
+            modelBuilder.Entity<Permiso>()
+                .HasOne(p => p.Usuario)
+                .WithMany()
+                .HasForeignKey(p => p.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Permiso>()
+                .HasOne(p => p.AprobadoPor)
+                .WithMany()
+                .HasForeignKey(p => p.AprobadoPorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
 
