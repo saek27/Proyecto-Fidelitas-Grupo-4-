@@ -27,6 +27,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 items.Add(new MenuItem { Title = "Reportes", Url = "/Reportes", Icon = "bi-bar-chart-line" });
                 items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
                 items.Add(new MenuItem { Title = "Planillas", Url = "/Planillas", Icon = "bi-calculator" });
+                items.Add(new MenuItem { Title = "Asistencia", Url = "/Asistencia", Icon = "bi-clock" });
 
                 helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
                 helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
@@ -43,6 +44,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 items.Add(new MenuItem { Title = "Historial", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
                 items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
                 items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+                items.Add(new MenuItem { Title = "Asistencia", Url = "/Asistencia", Icon = "bi-clock" });
 
                 helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
                 helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });
@@ -55,6 +57,7 @@ namespace OC.Web.ViewComponents.Sidebar
                 items.Add(new MenuItem { Title = "Ventas", Url = "/Ventas", Icon = "bi-receipt" });
                 items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
                 items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });
+                items.Add(new MenuItem { Title = "Asistencia", Url = "/Asistencia", Icon = "bi-clock" });
 
                 helpDesk.Add(new MenuItem { Title = "Nuevo Ticket", Url = "/Tickets/Create", Icon = "bi-plus-circle" });
                 helpDesk.Add(new MenuItem { Title = "Mis Tickets", Url = "/Tickets/MisTickets", Icon = "bi-ticket" });

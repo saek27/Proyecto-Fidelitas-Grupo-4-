@@ -1,0 +1,89 @@
+﻿@model List<OC.Core.Domain.Entities.Asistencia>
+
+<div class="card-dashboard">
+    <h4>Asistencia</h4>
+
+    @if (User.IsInRole("Optometrista") || User.IsInRole("Recepcion"))
+    {   
+    <div class="mb-3">
+        <a asp-action="MarcarEntrada" class="btn btn-success">
+            <i class="bi bi-box-arrow-in-right"></i> Marcar Entrada
+        </a>
+
+        <a asp-action="MarcarSalida" class="btn btn-danger">
+            <i class="bi bi-box-arrow-left"></i> Marcar Salida
+        </a>
+    </div>}
+
+    <form method="get" class="mb-3">
+        <input type="date" name="fecha" class="form-control w-auto d-inline" />
+        <button type="submit" class="btn btn-brand">Filtrar</button>
+    </form>
+
+    <div class="card-dashboard">
+        <h4>Historial de Asistencia</h4>
+
+        @if (!Model.Any())
+        {
+            <p>No hay registros.</p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <th>Empleado</th>
+                        }
+                        <th>Fecha</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <td>@a.Usuario.Nombre</td>
+                            }
+
+                        <td>@a.Fecha.ToShortDateString()</td>
+
+                        <td>
+                            @(a.HoraEntrada != null
+                                                    ? a.HoraEntrada.Value.ToString("hh:mm tt")
+                                                    : "-")
+                                                      </td>
+
+                        <td>
+                            @(a.HoraSalida != null
+                                                    ? a.HoraSalida.Value.ToString("hh:mm tt")
+                                                    : "-")
+                    </td>
+
+                            <td>
+                        @if (a.HoraEntrada != null && a.HoraSalida != null)
+                                {
+                                    <span class="badge bg-success">Completo</span>
+                                }
+                                else if (a.HoraEntrada != null)
+                                {
+                                    <span class="badge bg-warning text-dark">Pendiente salida</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Sin marcar</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+</div>

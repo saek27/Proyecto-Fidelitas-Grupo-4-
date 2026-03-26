@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OC.Core.Contracts.IRepositories;
@@ -10,6 +11,7 @@ using System.Security.Claims;
 
 namespace OC.Web.Controllers
 {
+    [Authorize(Roles = "Admin,Optometrista,Recepcion")]
     public class AsistenciaController : Controller
     {
         private readonly AppDbContext _context;
@@ -19,9 +21,45 @@ namespace OC.Web.Controllers
             _context = context;
         }
 
-        // 📌 Marcar entrada
-        public async Task<IActionResult> MarcarEntrada(int usuarioId)
+        /*public async Task<IActionResult> Index(DateTime? fecha)
         {
+            var hoy = fecha ?? DateTime.Today;
+
+            var data = await _context.Asistencias
+                .Where(a => a.Fecha == hoy)
+                .OrderByDescending(a => a.Fecha)
+                .ToListAsync();
+
+            return View(data);
+        }*/
+
+        public async Task<IActionResult> Index(DateTime? fecha)
+        {
+            var hoy = fecha ?? DateTime.Today;
+
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            IQueryable<Asistencia> query = _context.Asistencias;
+
+            if (role != "Admin")
+            {
+                query = query.Where(a => a.UsuarioId == userId);
+            }
+
+            var data = await query
+                .Include(a => a.Usuario)
+                .Where(a => a.Fecha == hoy)
+                .ToListAsync();
+
+            return View(data);
+        }
+
+        [Authorize(Roles = "Optometrista,Recepcion")]
+        public async Task<IActionResult> MarcarEntrada()
+        {
+            var usuarioId = int.Parse(User.FindFirst("UserId").Value);
+
             var hoy = DateTime.Today;
 
             var asistencia = await _context.Asistencias
@@ -46,9 +84,10 @@ namespace OC.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        // 📌 Marcar salida
-        public async Task<IActionResult> MarcarSalida(int usuarioId)
+        [Authorize(Roles = "Optometrista,Recepcion")]
+        public async Task<IActionResult> MarcarSalida()
         {
+            var usuarioId = int.Parse(User.FindFirst("UserId").Value);
             var hoy = DateTime.Today;
 
             var asistencia = await _context.Asistencias
