@@ -1,0 +1,65 @@
+﻿@using OC.Core.Domain.Entities
+@model List<Permiso>
+
+@{
+    ViewData["Title"] = "Permisos";
+}
+
+<h2>Permisos</h2>
+
+<a asp-action="Create" class="btn btn-primary">Solicitar Permiso</a>
+
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Tipo</th>
+            <th>Fechas</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th>Aprobado Por</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Usuario?.Nombre</td>
+
+                <td>@p.Tipo</td>
+
+                <td>
+                    @p.FechaInicio.ToShortDateString() -
+                    @p.FechaFin.ToShortDateString()
+                </td>
+
+                <td>@p.Motivo</td>
+
+                <td>
+                    <span class="badge bg-@(p.Estado == "Aprobado" ? "success" : p.Estado == "Rechazado" ? "danger" : "warning")">
+                        @p.Estado
+                    </span>
+                </td>
+
+                <td>@p.AprobadoPor?.Nombre</td>
+
+                <td>
+                    @if (User.IsInRole("Admin") && p.Estado == "Pendiente")
+                    {
+                        <form asp-action="Aprobar" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button class="btn btn-success btn-sm">✔</button>
+                        </form>
+
+                        <form asp-action="Rechazar" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button class="btn btn-danger btn-sm">✖</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OC.Core.Domain.Entities;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace OC.Data.Context
@@ -50,6 +51,11 @@ namespace OC.Data.Context
         //RH
         public DbSet<Planilla> Planillas { get; set; }
 
+        //Asistencia
+        public DbSet<Asistencia> Asistencias { get; set; }
+
+        //Permisos
+        public DbSet<Permiso> Permisos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -198,6 +204,18 @@ namespace OC.Data.Context
                 entity.Property(e => e.PorcentajeSolidarista).HasPrecision(5, 2);
             });
 
+            //Permisos
+            modelBuilder.Entity<Permiso>()
+                .HasOne(p => p.Usuario)
+                .WithMany()
+                .HasForeignKey(p => p.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Permiso>()
+                .HasOne(p => p.AprobadoPor)
+                .WithMany()
+                .HasForeignKey(p => p.AprobadoPorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
 

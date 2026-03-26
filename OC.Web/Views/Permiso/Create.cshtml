@@ -1,0 +1,56 @@
+﻿@using OC.Core.Domain.Entities
+@model Permiso
+
+@{
+    ViewData["Title"] = "Crear Permiso";
+}
+
+<h2>Solicitar Permiso</h2>
+
+<form asp-action="Create" method="post">
+
+    @if (ViewBag.Usuarios != null)
+    {
+        <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <select name="UsuarioId" class="form-control" required>
+                <option value="">Seleccione un usuario</option>
+
+                @foreach (var u in ViewBag.Usuarios)
+                {
+                    <option value="@u.Id">@u.Nombre</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label">Tipo de Permiso</label>
+        <select asp-for="Tipo" class="form-control" required>
+            <option value="">Seleccione</option>
+            <option value="Vacaciones">Vacaciones</option>
+            <option value="SinPago">Sin Pago</option>
+            <option value="Otro">Otro</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha Inicio</label>
+        <input asp-for="FechaInicio" type="date" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha Fin</label>
+        <input asp-for="FechaFin" type="date" class="form-control" required />
+    </div>
+
+    <!-- MOTIVO -->
+    <div class="mb-3">
+        <label class="form-label">Motivo</label>
+        <textarea asp-for="Motivo" class="form-control"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Volver</a>
+
+</form>
