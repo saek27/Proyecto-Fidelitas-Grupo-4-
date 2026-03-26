@@ -42,7 +42,6 @@ namespace OC.Web.ViewComponents.Sidebar
             {
                 items.Add(new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" });
                 items.Add(new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" });
-                items.Add(new MenuItem { Title = "Expedientes", Url = "/Expedientess", Icon = "bi-folder2-open" });
                 items.Add(new MenuItem { Title = "Historial", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" });
                 items.Add(new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" });
                 items.Add(new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" });

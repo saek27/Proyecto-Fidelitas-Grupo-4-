@@ -5,6 +5,121 @@
     var currentUrl = Context.Request.Path.ToString();
 }
 
+<style>
+    /* ============================================
+           Mejoras visuales para el Sidebar
+           ============================================ */
+
+    /* Animación de entrada para los items (se aplicará con JS) */
+    .sidebar-item {
+        opacity: 0;
+        transform: translateX(-15px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+        .sidebar-item.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+    /* Efecto 3D en hover */
+    #sidebar ul li a {
+        transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), background 0.2s ease, box-shadow 0.2s ease;
+        transform-style: preserve-3d;
+    }
+
+        #sidebar ul li a:hover {
+            transform: translateX(5px) translateZ(5px);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 2px 4px 12px rgba(0,0,0,0.2);
+        }
+
+    /* Ítem activo con gradiente animado */
+    #sidebar ul li.active > a {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    }
+
+        #sidebar ul li.active > a::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+    @@keyframes shimmer {
+        0% {
+            left: -100%;
+        }
+
+        50% {
+            left: 100%;
+        }
+
+        100% {
+            left: 100%;
+        }
+    }
+
+    /* Efecto de brillo en hover para dropdown toggle */
+    #sidebar .dropdown-toggle:hover {
+        background: rgba(255,255,255,0.12) !important;
+        transform: translateX(3px);
+    }
+
+    /* Mejora de los subitems del dropdown */
+    #sidebar .dropdown-item {
+        transition: all 0.2s ease;
+        transform: translateX(0);
+    }
+
+        #sidebar .dropdown-item:hover {
+            transform: translateX(5px);
+            background: rgba(255,255,255,0.15) !important;
+            padding-left: 18px;
+        }
+
+    /* Efecto de onda (ripple) al hacer clic (se añade con JS) */
+    .ripple-effect {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.4);
+        transform: scale(0);
+        animation: ripple 0.6s ease-out;
+        pointer-events: none;
+    }
+
+    @@keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+    /* Punto de notificación opcional (si se desea usar) */
+    .badge-notify {
+        background-color: #ef4444;
+        color: white;
+        border-radius: 10px;
+        padding: 0 6px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: auto;
+        margin-right: 4px;
+        line-height: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
 <ul class="components">
     @foreach (var item in Model.Items)
     {
@@ -12,10 +127,12 @@
         ? currentUrl == "/"
         : currentUrl.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
 
-        <li class="@(isActive ? "active" : "")">
+        <li class="sidebar-item @(isActive ? "active" : "")" data-delay="@(Model.Items.IndexOf(item) * 40)">
             <a href="@item.Url">
                 <i class="bi @item.Icon"></i>
                 @item.Title
+                @* Puedes agregar un badge de notificación si tu modelo lo soporta *@
+                @* @if (item.Notificaciones > 0) { <span class="badge-notify">@item.Notificaciones</span> } *@
             </a>
         </li>
     }
@@ -25,7 +142,7 @@
         var helpActive = Model.HelpDeskItems.Any(h =>
         currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase));
 
-        <li>
+        <li class="sidebar-item" data-delay="@(Model.Items.Count * 40)">
             <a class="dropdown-toggle"
                data-bs-toggle="collapse"
                href="#helpDeskMenu"
@@ -39,7 +156,7 @@
                     @foreach (var h in Model.HelpDeskItems)
                     {
                         var hActive = currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase);
-                        <li>
+                        <li class="sidebar-subitem" data-delay="@(Model.Items.Count * 40 + Model.HelpDeskItems.IndexOf(h) * 20)">
                             <a href="@h.Url"
                                style="padding:9px 14px; font-size:13px; display:flex; align-items:center; gap:8px;
                                               color:rgba(255,255,255,.7); text-decoration:none; border-radius:6px;
@@ -57,3 +174,62 @@
         </li>
     }
 </ul>
+
+<script>
+    // Animación de entrada con anime.js (si está disponible)
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof anime !== 'undefined') {
+            const items = document.querySelectorAll('.sidebar-item');
+            if (items.length) {
+                anime({
+                    targets: items,
+                    opacity: [0, 1],
+                    translateX: [-15, 0],
+                    delay: function(el, i) {
+                        return parseInt(el.getAttribute('data-delay') || i * 40);
+                    },
+                    duration: 500,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            const subitems = document.querySelectorAll('.sidebar-subitem');
+            if (subitems.length) {
+                anime({
+                    targets: subitems,
+                    opacity: [0, 1],
+                    translateX: [-10, 0],
+                    delay: function(el, i) {
+                        return parseInt(el.getAttribute('data-delay') || i * 30);
+                    },
+                    duration: 400,
+                    easing: 'easeOutCubic'
+                });
+            }
+        } else {
+            // Fallback si no hay anime.js
+            document.querySelectorAll('.sidebar-item, .sidebar-subitem').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateX(0)';
+            });
+        }
+
+        // Efecto ripple en los enlaces del sidebar
+        const links = document.querySelectorAll('#sidebar ul li a');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.className = 'ripple-effect';
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    });
+</script>
