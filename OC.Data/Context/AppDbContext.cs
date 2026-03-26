@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OC.Core.Domain.Entities;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace OC.Data.Context
@@ -50,6 +51,8 @@ namespace OC.Data.Context
         //RH
         public DbSet<Planilla> Planillas { get; set; }
 
+        //Asistencia
+        public DbSet<Asistencia> Asistencias { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
