@@ -893,6 +893,12 @@ namespace OC.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CalificacionCliente")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ComentarioCliente")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CreadoPorId")
                         .HasColumnType("int");
 
@@ -911,11 +917,35 @@ namespace OC.Data.Migrations
                     b.Property<DateTime?>("FechaAsignacion")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("FechaCalificacion")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("FechaCierre")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaPrimeraRespuesta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaReapertura")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaResolucion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaResolucionEsperada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaRespuestaEsperada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaUltimaAlertaSLA")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MotivoReapertura")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NumeroSeguimiento")
                         .IsRequired()
@@ -925,12 +955,36 @@ namespace OC.Data.Migrations
                     b.Property<string>("ObservacionesCierre")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ObservacionesInternas")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Prioridad")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("Reabierto")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ReabiertoPorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SLA_CumplidoResolucion")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SLA_CumplidoRespuesta")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SLA_Observacion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SolucionAplicada")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("TecnicoAsignadoId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TiempoDedicado")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Tipo")
                         .HasMaxLength(30)

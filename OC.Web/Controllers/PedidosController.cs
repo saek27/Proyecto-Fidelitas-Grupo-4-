@@ -285,9 +285,8 @@ namespace OC.Web.Controllers
         }
 
         // GET: Pedidos/Index (página principal de pedidos)
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
-            int pageSize = 10;
             var result = await _pedidoRepo.GetPagedAsync(
                 page,
                 pageSize,
@@ -295,12 +294,6 @@ namespace OC.Web.Controllers
                 orderBy: q => q.OrderByDescending(p => p.FechaPedido),
                 includeProperties: "Proveedor"
             );
-
-            // Pasar datos de paginación a la vista mediante ViewBag
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize);
-            ViewBag.HasPreviousPage = page > 1;
-            ViewBag.HasNextPage = page < ViewBag.TotalPages;
 
             return View(result);
         }

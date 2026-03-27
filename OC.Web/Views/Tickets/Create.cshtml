@@ -1,37 +1,120 @@
 ﻿@model OC.Web.ViewModels.TicketCreateViewModel
+@{
+    ViewData["Title"] = "Nuevo Ticket de Soporte";
+}
 
-<div class="card-dashboard">
-    <h4>Crear Ticket de Soporte</h4>
+<style>
+    .form-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 2rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-    <form asp-action="Create" method="post">
-        <div class="mb-3">
-            <label asp-for="Titulo" class="form-label"></label>
-            <input asp-for="Titulo" class="form-control" />
-            <span asp-validation-for="Titulo" class="text-danger"></span>
+        .form-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.25);
+        }
+
+    .form-control, .form-select {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.12);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+    .btn-ripple {
+        position: relative;
+        overflow: hidden;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="form-card animate-on-scroll" data-delay="0">
+                <h4 class="mb-4">
+                    <i class="bi bi-ticket-perforated me-2"></i> Crear Ticket de Soporte
+                </h4>
+
+                <form asp-action="Create" method="post" id="createTicketForm">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="Titulo" class="form-label fw-semibold">Título *</label>
+                        <input asp-for="Titulo" class="form-control" placeholder="Ej: Problema con el software de facturación" />
+                        <span asp-validation-for="Titulo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label fw-semibold">Descripción *</label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="5" placeholder="Describa detalladamente el problema..."></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="EquipoId" class="form-label fw-semibold">Equipo relacionado (opcional)</label>
+                        <select asp-for="EquipoId" asp-items="Model.EquiposList" class="form-select">
+                            <option value="">-- Ninguno --</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-ripple" id="submitBtn">
+                            <i class="bi bi-send me-2"></i> Enviar Ticket
+                        </button>
+                        <a asp-action="MisTickets" class="btn btn-outline-secondary btn-ripple">
+                            <i class="bi bi-arrow-left me-2"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <div class="mb-3">
-            <label asp-for="Descripcion" class="form-label"></label>
-            <textarea asp-for="Descripcion" class="form-control" rows="5"></textarea>
-            <span asp-validation-for="Descripcion" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="EquipoId" class="form-label">Equipo relacionado (opcional)</label>
-            <select asp-for="EquipoId" asp-items="Model.EquiposList" class="form-select">
-                <option value="">Ninguno</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-send"></i> Enviar Ticket
-        </button>
-        <a asp-action="MisTickets" class="btn btn-secondary">Cancelar</a>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        anime({
+            targets: '.animate-on-scroll',
+            opacity: [0, 1],
+            translateY: [20, 0],
+            duration: 600,
+            delay: 100,
+            easing: 'easeOutCubic'
+        });
+
+        document.querySelectorAll('.btn-ripple').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${e.clientX - rect.left - size/2}px;
+                    top: ${e.clientY - rect.top - size/2}px;
+                    background: rgba(255,255,255,0.4);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple-anim 0.5s ease-out;
+                    pointer-events: none;
+                `;
+                if (getComputedStyle(this).position === 'static') this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 500);
+            });
+        });
+    </script>
 }

@@ -6,13 +6,13 @@
     var userRole = roles.Any() ? string.Join(", ", roles) : "Sin rol";
     var hora = DateTime.Now.Hour;
     var saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
-    var modulos = ViewBag.Modulos as List<ModuloItem> ?? new List<ModuloItem>();
+    var grupos = ViewBag.ModulosGroups as List<ModuloGroup> ?? new List<ModuloGroup>();
 }
 
 <style>
     /* ============================================
-           Dashboard Home - Estilos específicos
-           ============================================ */
+               Dashboard Home - Estilos mejorados
+               ============================================ */
 
     .dashboard-home {
         min-height: calc(100vh - 56px);
@@ -77,27 +77,70 @@
         color: rgba(255,255,255,0.9);
     }
 
-    /* Grid de módulos */
-    .modules-grid {
+    /* ========== GRUPOS (CARDS GRANDES) ========== */
+    .group-card {
         position: relative;
         z-index: 2;
         max-width: 1100px;
-        margin: 0 auto;
+        margin: 0 auto 48px;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 32px;
+        padding: 24px 24px 32px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .group-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.4);
+            border-color: rgba(59,130,246,0.4);
+        }
+
+    .group-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+        border-bottom: 2px solid rgba(59,130,246,0.5);
+        padding-bottom: 16px;
+    }
+
+        .group-header i {
+            font-size: 2rem;
+            color: #3b82f6;
+            background: rgba(59,130,246,0.2);
+            padding: 12px;
+            border-radius: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .group-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #fff;
+            letter-spacing: -0.3px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+    /* Grid interno de módulos */
+    .modules-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 20px;
     }
 
-    /* Tarjeta de módulo (con efecto 3D) */
+    /* Tarjeta de módulo (efecto 3D mejorado) */
     .module-card {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 16px;
-        padding: 28px 16px 24px;
-        background: rgba(255,255,255,0.06);
-        backdrop-filter: blur(8px);
+        gap: 14px;
+        padding: 24px 16px 20px;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(4px);
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 24px;
         text-decoration: none;
@@ -118,7 +161,7 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
             opacity: 0;
             transition: opacity 0.4s ease;
             pointer-events: none;
@@ -151,15 +194,16 @@
     }
 
     .mc-label {
-        font-size: 0.9rem;
+        font-size: 1rem;
         font-weight: 600;
         letter-spacing: -0.2px;
         margin-bottom: 4px;
+        color: #fff;
     }
 
     .mc-sub {
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.6);
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.65);
         line-height: 1.3;
     }
 
@@ -169,17 +213,27 @@
             padding: 24px 16px 40px;
         }
 
-        .welcome-block {
+        .group-card {
+            padding: 16px;
             margin-bottom: 32px;
+        }
+
+        .group-header i {
+            font-size: 1.5rem;
+            padding: 8px;
+        }
+
+        .group-header h2 {
+            font-size: 1.3rem;
         }
 
         .modules-grid {
             gap: 12px;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         }
 
         .module-card {
-            padding: 20px 12px;
+            padding: 18px 12px;
         }
 
         .mc-icon {
@@ -212,20 +266,29 @@
         </p>
     </div>
 
-    <div class="modules-grid">
-        @foreach (var (m, i) in modulos.Select((m, i) => (m, i)))
-        {
-            <a href="@m.Url" class="module-card" data-delay="@(i * 50)">
-                <div class="mc-icon" style="background: @m.Bg; color: @m.Color;">
-                    <i class="bi @m.Icon"></i>
-                </div>
-                <div>
-                    <div class="mc-label">@m.Label</div>
-                    <div class="mc-sub">@m.Sub</div>
-                </div>
-            </a>
-        }
-    </div>
+    @foreach (var grupo in grupos)
+    {
+        <div class="group-card" data-group="@grupo.Title">
+            <div class="group-header">
+                <i class="bi @grupo.Icon"></i>
+                <h2>@grupo.Title</h2>
+            </div>
+            <div class="modules-grid">
+                @foreach (var (m, i) in grupo.Items.Select((m, i) => (m, i)))
+                {
+                    <a href="@m.Url" class="module-card" data-delay="@(i * 50)">
+                        <div class="mc-icon" style="background: @m.Bg; color: @m.Color;">
+                            <i class="bi @m.Icon"></i>
+                        </div>
+                        <div>
+                            <div class="mc-label">@m.Label</div>
+                            <div class="mc-sub">@m.Sub</div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    }
 
 </div>
 
@@ -239,128 +302,93 @@
 <script type="module">
     import * as THREE from 'three';
 
-    // Configurar el fondo 3D con esfera de puntos
     const container = document.getElementById('home-canvas');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    // Crear una esfera con puntos
-    const geometry = new THREE.SphereGeometry(5, 64, 64);
-    const material = new THREE.PointsMaterial({
-        color: 0x3b82f6,
-        size: 0.08,
-        transparent: true,
-        blending: THREE.AdditiveBlending
-    });
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    // Añadir un segundo anillo de partículas para más dinamismo
-    const ringGeometry = new THREE.BufferGeometry();
-    const ringCount = 800;
-    const ringPositions = new Float32Array(ringCount * 3);
-    for (let i = 0; i < ringCount; i++) {
-        const angle = (i / ringCount) * Math.PI * 2;
-        const radius = 6.5;
-        ringPositions[i*3] = Math.cos(angle) * radius;
-        ringPositions[i*3+1] = Math.sin(angle) * radius * 0.5;
-        ringPositions[i*3+2] = Math.sin(angle) * radius * 0.8;
-    }
-    ringGeometry.setAttribute('position', new THREE.BufferAttribute(ringPositions, 3));
-    const ringMaterial = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.06, transparent: true, blending: THREE.AdditiveBlending });
-    const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
-    scene.add(ringPoints);
-
-    camera.position.z = 12;
-
-    let mouseX = 0, mouseY = 0;
-    document.addEventListener('mousemove', (event) => {
-        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-        mouseY = (event.clientY / window.innerHeight) * 2 - 1;
-    });
-
-    let time = 0;
-    function animate() {
-        requestAnimationFrame(animate);
-        time += 0.005;
-
-        // Rotación de la esfera
-        points.rotation.y = time * 0.3;
-        points.rotation.x = Math.sin(time * 0.2) * 0.2;
-        points.rotation.z = Math.cos(time * 0.15) * 0.1;
-
-        // Rotación del anillo
-        ringPoints.rotation.y = time * 0.4;
-        ringPoints.rotation.x = Math.sin(time * 0.25) * 0.1;
-
-        // Seguir el mouse suavemente
-        points.rotation.x += (mouseY * 0.8 - points.rotation.x) * 0.05;
-        points.rotation.y += (mouseX * 0.8 - points.rotation.y) * 0.05;
-        ringPoints.rotation.x += (mouseY * 0.6 - ringPoints.rotation.x) * 0.05;
-        ringPoints.rotation.y += (mouseX * 0.6 - ringPoints.rotation.y) * 0.05;
-
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+    if (container) {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+        renderer.setClearColor(0x000000, 0);
+        container.appendChild(renderer.domElement);
+
+        // Partículas suaves (más sutiles)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 800;
+        const posArray = new Float32Array(particlesCount * 3);
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            posArray[i] = (Math.random() - 0.5) * 50;
+            posArray[i+1] = (Math.random() - 0.5) * 30;
+            posArray[i+2] = (Math.random() - 0.5) * 20 - 5;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.06,
+            color: 0x3b82f6,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        camera.position.z = 18;
+
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particlesMesh.rotation.y += 0.0005;
+            particlesMesh.rotation.x += 0.0003;
+            particlesMesh.rotation.x += (mouseY * 0.3 - particlesMesh.rotation.x) * 0.05;
+            particlesMesh.rotation.y += (mouseX * 0.3 - particlesMesh.rotation.y) * 0.05;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
 </script>
 <script>
-    // Animación de entrada de las tarjetas con anime.js (si está disponible)
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof anime !== 'undefined') {
-            const cards = document.querySelectorAll('.module-card');
-            if (cards.length) {
+            // Animación de entrada de los grupos (stagger)
+            const groups = document.querySelectorAll('.group-card');
+            anime({
+                targets: groups,
+                opacity: [0, 1],
+                translateY: [40, 0],
+                delay: function(el, i) { return i * 150; },
+                duration: 600,
+                easing: 'easeOutCubic'
+            });
+
+            // Animación de las tarjetas dentro de cada grupo (con stagger interno)
+            groups.forEach(group => {
+                const cards = group.querySelectorAll('.module-card');
                 anime({
                     targets: cards,
                     opacity: [0, 1],
-                    translateY: [30, 0],
-                    rotateX: [15, 0],
-                    delay: function(el, i) {
-                        return parseInt(el.getAttribute('data-delay') || i * 50);
-                    },
-                    duration: 700,
-                    easing: 'easeOutElastic(1, .6)'
+                    translateY: [20, 0],
+                    delay: function(el, i) { return parseInt(el.getAttribute('data-delay') || i * 50); },
+                    duration: 500,
+                    easing: 'easeOutQuad'
                 });
-            }
+            });
+        } else {
+            // Fallback: mostrar todo directamente
+            document.querySelectorAll('.group-card, .module-card').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
         }
     });
-
-
-        // Dentro de tu script en Index.cshtml (o en site.js)
-    if (typeof anime !== 'undefined') {
-        const cards = document.querySelectorAll('.module-card');
-        anime({
-            targets: cards,
-            opacity: [0, 1],
-            translateY: [30, 0],
-            rotateX: [15, 0],
-            delay: function(el, i) { return i * 50; },
-            duration: 700,
-            easing: 'easeOutElastic(1, .6)',
-            begin: function() {
-                // Opcional: también animar los iconos internos
-                cards.forEach(card => {
-                    const icon = card.querySelector('.mc-icon i');
-                    if (icon) {
-                        anime({
-                            targets: icon,
-                            scale: [0.8, 1],
-                            rotateY: [45, 0],
-                            duration: 500,
-                            easing: 'easeOutQuad'
-                        });
-                    }
-                });
-            }
-        });
-    }
 </script>

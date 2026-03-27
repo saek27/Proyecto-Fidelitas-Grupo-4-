@@ -1,30 +1,55 @@
 @model OC.Core.Domain.Entities.Producto
 @{
-    ViewData["Title"] = "Detalle producto";
+    ViewData["Title"] = $"Producto {Model.Nombre}";
 }
 
-<h2>@Model.Nombre</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card-dashboard animate-on-scroll" data-delay="0">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4><i class="bi bi-box-seam me-2"></i> Detalle del Producto</h4>
+                    <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">
+                        @(Model.Activo ? "Activo" : "Inactivo")
+                    </span>
+                </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+                <dl class="row">
+                    <dt class="col-sm-3">Nombre</dt>
+                    <dd class="col-sm-9">@Model.Nombre</dd>
 
-<dl class="row">
-    <dt class="col-sm-3">SKU</dt>
-    <dd class="col-sm-9">@Model.SKU</dd>
+                    <dt class="col-sm-3">SKU</dt>
+                    <dd class="col-sm-9">@Model.SKU</dd>
 
-    <dt class="col-sm-3">Costo unitario</dt>
-    <dd class="col-sm-9">@Model.CostoUnitario.ToString("N2")</dd>
+                    <dt class="col-sm-3">Costo unitario</dt>
+                    <dd class="col-sm-9">@Model.CostoUnitario.ToString("N2")</dd>
 
-    <dt class="col-sm-3">Stock disponible</dt>
-    <dd class="col-sm-9">@Model.Stock</dd>
-</dl>
+                    <dt class="col-sm-3">Stock disponible</dt>
+                    <dd class="col-sm-9 @(Model.Stock < 6 ? "text-danger fw-bold" : "")">@Model.Stock</dd>
+                </dl>
 
-<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar costo y stock</a>
-<a asp-action="Index" class="btn btn-secondary">Volver al inventario</a>
+                @if (Model.Stock < 6)
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Este producto tiene bajo stock (≤5 unidades). Se recomienda realizar un pedido.
+                    </div>
+                }
 
-<form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline mt-2" onsubmit="return confirm('¿Eliminar este producto del catálogo? Dejará de estar disponible para movimiento de stock y ventas.');">
-    @Html.AntiForgeryToken()
-    <button type="submit" class="btn btn-danger">Eliminar del catálogo</button>
-</form>
+                <div class="d-flex gap-2 mt-4">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-ripple">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary btn-ripple">
+                        <i class="bi bi-arrow-left"></i> Volver al inventario
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este producto del catálogo?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-ripple">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

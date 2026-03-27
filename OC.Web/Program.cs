@@ -54,7 +54,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 });
-
+//SLA
+// Agregar al final de la configuración de servicios
+builder.Services.AddHostedService<SLAMonitorService>();
+builder.Services.AddHostedService<TicketAutoCloseService>();
 
 //Valor Clinico
 builder.Services.AddScoped<IGenericRepository<ValorClinico>, GenericRepository<ValorClinico>>();

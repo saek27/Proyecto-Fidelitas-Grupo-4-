@@ -5,6 +5,8 @@ namespace OC.Web.ViewModels
     public class TicketEditViewModel
     {
         public int Id { get; set; }
+        public string NumeroSeguimiento { get; set; } = string.Empty;  // ← Agregar esta línea
+
         public string Titulo { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
         public string Estado { get; set; } = string.Empty;

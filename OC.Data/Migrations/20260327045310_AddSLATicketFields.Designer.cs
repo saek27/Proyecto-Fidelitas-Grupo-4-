@@ -12,8 +12,8 @@ using OC.Data.Context;
 namespace OC.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260326024158_AddPermisosTable")]
-    partial class AddPermisosTable
+    [Migration("20260327045310_AddSLATicketFields")]
+    partial class AddSLATicketFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -245,47 +245,6 @@ namespace OC.Data.Migrations
                     b.HasIndex("ExpedienteId");
 
                     b.ToTable("DocumentosExpediente");
-                });
-
-            modelBuilder.Entity("OC.Core.Domain.Entities.Empleado", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Apellidos")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Cedula")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Puesto")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SucursalId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Telefono")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SucursalId");
-
-                    b.ToTable("Empleados");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.EnvioNotificacion", b =>
@@ -597,6 +556,49 @@ namespace OC.Data.Migrations
                     b.ToTable("Pedidos");
                 });
 
+            modelBuilder.Entity("OC.Core.Domain.Entities.Permiso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AprobadoPorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaFin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaSolicitud")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Motivo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AprobadoPorId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Permisos");
+                });
+
             modelBuilder.Entity("OC.Core.Domain.Entities.Planilla", b =>
                 {
                     b.Property<int>("Id")
@@ -894,6 +896,9 @@ namespace OC.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ComentariosAdicionales")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CreadoPorId")
                         .HasColumnType("int");
 
@@ -918,6 +923,18 @@ namespace OC.Data.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("FechaPrimeraRespuesta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaResolucionEsperada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaRespuestaEsperada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaUltimaAlertaSLA")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("NumeroSeguimiento")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -930,8 +947,31 @@ namespace OC.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("RequiereSeguimiento")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SLA_CumplidoResolucion")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SLA_CumplidoRespuesta")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SLA_Observacion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SatisfaccionUsuario")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SolucionAplicada")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int?>("TecnicoAsignadoId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TiempoDedicado")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Tipo")
                         .HasMaxLength(30)
@@ -1228,17 +1268,6 @@ namespace OC.Data.Migrations
                     b.Navigation("Expediente");
                 });
 
-            modelBuilder.Entity("OC.Core.Domain.Entities.Empleado", b =>
-                {
-                    b.HasOne("OC.Core.Domain.Entities.Sucursal", "Sucursal")
-                        .WithMany("Empleados")
-                        .HasForeignKey("SucursalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Sucursal");
-                });
-
             modelBuilder.Entity("OC.Core.Domain.Entities.EnvioNotificacion", b =>
                 {
                     b.HasOne("OC.Core.Domain.Entities.Cita", "Cita")
@@ -1312,6 +1341,24 @@ namespace OC.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Proveedor");
+                });
+
+            modelBuilder.Entity("OC.Core.Domain.Entities.Permiso", b =>
+                {
+                    b.HasOne("OC.Core.Domain.Entities.Usuario", "AprobadoPor")
+                        .WithMany()
+                        .HasForeignKey("AprobadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OC.Core.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AprobadoPor");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("OC.Core.Domain.Entities.Planilla", b =>
@@ -1471,8 +1518,6 @@ namespace OC.Data.Migrations
             modelBuilder.Entity("OC.Core.Domain.Entities.Sucursal", b =>
                 {
                     b.Navigation("Citas");
-
-                    b.Navigation("Empleados");
 
                     b.Navigation("Usuarios");
                 });

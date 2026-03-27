@@ -1,37 +1,56 @@
 @model OC.Core.Domain.Entities.Producto
 @{
-    ViewData["Title"] = "Editar producto";
+    ViewData["Title"] = "Editar Producto";
 }
 
-<h2>Editar producto</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card-dashboard animate-on-scroll" data-delay="0">
+                <h4 class="mb-4"><i class="bi bi-pencil-square me-2"></i> Editar Producto</h4>
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="SKU" />
-    <input type="hidden" asp-for="Activo" />
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="SKU" />
+                    <input type="hidden" asp-for="Activo" />
 
-    <div class="mb-3">
-        <label class="form-label">Nombre</label>
-        <input asp-for="Nombre" class="form-control" />
-        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label fw-semibold">Nombre *</label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SKU" class="form-label fw-semibold">SKU</label>
+                        <input asp-for="SKU" class="form-control" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CostoUnitario" class="form-label fw-semibold">Costo unitario *</label>
+                        <input asp-for="CostoUnitario" type="number" step="0.01" min="0" class="form-control" />
+                        <span asp-validation-for="CostoUnitario" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Stock" class="form-label fw-semibold">Stock disponible *</label>
+                        <input asp-for="Stock" type="number" min="0" class="form-control" />
+                        <span asp-validation-for="Stock" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-ripple">
+                            <i class="bi bi-save me-2"></i> Actualizar
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-ripple">
+                            <i class="bi bi-arrow-left me-2"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label">SKU</label>
-        <input asp-for="SKU" class="form-control" readonly />
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Costo unitario</label>
-        <input asp-for="CostoUnitario" type="number" step="0.01" min="0" class="form-control" />
-        <span asp-validation-for="CostoUnitario" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Stock disponible</label>
-        <input asp-for="Stock" type="number" min="0" class="form-control" />
-        <span asp-validation-for="Stock" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Actualizar</button>
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -1,35 +1,40 @@
-﻿@model OC.Web.ViewModels.TicketAsignarViewModel
+﻿@model OC.Web.ViewModels.TicketResolverViewModel
 @{
-    ViewData["Title"] = "Asignar Ticket";
+    ViewData["Title"] = "Resolver Ticket";
 }
 
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="card-dashboard animate-on-scroll" data-delay="0">
-                <h4 class="mb-4"><i class="bi bi-person-plus me-2"></i> Asignar Ticket</h4>
+                <h4 class="mb-4"><i class="bi bi-check2-circle me-2"></i> Resolver Ticket</h4>
 
                 <div class="alert alert-info mb-4">
                     <strong>Ticket:</strong> @Model.NumeroSeguimiento - @Model.Titulo
+                    <div class="mt-2"><i class="bi bi-clock-history"></i> Tiempo desde asignación: <span id="tiempoCalculado"></span></div>
                 </div>
 
-                <form asp-action="Asignar" method="post">
+                <form asp-action="Resolver" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
 
                     <div class="mb-3">
-                        <label asp-for="TecnicoAsignadoId" class="form-label fw-semibold">Seleccionar técnico</label>
-                        <select asp-for="TecnicoAsignadoId" asp-items="Model.TecnicosList" class="form-select">
-                            <option value="">-- Seleccione un técnico --</option>
-                        </select>
-                        <span asp-validation-for="TecnicoAsignadoId" class="text-danger"></span>
+                        <label asp-for="SolucionAplicada" class="form-label fw-semibold">Solución aplicada *</label>
+                        <input asp-for="SolucionAplicada" class="form-control" placeholder="Ej: Reinstalación de controladores, Reemplazo de hardware..." />
+                        <span asp-validation-for="SolucionAplicada" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ObservacionesInternas" class="form-label fw-semibold">Observaciones internas (para el equipo)</label>
+                        <textarea asp-for="ObservacionesInternas" class="form-control" rows="3" placeholder="Notas que no verá el cliente..."></textarea>
+                        <span asp-validation-for="ObservacionesInternas" class="text-danger"></span>
                     </div>
 
                     <div class="d-flex gap-3">
                         <button type="submit" class="btn btn-primary btn-ripple">
-                            <i class="bi bi-check-lg me-2"></i> Asignar
+                            <i class="bi bi-check-lg me-2"></i> Marcar como Resuelto
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary btn-ripple">
+                        <a asp-action="PanelTecnico" class="btn btn-outline-secondary btn-ripple">
                             <i class="bi bi-arrow-left me-2"></i> Cancelar
                         </a>
                     </div>
@@ -50,6 +55,17 @@
             easing: 'easeOutCubic'
         });
 
+        // Calcular tiempo automáticamente
+        const fechaAsignacion = new Date("@Model.FechaAsignacion?.ToString("o")");
+        const fechaCreacion = new Date("@Model.FechaCreacion.ToString("o")");
+        const inicio = fechaAsignacion || fechaCreacion;
+        const ahora = new Date();
+        const diffHoras = (ahora - inicio) / (1000 * 60 * 60);
+        const horas = Math.floor(diffHoras);
+        const minutos = Math.floor((diffHoras - horas) * 60);
+        document.getElementById('tiempoCalculado').innerText = `${horas}h ${minutos}m`;
+
+        // Efecto ripple
         document.querySelectorAll('.btn-ripple').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const ripple = document.createElement('span');
