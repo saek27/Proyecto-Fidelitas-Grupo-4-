@@ -92,6 +92,7 @@ namespace OC.Data.Context
             {
                 e.HasIndex(p => p.SKU).IsUnique();
                 e.Property(p => p.CostoUnitario).HasPrecision(18, 2);
+                e.Property(p => p.RutaImagen).HasMaxLength(512);
             });
 
             modelBuilder.Entity<DetallePedido>(entity =>
@@ -216,6 +217,10 @@ namespace OC.Data.Context
                 .WithMany()
                 .HasForeignKey(p => p.AprobadoPorId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Permiso>()
+                .Property(p => p.RutaDocumentoIncapacidad)
+                .HasMaxLength(512);
 
         }
 

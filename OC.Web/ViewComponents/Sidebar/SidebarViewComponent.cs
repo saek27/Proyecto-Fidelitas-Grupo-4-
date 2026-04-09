@@ -222,7 +222,8 @@ namespace OC.Web.ViewComponents.Sidebar
                     Icon = "bi-people",
                     Items = new List<MenuItem>
                     {
-                        new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" }
+                        new MenuItem { Title = "Mis Planillas", Url = "/Planillas/MisPlanillas", Icon = "bi-file-earmark-text" },
+                        new MenuItem { Title = "Permiso", Url = "/Permiso", Icon = "bi-clock" }
                     }
                 });
             }

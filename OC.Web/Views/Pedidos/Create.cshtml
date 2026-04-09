@@ -1,4 +1,4 @@
-﻿@model OC.Web.ViewModels.PedidoCreateViewModel
+@model OC.Web.ViewModels.PedidoCreateViewModel
 @{
     ViewData["Title"] = "Generar Pedido";
 }
@@ -37,9 +37,9 @@
                     <div id="productos-container">
                         @for (int i = 0; i < Model.Detalles.Count; i++)
                         {
-                            <div class="row mb-2 producto-item align-items-end">
-                                <div class="col-md-6">
-                                    <select name="Detalles[@i].ProductoId" class="form-select">
+                            <div class="row mb-2 producto-item align-items-center g-2">
+                                <div class="col-md-5">
+                                    <select name="Detalles[@i].ProductoId" class="form-select prod-select">
                                         <option value="">Seleccione un producto</option>
                                         @foreach (var prod in Model.Productos)
                                         {
@@ -54,31 +54,42 @@
                                         }
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2 text-center prod-vista-mini">
+                                    <img src="" alt="" class="rounded border prod-thumb-img" style="display:none;max-height:52px;max-width:52px;object-fit:contain" />
+                                    <span class="text-muted small prod-thumb-ph">—</span>
+                                </div>
+                                <div class="col-md-2">
                                     <input type="number" name="Detalles[@i].Cantidad" class="form-control" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" />
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" class="btn btn-danger btn-sm remove-product w-100">
-                                        <i class="bi bi-trash"></i> Eliminar
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100 btn-ripple" title="Quitar línea">
+                                        <i class="bi bi-x-lg me-1"></i> Quitar
                                     </button>
                                 </div>
                             </div>
                         }
                     </div>
 
-                    <div class="mb-3">
-                        <button type="button" id="add-product" class="btn btn-outline-info btn-ripple">
-                            <i class="bi bi-plus-circle"></i> Agregar producto
-                        </button>
+                    <div class="btn-toolbar mb-2 align-items-center flex-wrap gap-2" role="toolbar" aria-label="Líneas del pedido">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" id="add-product" class="btn btn-outline-primary btn-ripple">
+                                <i class="bi bi-plus-lg me-1"></i> Agregar producto
+                            </button>
+                        </div>
+                        <span class="text-muted small d-none d-md-inline mb-0">Añada una fila por cada artículo del pedido.</span>
                     </div>
 
-                    <div class="d-flex gap-3 mt-4">
-                        <button type="submit" class="btn btn-success btn-ripple">
-                            <i class="bi bi-send me-2"></i> Generar Pedido
-                        </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary btn-ripple">
-                            <i class="bi bi-arrow-left me-2"></i> Cancelar
-                        </a>
+                    <div class="form-footer-actions">
+                        <div class="btn-toolbar mb-0" role="toolbar" aria-label="Enviar pedido">
+                            <div class="btn-group" role="group">
+                                <button type="submit" class="btn btn-brand btn-ripple">
+                                    <i class="bi bi-send me-2"></i> Generar pedido
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary btn-ripple">
+                                    <i class="bi bi-x-lg me-2"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -89,31 +100,56 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        window.productoImagenes = @Html.Raw(ViewBag.ProductoImagenesJson ?? "{}");
         var productIndex = @Model.Detalles.Count;
-        var productosHtml = `@Html.Raw(Json.Serialize(Model.Productos.Select(p => new { value = p.Value, text = p.Text })))`;
+
+        function refrescarMiniatura($row) {
+            var id = $row.find('.prod-select').val();
+            var url = (window.productoImagenes && id && window.productoImagenes[id]) ? window.productoImagenes[id] : '';
+            var $img = $row.find('.prod-thumb-img');
+            var $ph = $row.find('.prod-thumb-ph');
+            if (url) {
+                $img.attr('src', url).show();
+                $ph.hide();
+            } else {
+                $img.hide().attr('src', '');
+                $ph.show();
+            }
+        }
+
+        $(function () {
+            $('.producto-item').each(function () { refrescarMiniatura($(this)); });
+        });
+
+        $(document).on('change', '.producto-item .prod-select', function () {
+            refrescarMiniatura($(this).closest('.producto-item'));
+        });
 
         $('#add-product').click(function () {
             var newRow = `
-                <div class="row mb-2 producto-item align-items-end">
-                    <div class="col-md-6">
-                        <select name="Detalles[${productIndex}].ProductoId" class="form-select">
+                <div class="row mb-2 producto-item align-items-center g-2">
+                    <div class="col-md-5">
+                        <select name="Detalles[${productIndex}].ProductoId" class="form-select prod-select">
                             <option value="">Seleccione un producto</option>
                             @foreach (var prod in Model.Productos)
                             {
-                                    <option value="@prod.Value">@prod.Text</option>
+                                <option value="@prod.Value">@prod.Text</option>
                             }
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2 text-center prod-vista-mini">
+                        <img src="" alt="" class="rounded border prod-thumb-img" style="display:none;max-height:52px;max-width:52px;object-fit:contain" />
+                        <span class="text-muted small prod-thumb-ph">—</span>
+                    </div>
+                    <div class="col-md-2">
                         <input type="number" name="Detalles[${productIndex}].Cantidad" class="form-control" placeholder="Cantidad" min="1" />
                     </div>
                     <div class="col-md-3">
-                        <button type="button" class="btn btn-danger btn-sm remove-product w-100">
-                            <i class="bi bi-trash"></i> Eliminar
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100 btn-ripple" title="Quitar línea">
+                            <i class="bi bi-x-lg me-1"></i> Quitar
                         </button>
                     </div>
-                </div>
-            `;
+                </div>`;
             $('#productos-container').append(newRow);
             productIndex++;
         });

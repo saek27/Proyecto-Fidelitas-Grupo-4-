@@ -21,5 +21,8 @@ namespace OC.Core.Domain.Entities
         public int Stock { get; set; }
 
         public bool Activo { get; set; } = true;
+
+        /// <summary>Ruta relativa bajo wwwroot (ej. /uploads/productos/...).</summary>
+        public string? RutaImagen { get; set; }
     }
 }

@@ -142,6 +142,41 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>Columna para documento de incapacidad en permisos (RR.HH.).</summary>
+        public static void EnsureProductoRutaImagenColumn(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Productos','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Productos') AND name = 'RutaImagen'
+    )
+    BEGIN
+        ALTER TABLE Productos ADD RutaImagen nvarchar(512) NULL;
+    END
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
+        public static void EnsurePermisoRutaDocumentoIncapacidadColumn(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Permisos','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Permisos') AND name = 'RutaDocumentoIncapacidad'
+    )
+    BEGIN
+        ALTER TABLE Permisos ADD RutaDocumentoIncapacidad nvarchar(512) NULL;
+    END
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

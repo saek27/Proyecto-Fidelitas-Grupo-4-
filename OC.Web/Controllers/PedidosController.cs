@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -48,12 +49,16 @@ namespace OC.Web.Controllers
         // GET: Pedidos/Create
         public async Task<IActionResult> Create()
         {
+            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
+                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+
             var viewModel = new PedidoCreateViewModel
             {
                 Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                     .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre }),
-                Productos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                    .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
+                Productos = productosActivos
+                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
             };
             return View(viewModel);
         }
@@ -125,6 +130,10 @@ namespace OC.Web.Controllers
             var pedidoEntity = pedido.Items.FirstOrDefault();
             if (pedidoEntity == null) return NotFound();
 
+            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
+                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+
             var viewModel = new PedidoEditViewModel
             {
                 Id = pedidoEntity.Id,
@@ -141,8 +150,8 @@ namespace OC.Web.Controllers
                 }).ToList() ?? new List<DetallePedidoViewModel>(),
                 Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                     .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre, Selected = p.Id == pedidoEntity.ProveedorId }),
-                Productos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                    .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
+                Productos = productosActivos
+                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
             };
 
             return View(viewModel);
@@ -270,18 +279,26 @@ namespace OC.Web.Controllers
 
         private async Task CargarListasCreate(PedidoCreateViewModel model)
         {
+            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
+                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+
             model.Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                 .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre });
-            model.Productos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
+            model.Productos = productosActivos
+                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
         }
 
         private async Task CargarListas(PedidoEditViewModel model)
         {
+            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
+                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+
             model.Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                 .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre });
-            model.Productos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
+            model.Productos = productosActivos
+                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
         }
 
         // GET: Pedidos/Index (página principal de pedidos)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,8 +11,8 @@ namespace OC.Core.Domain.Entities
         public int Id { get; set; }
 
         public int UsuarioId { get; set; }
-        public Usuario Usuario { get; set; }
-        public string Tipo { get; set; } // Vacaciones, SinPago, Otro
+        public Usuario? Usuario { get; set; }
+        public string Tipo { get; set; } = string.Empty; // Vacaciones, SinPago, Incapacidad, Otro
         public string? Motivo { get; set; }
 
         public DateTime FechaInicio { get; set; }
@@ -24,5 +24,8 @@ namespace OC.Core.Domain.Entities
 
         public int? AprobadoPorId { get; set; }
         public Usuario? AprobadoPor { get; set; }
+
+        /// <summary>Ruta relativa (wwwroot) del documento de incapacidad, si aplica.</summary>
+        public string? RutaDocumentoIncapacidad { get; set; }
     }
 }
