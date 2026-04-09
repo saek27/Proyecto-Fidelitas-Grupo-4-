@@ -1,5 +1,5 @@
 ﻿@using OC.Web.ViewComponents.Sidebar
-@model SidebarViewModel
+@model List<SidebarGroup>
 
 @{
     var currentUrl = Context.Request.Path.ToString();
@@ -7,10 +7,90 @@
 
 <style>
     /* ============================================
-           Mejoras visuales para el Sidebar
-           ============================================ */
+               Estilos para el sidebar con grupos
+               ============================================ */
 
-    /* Animación de entrada para los items (se aplicará con JS) */
+    .sidebar-group {
+        margin-bottom: 4px;
+    }
+
+    .sidebar-group-header {
+        padding: 11px 20px;
+        font-size: 13.5px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: rgba(255,255,255,.72);
+        text-decoration: none;
+        margin: 1px 10px;
+        border-radius: var(--radius-sm);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .sidebar-group-header i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            opacity: .8;
+            transition: var(--transition);
+        }
+
+        .sidebar-group-header:hover {
+            color: #fff;
+            background: rgba(255,255,255,.09);
+        }
+
+            .sidebar-group-header:hover i {
+                opacity: 1;
+                transform: translateX(2px);
+            }
+
+        .sidebar-group-header[aria-expanded="true"] i:first-child {
+            transform: rotate(90deg);
+        }
+
+    .sidebar-group-content {
+        padding-left: 12px;
+    }
+
+        .sidebar-group-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-group-content li a {
+            padding: 9px 14px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,.7);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+            .sidebar-group-content li a i {
+                font-size: 14px;
+                width: 16px;
+                text-align: center;
+            }
+
+            .sidebar-group-content li a:hover {
+                background: rgba(255,255,255,.09);
+                color: #fff;
+                transform: translateX(3px);
+            }
+
+        .sidebar-group-content li.active a {
+            background: rgba(59,130,246,.3);
+            color: #fff;
+        }
+
+    /* Animaciones de entrada */
     .sidebar-item {
         opacity: 0;
         transform: translateX(-15px);
@@ -22,70 +102,7 @@
             transform: translateX(0);
         }
 
-    /* Efecto 3D en hover */
-    #sidebar ul li a {
-        transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), background 0.2s ease, box-shadow 0.2s ease;
-        transform-style: preserve-3d;
-    }
-
-        #sidebar ul li a:hover {
-            transform: translateX(5px) translateZ(5px);
-            background: rgba(255,255,255,0.12);
-            box-shadow: 2px 4px 12px rgba(0,0,0,0.2);
-        }
-
-    /* Ítem activo con gradiente animado */
-    #sidebar ul li.active > a {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
-    }
-
-        #sidebar ul li.active > a::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            animation: shimmer 3s infinite;
-        }
-
-    @@keyframes shimmer {
-        0% {
-            left: -100%;
-        }
-
-        50% {
-            left: 100%;
-        }
-
-        100% {
-            left: 100%;
-        }
-    }
-
-    /* Efecto de brillo en hover para dropdown toggle */
-    #sidebar .dropdown-toggle:hover {
-        background: rgba(255,255,255,0.12) !important;
-        transform: translateX(3px);
-    }
-
-    /* Mejora de los subitems del dropdown */
-    #sidebar .dropdown-item {
-        transition: all 0.2s ease;
-        transform: translateX(0);
-    }
-
-        #sidebar .dropdown-item:hover {
-            transform: translateX(5px);
-            background: rgba(255,255,255,0.15) !important;
-            padding-left: 18px;
-        }
-
-    /* Efecto de onda (ripple) al hacer clic (se añade con JS) */
+    /* Efecto de onda (ripple) */
     .ripple-effect {
         position: absolute;
         border-radius: 50%;
@@ -102,7 +119,7 @@
         }
     }
 
-    /* Punto de notificación opcional (si se desea usar) */
+    /* Badge de notificación opcional */
     .badge-notify {
         background-color: #ef4444;
         color: white;
@@ -121,68 +138,49 @@
 </style>
 
 <ul class="components">
-    @foreach (var item in Model.Items)
+    @foreach (var group in Model)
     {
-        var isActive = item.Url == "/"
-        ? currentUrl == "/"
-        : currentUrl.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
+        var groupId = $"group-{group.Title.Replace(" ", "")}";
+        // Determinar si algún ítem del grupo está activo para abrir el acordeón por defecto
+        var anyActive = group.Items.Any(i => i.Url == "/" ? currentUrl == "/" : currentUrl.StartsWith(i.Url, StringComparison.OrdinalIgnoreCase));
 
-        <li class="sidebar-item @(isActive ? "active" : "")" data-delay="@(Model.Items.IndexOf(item) * 40)">
-            <a href="@item.Url">
-                <i class="bi @item.Icon"></i>
-                @item.Title
-                @* Puedes agregar un badge de notificación si tu modelo lo soporta *@
-                @* @if (item.Notificaciones > 0) { <span class="badge-notify">@item.Notificaciones</span> } *@
-            </a>
-        </li>
-    }
-
-    @if (Model.HelpDeskItems.Any())
-    {
-        var helpActive = Model.HelpDeskItems.Any(h =>
-        currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase));
-
-        <li class="sidebar-item" data-delay="@(Model.Items.Count * 40)">
-            <a class="dropdown-toggle"
+        <li class="sidebar-group" data-delay="@(Model.IndexOf(group) * 40)">
+            <a class="sidebar-group-header dropdown-toggle"
                data-bs-toggle="collapse"
-               href="#helpDeskMenu"
+               href="#@groupId"
                role="button"
-               aria-expanded="@(helpActive ? "true" : "false")">
-                <i class="bi bi-headset"></i>
-                Mesa de Ayuda
+               aria-expanded="@(anyActive ? "true" : "false")">
+                <i class="bi @group.Icon"></i>
+                @group.Title
             </a>
-            <div class="collapse @(helpActive ? "show" : "")" id="helpDeskMenu">
-                <ul class="list-unstyled" style="padding:4px 0 4px 12px;">
-                    @foreach (var h in Model.HelpDeskItems)
-                    {
-                        var hActive = currentUrl.StartsWith(h.Url, StringComparison.OrdinalIgnoreCase);
-                        <li class="sidebar-subitem" data-delay="@(Model.Items.Count * 40 + Model.HelpDeskItems.IndexOf(h) * 20)">
-                            <a href="@h.Url"
-                               style="padding:9px 14px; font-size:13px; display:flex; align-items:center; gap:8px;
-                                              color:rgba(255,255,255,.7); text-decoration:none; border-radius:6px;
-                                              background:@(hActive ? "rgba(59,130,246,.3)" : "transparent");
-                                              transition:all .2s ease;"
-                               onmouseover="this.style.background='rgba(255,255,255,.09)';this.style.color='#fff'"
-                               onmouseout="this.style.background='@(hActive ? "rgba(59,130,246,.3)" : "transparent")';this.style.color='rgba(255,255,255,.7)'">
-                                <i class="bi @h.Icon" style="font-size:14px;width:16px;text-align:center;"></i>
-                                @h.Title
-                            </a>
-                        </li>
-                    }
-                </ul>
+            <div class="collapse @(anyActive ? "show" : "")" id="@groupId">
+                <div class="sidebar-group-content">
+                    <ul>
+                        @foreach (var item in group.Items)
+                        {
+                            var isActive = item.Url == "/" ? currentUrl == "/" : currentUrl.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
+                            <li class="@(isActive ? "active" : "")">
+                                <a href="@item.Url">
+                                    <i class="bi @item.Icon"></i>
+                                    @item.Title
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
         </li>
     }
 </ul>
 
 <script>
-    // Animación de entrada con anime.js (si está disponible)
     document.addEventListener('DOMContentLoaded', function() {
+        // Animación de entrada con anime.js
         if (typeof anime !== 'undefined') {
-            const items = document.querySelectorAll('.sidebar-item');
-            if (items.length) {
+            const groups = document.querySelectorAll('.sidebar-group');
+            if (groups.length) {
                 anime({
-                    targets: items,
+                    targets: groups,
                     opacity: [0, 1],
                     translateX: [-15, 0],
                     delay: function(el, i) {
@@ -192,23 +190,9 @@
                     easing: 'easeOutCubic'
                 });
             }
-
-            const subitems = document.querySelectorAll('.sidebar-subitem');
-            if (subitems.length) {
-                anime({
-                    targets: subitems,
-                    opacity: [0, 1],
-                    translateX: [-10, 0],
-                    delay: function(el, i) {
-                        return parseInt(el.getAttribute('data-delay') || i * 30);
-                    },
-                    duration: 400,
-                    easing: 'easeOutCubic'
-                });
-            }
         } else {
             // Fallback si no hay anime.js
-            document.querySelectorAll('.sidebar-item, .sidebar-subitem').forEach(el => {
+            document.querySelectorAll('.sidebar-group').forEach(el => {
                 el.style.opacity = '1';
                 el.style.transform = 'translateX(0)';
             });

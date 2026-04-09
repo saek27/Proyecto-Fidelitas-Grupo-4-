@@ -1010,3 +1010,80 @@ body {
     transform: translateY(-6px) rotateY(12deg) rotateX(4deg) scale(1.12);
     transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
+
+/* ============================================
+   Estilos para SLA
+   ============================================ */
+
+/* Badges SLA */
+.sla-success {
+    background: #10b981;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.sla-warning {
+    background: #f59e0b;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    animation: pulse-warning 1.5s infinite;
+}
+
+.sla-danger {
+    background: #ef4444;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    animation: pulse-danger 1s infinite;
+}
+
+.sla-info {
+    background: #3b82f6;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 5px #f59e0b;
+    }
+}
+
+@keyframes pulse-danger {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 8px #ef4444;
+    }
+}
+
+/* Countdown en tickets */
+.sla-countdown {
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 500;
+}
+
+    .sla-countdown.urgent {
+        color: #ef4444;
+        font-weight: bold;
+    }

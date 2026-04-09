@@ -4,80 +4,95 @@
     ViewData["Title"] = "Editar Pedido";
 }
 
-<h2>Editar Pedido</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card-dashboard animate-on-scroll" data-delay="0">
+                <h4 class="mb-4"><i class="bi bi-pencil-square me-2"></i> Editar Pedido</h4>
 
-<form asp-action="Edit" method="post" id="pedidoForm">
-    <input type="hidden" asp-for="Id" />
+                <form asp-action="Edit" method="post" id="pedidoForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="ProveedorId" class="form-label"></label>
-                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select">
-                    <option value="">Seleccione un proveedor</option>
-                </select>
-                <span asp-validation-for="ProveedorId" class="text-danger"></span>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="FechaEntregaEstimada" class="form-label"></label>
-                <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
-                <span asp-validation-for="FechaEntregaEstimada" class="text-danger"></span>
-            </div>
-        </div>
-    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProveedorId" class="form-label fw-semibold">Proveedor *</label>
+                            <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select">
+                                <option value="">Seleccione un proveedor</option>
+                            </select>
+                            <span asp-validation-for="ProveedorId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FechaEntregaEstimada" class="form-label fw-semibold">Fecha entrega estimada *</label>
+                            <input asp-for="FechaEntregaEstimada" type="date" class="form-control" />
+                            <span asp-validation-for="FechaEntregaEstimada" class="text-danger"></span>
+                        </div>
+                    </div>
 
-    <div class="mb-3">
-        <label asp-for="Descripcion" class="form-label"></label>
-        <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
-        <span asp-validation-for="Descripcion" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label fw-semibold">Descripción</label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger"></span>
+                    </div>
 
-    <div class="mb-3">
-        <label asp-for="Estado" class="form-label"></label>
-        <select asp-for="Estado" class="form-select" asp-items="Html.GetEnumSelectList<EstadoPedido>()"></select>
-        <span asp-validation-for="Estado" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
+                        <select asp-for="Estado" class="form-select" asp-items="Html.GetEnumSelectList<EstadoPedido>()"></select>
+                        <span asp-validation-for="Estado" class="text-danger"></span>
+                    </div>
 
-    <h4>Productos</h4>
-    <div id="productos-container">
-        @for (int i = 0; i < Model.Detalles.Count; i++)
-        {
-            <div class="row mb-2 producto-item">
-                <div class="col-md-5">
-                    <select name="Detalles[@i].ProductoId" class="form-select">
-                        <option value="">Seleccione un producto</option>
-                        @foreach (var prod in Model.Productos)
+                    <h5 class="mt-4 mb-3">Productos del pedido</h5>
+                    <div id="productos-container">
+                        @for (int i = 0; i < Model.Detalles.Count; i++)
                         {
-                            if (prod.Value == Model.Detalles[i].ProductoId.ToString())
-                            {
-                                <option value="@prod.Value" selected>@prod.Text</option>
-                            }
-                            else
-                            {
-                                <option value="@prod.Value">@prod.Text</option>
-                            }
+                            <div class="row mb-2 producto-item align-items-end">
+                                <div class="col-md-6">
+                                    <select name="Detalles[@i].ProductoId" class="form-select">
+                                        <option value="">Seleccione un producto</option>
+                                        @foreach (var prod in Model.Productos)
+                                        {
+                                            if (prod.Value == Model.Detalles[i].ProductoId.ToString())
+                                            {
+                                                <option value="@prod.Value" selected>@prod.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@prod.Value">@prod.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" name="Detalles[@i].Cantidad" class="form-control" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-danger btn-sm remove-product w-100">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
                         }
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <input type="number" name="Detalles[@i].Cantidad" class="form-control" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" />
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-sm remove-product">Eliminar</button>
-                </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="button" id="add-product" class="btn btn-outline-info btn-ripple">
+                            <i class="bi bi-plus-circle"></i> Agregar producto
+                        </button>
+                    </div>
+
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="submit" class="btn btn-primary btn-ripple">
+                            <i class="bi bi-save me-2"></i> Guardar Cambios
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-ripple">
+                            <i class="bi bi-arrow-left me-2"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
             </div>
-        }
+        </div>
     </div>
-
-    <div class="mb-3">
-        <button type="button" id="add-product" class="btn btn-info">Agregar producto</button>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -85,8 +100,8 @@
         var productIndex = @Model.Detalles.Count;
         $('#add-product').click(function () {
             var newRow = `
-                <div class="row mb-2 producto-item">
-                    <div class="col-md-5">
+                <div class="row mb-2 producto-item align-items-end">
+                    <div class="col-md-6">
                         <select name="Detalles[${productIndex}].ProductoId" class="form-select">
                             <option value="">Seleccione un producto</option>
                             @foreach (var prod in Model.Productos)
@@ -98,8 +113,10 @@
                     <div class="col-md-3">
                         <input type="number" name="Detalles[${productIndex}].Cantidad" class="form-control" placeholder="Cantidad" min="1" />
                     </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-danger btn-sm remove-product">Eliminar</button>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-danger btn-sm remove-product w-100">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
                     </div>
                 </div>
             `;

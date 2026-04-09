@@ -1,79 +1,145 @@
-@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Producto>
+@using OC.Core.Domain.Entities
+@model OC.Core.Common.PagedResult<Producto>
 @{
     ViewData["Title"] = "Inventario";
+    var pagination = new PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("Index", new { page, pageSize = ViewBag.PageSize })
+    };
+    var lowStock = ViewBag.LowStock as IEnumerable<Producto> ?? new List<Producto>();
 }
 
-<h2>Inventario</h2>
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-dark">
+            <i class="bi bi-box-seam me-2"></i> Inventario
+        </h2>
+        <a asp-action="Create" class="btn btn-primary btn-ripple">
+            <i class="bi bi-plus-circle me-2"></i> Nuevo Producto
+        </a>
+    </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show animate-fade-up mb-3" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-<a asp-action="Create" class="btn btn-primary mb-3">Nuevo producto</a>
+    <div class="card-dashboard animate-on-scroll" data-delay="0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>SKU</th>
+                            <th>Costo unitario</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            var stockClass = item.Stock < 6 ? "text-danger fw-bold" : "";
+                            <tr class="animate-on-scroll" data-delay="@(Model.Items.ToList().IndexOf(item) * 30)">
+                                <td>@item.Nombre</td>
+                                <td>@item.SKU</td>
+                                <td>@item.CostoUnitario.ToString("N2")</td>
+                                <td class="@stockClass">@item.Stock</td>
+                                <td>
+                                    @if (item.Activo)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactivo</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este producto del catálogo?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-<form method="get">
-    <label>Mostrar:</label>
-    <select name="pageSize" onchange="this.form.submit()">
-        <option value="5" selected="@(ViewBag.PageSize == 5)">5</option>
-        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-        <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
-    </select>
-</form>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>SKU</th>
-            <th>Costo unitario</th>
-            <th>Stock</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
-            <tr>
-                <td>@item.Nombre</td>
-                <td>@item.SKU</td>
-                <td>@item.CostoUnitario.ToString("N2")</td>
-                <td>@item.Stock</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Ver</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
-                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este producto del catálogo?');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-@if (((IEnumerable<OC.Core.Domain.Entities.Producto>)ViewBag.LowStock).Any())
-{
-    <h3 class="mt-4 text-danger">⚠ Productos con bajo stock</h3>
-
-    <table class="table table-danger">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Stock</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in (IEnumerable<OC.Core.Domain.Entities.Producto>)ViewBag.LowStock)
+            @if (!Model.Items.Any())
             {
-                <tr>
-                    <td>@item.Nombre</td>
-                    <td>@item.Stock</td>
-                </tr>
+                <div class="alert alert-info text-center m-3">
+                    <i class="bi bi-info-circle"></i> No hay productos registrados.
+                    <a asp-action="Create" class="alert-link">Agregar el primero</a>
+                </div>
             }
-        </tbody>
-    </table>
-}
+        </div>
+    </div>
 
+    @await Html.PartialAsync("_Pagination", pagination)
+
+    @if (lowStock.Any())
+    {
+        <div class="card-dashboard mt-4 border-danger animate-on-scroll" data-delay="200">
+            <div class="card-header bg-danger bg-opacity-10 border-bottom-0">
+                <h5 class="mb-0 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Productos con bajo stock (≤5)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-danger mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>SKU</th>
+                                <th>Stock actual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lowStock)
+                            {
+                                <tr>
+                                    <td>@item.Nombre</td>
+                                    <td>@item.SKU</td>
+                                    <td class="fw-bold text-danger">@item.Stock</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        anime({
+            targets: '.animate-on-scroll',
+            opacity: [0, 1],
+            translateY: [15, 0],
+            delay: function(el, i) { return parseInt(el.getAttribute('data-delay') || i * 30); },
+            duration: 500,
+            easing: 'easeOutQuad'
+        });
+    </script>
+}
