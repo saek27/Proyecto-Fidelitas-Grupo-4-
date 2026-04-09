@@ -1,8 +1,15 @@
 ﻿@using OC.Core.Domain.Entities
-@model List<Permiso>
+@model OC.Core.Common.PagedResult<Permiso>
 
 @{
     ViewData["Title"] = "Permisos";
+
+    var pagination = new PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("Index", new { page })
+    };
 }
 
 <h2>Permisos</h2>
@@ -23,7 +30,7 @@
     </thead>
 
     <tbody>
-        @foreach (var p in Model)
+        @foreach (var p in Model.Items)
         {
             <tr>
                 <td>@p.Usuario?.Nombre</td>
@@ -63,3 +70,12 @@
         }
     </tbody>
 </table>
+
+@if (!Model.Items.Any())
+{
+    <div class="alert alert-info text-center m-3">
+        No hay permisos registrados.
+    </div>
+}
+
+@await Html.PartialAsync("_Pagination", pagination)

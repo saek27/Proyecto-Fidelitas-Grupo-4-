@@ -21,7 +21,7 @@ namespace OC.Web.Controllers
         }
 
 
-        public async Task<IActionResult> Index()
+        /*public async Task<IActionResult> Index()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -41,6 +41,40 @@ namespace OC.Web.Controllers
                 .ToListAsync();
 
             return View(data);
+        }*/
+
+        public async Task<IActionResult> Index(int page = 1)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            IQueryable<Permiso> query = _context.Permisos
+                .Include(p => p.Usuario)
+                .Include(p => p.AprobadoPor);
+
+            if (role != "Admin")
+            {
+                query = query.Where(p => p.UsuarioId == userId);
+            }
+
+            int pageSize = 10;
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(p => p.FechaSolicitud)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = new OC.Core.Common.PagedResult<Permiso>(
+                items,
+                totalItems,
+                page,
+                pageSize
+            );
+
+            return View(result);
         }
 
 

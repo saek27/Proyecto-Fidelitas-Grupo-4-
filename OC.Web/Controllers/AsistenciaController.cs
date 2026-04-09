@@ -33,7 +33,7 @@ namespace OC.Web.Controllers
             return View(data);
         }*/
 
-        public async Task<IActionResult> Index(DateTime? fecha)
+        /*public async Task<IActionResult> Index(DateTime? fecha)
         {
             var hoy = fecha ?? DateTime.Today;
 
@@ -50,6 +50,32 @@ namespace OC.Web.Controllers
             var data = await query
                 .Include(a => a.Usuario)
                 .Where(a => a.Fecha == hoy)
+                .ToListAsync();
+
+            return View(data);
+        }*/
+
+        public async Task<IActionResult> Index(DateTime? fecha)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            IQueryable<Asistencia> query = _context.Asistencias
+                .Include(a => a.Usuario);
+
+            if (role != "Admin")
+            {
+                query = query.Where(a => a.UsuarioId == userId);
+            }
+
+            
+            if (fecha.HasValue)
+            {
+                query = query.Where(a => a.Fecha == fecha.Value);
+            }
+
+            var data = await query
+                .OrderByDescending(a => a.Fecha)
                 .ToListAsync();
 
             return View(data);

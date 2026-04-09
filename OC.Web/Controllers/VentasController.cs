@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OC.Core.Common;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Core.Domain.Enums;
@@ -37,15 +38,32 @@ namespace OC.Web.Controllers
         }
 
         // GET: /Ventas
-        public async Task<IActionResult> Index()
+        /*   public async Task<IActionResult> Index()
+           {
+               try
+               {
+                   var resultado = await _ventaRepo.GetPagedAsync(
+                       1, 100, null,
+                       includeProperties: "Paciente,Usuario");
+
+                   return View(resultado.Items);
+               }
+               catch (Exception ex)
+               {
+                   TempData["Error"] = $"Error al cargar las ventas: {ex.Message}";
+                   return RedirectToAction("Index", "Home");
+               }
+           }*/
+
+        public async Task<IActionResult> Index(int page = 1)
         {
             try
             {
                 var resultado = await _ventaRepo.GetPagedAsync(
-                    1, 100, null,
+                    page, 10, null,
                     includeProperties: "Paciente,Usuario");
 
-                return View(resultado.Items);
+                return View(resultado); // 🔥 AQUÍ está la clave
             }
             catch (Exception ex)
             {

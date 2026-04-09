@@ -1,5 +1,14 @@
 ﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Proveedor>
 
+@{
+    ViewData["Title"] = "Proveedores";
+    var pagination = new PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("Index", new { page })
+    };
+}
 
 <h2>Proveedores</h2>
 
@@ -38,3 +47,12 @@
     </tbody>
 </table>
 
+@if (!Model.Items.Any())
+{
+    <div class="alert alert-info text-center m-3">
+        No hay proveedores registrados.
+        <a asp-action="Create" class="alert-link">Crear el primero</a>
+    </div>
+}
+
+@await Html.PartialAsync("_Pagination", pagination)
