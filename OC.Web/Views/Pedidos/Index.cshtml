@@ -1,4 +1,4 @@
-﻿@using OC.Core.Domain.Entities
+@using OC.Core.Domain.Entities
 @model OC.Core.Common.PagedResult<Pedido>
 @{
     ViewData["Title"] = "Gestión de Pedidos";
@@ -11,13 +11,20 @@
 }
 
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-dark">
-            <i class="bi bi-truck me-2"></i> Gestión de Pedidos
+    <div class="d-flex flex-column flex-md-row gap-3 justify-content-md-between align-items-md-center mb-4">
+        <h2 class="text-dark mb-0">
+            <i class="bi bi-truck me-2"></i> Gestión de pedidos
         </h2>
-        <a asp-action="Create" class="btn btn-primary btn-ripple">
-            <i class="bi bi-plus-circle me-2"></i> Nuevo Pedido
-        </a>
+        <div class="btn-toolbar page-header-toolbar mb-0 justify-content-md-end" role="toolbar" aria-label="Acciones de pedidos">
+            <div class="btn-group" role="group">
+                <a asp-action="Historial" class="btn btn-outline-secondary btn-ripple">
+                    <i class="bi bi-clock-history me-2"></i> Historial
+                </a>
+                <a asp-action="Create" class="btn btn-brand btn-ripple">
+                    <i class="bi bi-plus-circle me-2"></i> Nuevo pedido
+                </a>
+            </div>
+        </div>
     </div>
 
     @if (TempData["Success"] != null)
@@ -75,27 +82,36 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-sm btn-outline-info" title="Ver detalle">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a asp-action="Edit" asp-route-id="@pedido.Id" class="btn btn-sm btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        @if (pedido.Activo)
-                                        {
-                                            <form asp-action="Desactivar" asp-route-id="@pedido.Id" method="post" style="display:inline;">
+                                    @if (pedido.Activo)
+                                    {
+                                        <div class="btn-toolbar table-row-toolbar justify-content-center flex-wrap mb-0" role="toolbar" aria-label="Acciones del pedido">
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Consulta y edición">
+                                                <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-outline-info" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i><span class="d-none d-xl-inline ms-1">Ver</span>
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@pedido.Id" class="btn btn-outline-secondary" title="Editar">
+                                                    <i class="bi bi-pencil"></i><span class="d-none d-xl-inline ms-1">Editar</span>
+                                                </a>
+                                            </div>
+                                            <form asp-action="Desactivar" asp-route-id="@pedido.Id" method="post" class="ms-1" onsubmit="return confirm('¿Desactivar este pedido?');">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar" onclick="return confirm('¿Desactivar este pedido?')">
-                                                    <i class="bi bi-trash"></i>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar pedido">
+                                                    <i class="bi bi-archive"></i><span class="d-none d-xl-inline ms-1">Desactivar</span>
                                                 </button>
                                             </form>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-dark ms-2">Inactivo</span>
-                                        }
-                                    </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="btn-toolbar flex-column align-items-center gap-2 mb-0" role="toolbar" aria-label="Pedido inactivo">
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-outline-info" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
                                 </td>
                             </tr>
                         }

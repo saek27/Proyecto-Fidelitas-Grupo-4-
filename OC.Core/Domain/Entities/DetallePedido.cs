@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace OC.Core.Domain.Entities
 {
@@ -12,7 +12,7 @@ namespace OC.Core.Domain.Entities
 
         [Required]
         public int ProductoId { get; set; }
-        public Producto Producto { get; set; }
+        public Producto? Producto { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "La cantidad debe ser mayor a 0")]

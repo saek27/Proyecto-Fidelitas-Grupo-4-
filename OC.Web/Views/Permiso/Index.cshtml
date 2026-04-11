@@ -1,4 +1,4 @@
-﻿@using OC.Core.Domain.Entities
+@using OC.Core.Domain.Entities
 @model OC.Core.Common.PagedResult<Permiso>
 
 @{
@@ -12,19 +12,21 @@
     };
 }
 
-<h2>Permisos</h2>
+<div class="card-dashboard page-fade">
+<h4 class="mb-3"><i class="bi bi-clock-history me-2"></i>Permisos</h4>
 
-<a asp-action="Create" class="btn btn-primary">Solicitar Permiso</a>
+<a asp-action="Create" class="btn btn-brand mb-3"><i class="bi bi-plus-lg me-1"></i>Solicitar permiso</a>
 
-<table class="table mt-3">
+<table class="table table-striped mt-2">
     <thead>
         <tr>
             <th>Usuario</th>
             <th>Tipo</th>
             <th>Fechas</th>
             <th>Motivo</th>
+            <th>Documento</th>
             <th>Estado</th>
-            <th>Aprobado Por</th>
+            <th>Aprobado por</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -45,6 +47,19 @@
                 <td>@p.Motivo</td>
 
                 <td>
+                    @if (!string.IsNullOrEmpty(p.RutaDocumentoIncapacidad))
+                    {
+                        <a href="@p.RutaDocumentoIncapacidad" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-file-earmark-text"></i> Ver
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </td>
+
+                <td>
                     <span class="badge bg-@(p.Estado == "Aprobado" ? "success" : p.Estado == "Rechazado" ? "danger" : "warning")">
                         @p.Estado
                     </span>
@@ -56,13 +71,15 @@
                     @if (User.IsInRole("Admin") && p.Estado == "Pendiente")
                     {
                         <form asp-action="Aprobar" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@p.Id" />
-                            <button class="btn btn-success btn-sm">✔</button>
+                            <button type="submit" class="btn btn-success btn-sm" title="Aprobar">✔</button>
                         </form>
 
                         <form asp-action="Rechazar" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@p.Id" />
-                            <button class="btn btn-danger btn-sm">✖</button>
+                            <button type="submit" class="btn btn-danger btn-sm" title="Rechazar">✖</button>
                         </form>
                     }
                 </td>
@@ -79,3 +96,4 @@
 }
 
 @await Html.PartialAsync("_Pagination", pagination)
+</div>

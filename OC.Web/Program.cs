@@ -12,7 +12,7 @@ using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 
 
-// Forzar cultura invariante para toda la aplicación
+// Forzar cultura invariante para toda la aplicaci?n
 var culture = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
@@ -43,7 +43,7 @@ builder.Services.AddControllersWithViews()
     .AddMvcOptions(options =>
     {
         // Forzar model binding con cultura invariante
-        options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(x => $"El valor '{x}' no es válido.");
+        options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(x => $"El valor '{x}' no es v?lido.");
     });
 
 //Decimales de CR
@@ -55,7 +55,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedUICultures = supportedCultures;
 });
 //SLA
-// Agregar al final de la configuración de servicios
+// Agregar al final de la configuraci?n de servicios
 builder.Services.AddHostedService<SLAMonitorService>();
 builder.Services.AddHostedService<TicketAutoCloseService>();
 
@@ -105,6 +105,8 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsureEnviosNotificacionTable(context);
         OC.Data.Context.DbInitializer.EnsureCitasNotificationColumns(context);
         OC.Data.Context.DbInitializer.EnsurePacienteLockoutColumns(context);
+        OC.Data.Context.DbInitializer.EnsurePermisoRutaDocumentoIncapacidadColumn(context);
+        OC.Data.Context.DbInitializer.EnsureProductoRutaImagenColumn(context);
         OC.Data.Context.DbInitializer.Initialize(context);
     }
     catch (Exception ex)

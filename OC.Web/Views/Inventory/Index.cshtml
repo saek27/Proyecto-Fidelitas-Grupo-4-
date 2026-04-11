@@ -12,13 +12,15 @@
 }
 
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-dark">
+    <div class="d-flex flex-column flex-md-row gap-3 justify-content-md-between align-items-md-center mb-4">
+        <h2 class="text-dark mb-0">
             <i class="bi bi-box-seam me-2"></i> Inventario
         </h2>
-        <a asp-action="Create" class="btn btn-primary btn-ripple">
-            <i class="bi bi-plus-circle me-2"></i> Nuevo Producto
-        </a>
+        <div class="btn-toolbar page-header-toolbar mb-0 justify-content-md-end" role="toolbar" aria-label="Acciones de inventario">
+            <a asp-action="Create" class="btn btn-brand btn-ripple">
+                <i class="bi bi-plus-circle me-2"></i> Nuevo producto
+            </a>
+        </div>
     </div>
 
     @if (TempData["Success"] != null)
@@ -35,6 +37,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
+                            <th style="width:72px">Imagen</th>
                             <th>Nombre</th>
                             <th>SKU</th>
                             <th>Costo unitario</th>
@@ -48,6 +51,16 @@
                         {
                             var stockClass = item.Stock < 6 ? "text-danger fw-bold" : "";
                             <tr class="animate-on-scroll" data-delay="@(Model.Items.ToList().IndexOf(item) * 30)">
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(item.RutaImagen))
+                                    {
+                                        <img src="@item.RutaImagen" alt="" class="rounded border" style="height:48px;width:48px;object-fit:contain" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
                                 <td>@item.Nombre</td>
                                 <td>@item.SKU</td>
                                 <td>@item.CostoUnitario.ToString("N2")</td>
@@ -63,17 +76,19 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Ver detalle">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este producto del catálogo?');">
+                                    <div class="btn-toolbar table-row-toolbar justify-content-center flex-wrap mb-0" role="toolbar" aria-label="Acciones del producto">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Consulta y edición">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info" title="Ver detalle">
+                                                <i class="bi bi-eye"></i><span class="d-none d-xl-inline ms-1">Ver</span>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary" title="Editar">
+                                                <i class="bi bi-pencil"></i><span class="d-none d-xl-inline ms-1">Editar</span>
+                                            </a>
+                                        </div>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="ms-1" onsubmit="return confirm('¿Eliminar este producto del catálogo?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <i class="bi bi-trash"></i>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar del catálogo">
+                                                <i class="bi bi-trash"></i><span class="d-none d-xl-inline ms-1">Eliminar</span>
                                             </button>
                                         </form>
                                     </div>
@@ -109,6 +124,7 @@
                     <table class="table table-danger mb-0">
                         <thead>
                             <tr>
+                                <th style="width:56px"></th>
                                 <th>Nombre</th>
                                 <th>SKU</th>
                                 <th>Stock actual</th>
@@ -118,6 +134,13 @@
                             @foreach (var item in lowStock)
                             {
                                 <tr>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(item.RutaImagen))
+                                        {
+                                            <img src="@item.RutaImagen" alt="" class="rounded" style="height:40px;width:40px;object-fit:contain" />
+                                        }
+                                        else { <span class="text-muted">—</span> }
+                                    </td>
                                     <td>@item.Nombre</td>
                                     <td>@item.SKU</td>
                                     <td class="fw-bold text-danger">@item.Stock</td>
