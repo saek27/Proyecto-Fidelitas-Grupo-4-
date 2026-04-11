@@ -1,0 +1,161 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Mi Carrito";
+}
+@model List<OC.Web.ViewModels.DetalleVentaInputModel>
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Mi Carrito de Compras</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            Tu carrito está vacío. <a href="/landing/catalogo">Ver productos</a>
+        </div>
+    }
+    else
+    {
+        <form id="formCarrito" method="post" asp-action="FinalizarCompra">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle" id="tablaCarrito">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Producto</th>
+                            <th style="width:100px">Cantidad</th>
+                            <th style="width:150px">Precio unitario</th>
+                            <th style="width:150px">Subtotal</th>
+                            <th style="width:50px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr data-index="@i">
+                                <td>
+                                    @Model[i].DescripcionSnapshot
+                                    <input type="hidden" name="detalles[@i].ProductoId" value="@Model[i].ProductoId" />
+                                    <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
+                                </td>
+                                <td>
+                                    <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad" style="width:80px" />
+                                </td>
+                                <td>
+                                    <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("F2")" step="0.01" min="0" class="form-control precio" style="width:120px" />
+                                </td>
+                                <td class="subtotal">₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("F2"))</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-danger eliminar-item"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active">
+                            <th colspan="3" class="text-end">Total:</th>
+                            <th id="totalGeneral">₡ 0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Método de pago</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked>
+                                <label class="form-check-label" for="mpEfectivo">Efectivo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" value="2" id="mpSINPE">
+                                <label class="form-check-label" for="mpSINPE">SINPE Móvil</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodoPago" value="3" id="mpTarjeta">
+                                <label class="form-check-label" for="mpTarjeta">Tarjeta</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <label class="form-label">Notas (opcional)</label>
+                            <textarea name="notas" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-success btn-lg">Confirmar compra</button>
+                <a href="/landing/catalogo" class="btn btn-secondary btn-lg">Seguir comprando</a>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function actualizarSubtotales() {
+            let total = 0;
+            $('#tablaCarrito tbody tr').each(function () {
+                const $row = $(this);
+                const cantidad = parseFloat($row.find('.cantidad').val()) || 0;
+                const precio = parseFloat($row.find('.precio').val()) || 0;
+                const subtotal = cantidad * precio;
+                $row.find('.subtotal').text('₡ ' + subtotal.toFixed(2));
+                total += subtotal;
+            });
+            $('#totalGeneral').text('₡ ' + total.toFixed(2));
+        }
+
+        function sincronizarCarrito() {
+            const items = [];
+            $('#tablaCarrito tbody tr').each(function () {
+                const $row = $(this);
+                items.push({
+                    productoId: $row.find('input[name$=".ProductoId"]').val(),
+                    descripcionSnapshot: $row.find('input[name$=".DescripcionSnapshot"]').val(),
+                    cantidad: parseInt($row.find('.cantidad').val()) || 1,
+                    precioUnitario: parseFloat($row.find('.precio').val()) || 0
+                });
+            });
+            $.post('@Url.Action("ActualizarCarrito", "Landing")', JSON.stringify(items), function (res) {
+                if (!res.success) alert('Error al actualizar el carrito');
+            }).fail(() => alert('Error de red'));
+        }
+
+        $(document).ready(function () {
+            actualizarSubtotales();
+
+            $(document).on('change', '.cantidad, .precio', function () {
+                actualizarSubtotales();
+                sincronizarCarrito();
+            });
+
+            $(document).on('click', '.eliminar-item', function () {
+                $(this).closest('tr').remove();
+                actualizarSubtotales();
+                sincronizarCarrito();
+                if ($('#tablaCarrito tbody tr').length === 0) {
+                    location.reload();
+                }
+            });
+
+            $('#formCarrito').on('submit', function (e) {
+                if ($('#tablaCarrito tbody tr').length === 0) {
+                    e.preventDefault();
+                    alert('El carrito está vacío');
+                }
+            });
+        });
+    </script>
+}

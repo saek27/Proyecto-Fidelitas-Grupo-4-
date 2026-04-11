@@ -61,6 +61,18 @@ namespace OC.Data.Context
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+            //LandingPage campos adicionales digales praaa
+            modelBuilder.Entity<Producto>(entity =>
+            {
+                entity.Property(p => p.PrecioPublico).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Sucursal>(entity =>
+            {
+                entity.Property(s => s.Latitud).HasPrecision(10, 6);
+                entity.Property(s => s.Longitud).HasPrecision(10, 6);
+            });
+
             modelBuilder.Entity<ValorClinico>(entity =>
             {
                 entity.Property(e => e.EsferaOD).HasPrecision(4, 2);
@@ -223,6 +235,7 @@ namespace OC.Data.Context
                 .HasMaxLength(512);
 
         }
+
 
 
     }

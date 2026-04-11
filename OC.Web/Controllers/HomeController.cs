@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace OC.Web.Controllers
 {
-    [Authorize]
+    
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -20,7 +20,16 @@ namespace OC.Web.Controllers
         {
             var rol = User.FindFirstValue(ClaimTypes.Role) ?? "";
             ViewBag.ModulosGroups = GetModulosGroups(rol);
-            return View();
+            // Si no está autenticado, mostrar landing
+            if (!User.Identity.IsAuthenticated)
+                return RedirectToAction("Index", "Landing");
+
+            // Si es paciente, mostrar landing
+            if (User.IsInRole("Paciente"))
+                return RedirectToAction("Index", "Landing");
+
+            // Si es trabajador (Admin, Recepcion, Optometrista, Tecnico), mostrar dashboard interno
+            return View(); // ← tu vista actual de Home/Index (dashboard)
         }
 
         private static List<ModuloGroup> GetModulosGroups(string rol) => rol switch

@@ -54,6 +54,18 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 });
+
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddScoped<IGenericRepository<DetalleVenta>, GenericRepository<DetalleVenta>>();
+builder.Services.AddScoped<IGenericRepository<Usuario>, GenericRepository<Usuario>>();
+
 //SLA
 // Agregar al final de la configuraci?n de servicios
 builder.Services.AddHostedService<SLAMonitorService>();
@@ -128,12 +140,17 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting(); // 1. Primero Routing
+app.UseSession();
 
 app.UseAuthentication(); // 2. Luego Qui?n eres
 app.UseAuthorization();  // 3. Finalmente Qu? puedes hacer
 
+
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+
 
 app.Run();
