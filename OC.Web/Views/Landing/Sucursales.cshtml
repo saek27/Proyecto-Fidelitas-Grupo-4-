@@ -1,0 +1,45 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Nuestras Sucursales";
+}
+@model IEnumerable<OC.Core.Domain.Entities.Sucursal>
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Nuestras Sucursales</h1>
+
+    <!-- Mapa fijo de la sucursal principal -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3930.0402681624164!2d-84.0778783!3d9.9306045!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8fa0e367a9fc9151%3A0x52cf5ecceb00c31a!2s%C3%93ptica%20Comunal!5e0!3m2!1ses!2scr!4v1775895575312!5m2!1ses!2scr"
+                            width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de sucursales (si hay más de una) -->
+    <div class="row g-4">
+        @foreach (var suc in Model)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@suc.Nombre</h5>
+                        <p><i class="bi bi-geo-alt"></i> @suc.Direccion</p>
+                        <p><i class="bi bi-telephone"></i> @suc.Telefono</p>
+                        @if (!string.IsNullOrEmpty(suc.TelefonoAdicional))
+                        {
+                            <p><i class="bi bi-telephone"></i> @suc.TelefonoAdicional</p>
+                        }
+                        @if (!string.IsNullOrEmpty(suc.HorarioAtencion))
+                        {
+                            <p><i class="bi bi-clock"></i> @suc.HorarioAtencion</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

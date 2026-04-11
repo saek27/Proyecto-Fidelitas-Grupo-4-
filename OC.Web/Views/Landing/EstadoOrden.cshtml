@@ -1,0 +1,63 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Estado de mi orden";
+}
+@model IEnumerable<OC.Core.Domain.Entities.OrdenTrabajo>
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Estado de mi orden de lentes</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">No tienes órdenes de trabajo registradas.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Referencia</th>
+                        <th>Fecha de creación</th>
+                        <th>Estado</th>
+                        <th>Sucursal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var orden in Model)
+                    {
+                        <tr>
+                            <td>@orden.Referencia</td>
+                            <td>@orden.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @switch (orden.Estado)
+                                {
+                                    case "Recibida":
+                                        <span class="badge bg-secondary">Recibida</span>
+                                        break;
+                                    case "EnProceso":
+
+                                        <span class="badge bg-primary">En proceso</span>
+                                        break;
+                                    case "Lista":
+
+                                        <span class="badge bg-success">Lista para retirar</span>
+                                        break;
+                                    case "Entregada":
+
+                                        <span class="badge bg-info">Entregada</span>
+                                        break;
+                                    default:
+
+                                        <span class="badge bg-secondary">@orden.Estado</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@orden.Sucursal?.Nombre</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

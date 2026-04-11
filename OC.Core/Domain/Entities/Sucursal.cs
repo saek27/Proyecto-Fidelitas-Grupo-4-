@@ -16,7 +16,10 @@ namespace OC.Core.Domain.Entities
         public string? Telefono { get; set; }
         public bool Activo { get; set; }
 
-
+        public string? HorarioAtencion { get; set; }
+        public decimal? Latitud { get; set; }
+        public decimal? Longitud { get; set; }
+        public string? TelefonoAdicional { get; set; }
 
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
         public ICollection<Cita> Citas { get; set; } = new List<Cita>();

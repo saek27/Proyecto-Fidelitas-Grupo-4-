@@ -1,0 +1,62 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Contacto";
+}
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Contáctanos</h1>
+
+    <div class="row">
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-geo-alt"></i> Ubicación</h5>
+                    <p>San José, Costa Rica</p>
+                    <p><i class="bi bi-telephone"></i> Teléfono: <strong>2221-1187</strong></p>
+                    <p><i class="bi bi-envelope"></i> Email: <a href="mailto:lentesyprocesos@hotmail.com">lentesyprocesos@hotmail.com</a></p>
+                    <p><i class="bi bi-whatsapp"></i> WhatsApp: <a href="https://wa.me/50686970611" target="_blank">+506 8697-0611</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-clock"></i> Horarios de atención</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle-fill text-success"></i> Lunes a Viernes: 8:00 - 18:00</li>
+                        <li><i class="bi bi-check-circle-fill text-success"></i> Sábados: 9:00 - 14:00</li>
+                        <li><i class="bi bi-x-circle-fill text-danger"></i> Domingos: Cerrado</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de contacto (opcional, puedes implementar envío de correo) -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-chat-dots"></i> Escríbenos</h5>
+                    <form id="contactForm" method="post" action="/landing/enviar-contacto">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" name="nombre" class="form-control" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Correo electrónico</label>
+                                <input type="email" name="email" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mensaje</label>
+                            <textarea name="mensaje" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

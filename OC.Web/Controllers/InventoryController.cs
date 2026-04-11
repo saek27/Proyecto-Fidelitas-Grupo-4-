@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
-using OC.Core.Common;
 using OC.Core.Domain.Entities;
 
 namespace OC.Web.Controllers
@@ -10,26 +9,16 @@ namespace OC.Web.Controllers
     public class InventoryController : Controller
     {
         private readonly IGenericRepository<Producto> _productoRepo;
+        private readonly IWebHostEnvironment _env;
 
-        public InventoryController(IGenericRepository<Producto> productoRepo)
+        private static readonly string[] ExtensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        private const long TamanoMaxImagenBytes = 5 * 1024 * 1024;
+
+        public InventoryController(IGenericRepository<Producto> productoRepo, IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
+            _env = env;
         }
-
-        // Lista solo productos activos (catálogo disponible)
-        /*
-        public async Task<IActionResult> Index(int page = 1)
-        {
-            var result = await _productoRepo.GetPagedAsync(
-                page,
-                10,
-                p => p.Activo,
-                q => q.OrderBy(p => p.Nombre)
-            );
-            return View(result);
-        }
-        */
-
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
@@ -40,17 +29,16 @@ namespace OC.Web.Controllers
                 q => q.OrderBy(p => p.Nombre)
             );
 
-            // 🔻 Productos con bajo stock
             var lowStock = await _productoRepo.GetAllAsync(
                 p => p.Activo && p.Stock < 6
             );
 
             ViewBag.PageSize = pageSize;
-
             ViewBag.LowStock = lowStock;
 
             return View(result);
         }
+
         public IActionResult Create()
         {
             return View(new Producto());
@@ -58,25 +46,44 @@ namespace OC.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Producto model)
+        public async Task<IActionResult> Create(
+            [Bind(nameof(Producto.Nombre), nameof(Producto.SKU), nameof(Producto.CostoUnitario), nameof(Producto.Stock))]
+            Producto model,
+            IFormFile? imagenProducto)
         {
+            imagenProducto ??= Request.Form.Files.GetFile("imagenProducto");
+
             if (string.IsNullOrWhiteSpace(model.SKU))
             {
-                ModelState.AddModelError("SKU", "El SKU es requerido.");
-                return View(model);
+                ModelState.AddModelError(nameof(Producto.SKU), "El SKU es requerido.");
             }
-            var skuNorm = model.SKU.Trim().ToUpperInvariant();
+
+            var skuNorm = (model.SKU ?? "").Trim().ToUpperInvariant();
             var existente = await _productoRepo.GetPagedAsync(1, 1, p => p.SKU == skuNorm);
             if (existente.TotalCount > 0)
             {
-                ModelState.AddModelError("SKU", "Ya existe un producto con este SKU.");
-                return View(model);
+                ModelState.AddModelError(nameof(Producto.SKU), "Ya existe un producto con este SKU.");
             }
+
+            if (imagenProducto != null && imagenProducto.Length > 0)
+            {
+                var err = ValidarImagen(imagenProducto);
+                if (err != null)
+                    ModelState.AddModelError(nameof(imagenProducto), err);
+            }
+
             if (!ModelState.IsValid)
                 return View(model);
 
             model.SKU = skuNorm;
             model.Activo = true;
+            model.RutaImagen = null;
+
+            if (imagenProducto != null && imagenProducto.Length > 0)
+            {
+                model.RutaImagen = await GuardarImagenProductoAsync(imagenProducto);
+            }
+
             await _productoRepo.AddAsync(model);
 
             TempData["Success"] = "Producto registrado correctamente.";
@@ -101,25 +108,54 @@ namespace OC.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Producto model)
+        public async Task<IActionResult> Edit(
+            [Bind(nameof(Producto.Id), nameof(Producto.Nombre), nameof(Producto.SKU), nameof(Producto.CostoUnitario), nameof(Producto.Stock), nameof(Producto.Activo))]
+            Producto model,
+            IFormFile? imagenProducto)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            imagenProducto ??= Request.Form.Files.GetFile("imagenProducto");
 
             var existente = await _productoRepo.GetByIdAsync(model.Id);
             if (existente == null)
                 return NotFound();
 
+            if (!ModelState.IsValid)
+            {
+                existente.Nombre = model.Nombre;
+                existente.CostoUnitario = model.CostoUnitario;
+                existente.Stock = model.Stock;
+                return View(existente);
+            }
+
+            if (imagenProducto != null && imagenProducto.Length > 0)
+            {
+                var err = ValidarImagen(imagenProducto);
+                if (err != null)
+                {
+                    ModelState.AddModelError(nameof(imagenProducto), err);
+                    existente.Nombre = model.Nombre;
+                    existente.CostoUnitario = model.CostoUnitario;
+                    existente.Stock = model.Stock;
+                    return View(existente);
+                }
+            }
+
             existente.Nombre = model.Nombre;
             existente.CostoUnitario = model.CostoUnitario;
             existente.Stock = model.Stock;
+
+            if (imagenProducto != null && imagenProducto.Length > 0)
+            {
+                TryDeleteImagenFisica(existente.RutaImagen);
+                existente.RutaImagen = await GuardarImagenProductoAsync(imagenProducto);
+            }
+
             await _productoRepo.UpdateAsync(existente);
 
-            TempData["Success"] = "Costo y stock actualizados correctamente.";
+            TempData["Success"] = "Producto actualizado correctamente.";
             return RedirectToAction(nameof(Details), new { id = model.Id });
         }
 
-        // Eliminar del catálogo activo (soft delete)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -133,6 +169,52 @@ namespace OC.Web.Controllers
 
             TempData["Success"] = "Producto eliminado del catálogo.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private string? ValidarImagen(IFormFile file)
+        {
+            if (file.Length > TamanoMaxImagenBytes)
+                return "La imagen no puede superar 5 MB.";
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!ExtensionesImagen.Contains(ext))
+                return "Use JPG, PNG, GIF o WEBP.";
+            return null;
+        }
+
+        private async Task<string> GuardarImagenProductoAsync(IFormFile file)
+        {
+            var uploadsFolder = Path.Combine(_env.WebRootPath ?? "", "uploads", "productos");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!ExtensionesImagen.Contains(ext))
+                ext = ".jpg";
+
+            var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
+            var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            await using (var stream = new FileStream(physicalPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return "/uploads/productos/" + uniqueFileName;
+        }
+
+        private void TryDeleteImagenFisica(string? rutaRelativa)
+        {
+            if (string.IsNullOrEmpty(rutaRelativa) || _env.WebRootPath == null)
+                return;
+            if (!rutaRelativa.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var relative = rutaRelativa.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var path = Path.Combine(_env.WebRootPath, relative);
+            if (System.IO.File.Exists(path))
+            {
+                try { System.IO.File.Delete(path); } catch { /* ignorar bloqueos */ }
+            }
         }
     }
 }

@@ -1,0 +1,46 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Mis Facturas";
+}
+@model IEnumerable<OC.Core.Domain.Entities.Venta>
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Mis Facturas</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">No tienes facturas registradas.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>N° Factura</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Método de pago</th>
+                        <th>Ver detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venta in Model)
+                    {
+                        <tr>
+                            <td>@venta.NumeroFactura</td>
+                            <td>@venta.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>₡@venta.Total.ToString("N2")</td>
+                            <td>@venta.MetodoPago</td>
+                            <td>
+                                <a href="/Ventas/Factura/@venta.Id" class="btn btn-sm btn-info" target="_blank">
+                                    <i class="bi bi-eye"></i> Ver factura
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -133,7 +133,7 @@ namespace OC.Web.Controllers
                 new ClaimsPrincipal(claimsIdentity),
                 new AuthenticationProperties { IsPersistent = false });
 
-            return RedirectToAction("Index", "PacienteDashboard");
+            return RedirectToAction("Index", "Landing");
         }
 
         [HttpGet]
@@ -240,7 +240,7 @@ namespace OC.Web.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login");
+            return RedirectToAction("Index", "Landing");
         }
     }
 }

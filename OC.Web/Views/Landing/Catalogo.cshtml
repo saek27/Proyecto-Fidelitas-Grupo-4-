@@ -1,0 +1,55 @@
+﻿@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Catálogo de Lentes";
+}
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Producto>
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Nuestros Lentes</h1>
+
+    <div class="row">
+        <div class="col-12 col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Filtrar</div>
+                <div class="card-body">
+                    <h6>Categoría</h6>
+                    <div class="list-group">
+                        <a href="/landing/catalogo" class="list-group-item list-group-item-action @(string.IsNullOrEmpty(ViewBag.CategoriaActual) ? "active" : "")">Todos</a>
+                        <a href="/landing/catalogo?categoria=Lentes de Sol" class="list-group-item list-group-item-action">Lentes de Sol</a>
+                        <a href="/landing/catalogo?categoria=Lentes Graduados" class="list-group-item list-group-item-action">Lentes Graduados</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-9">
+            <div class="row g-4">
+                @foreach (var prod in Model.Items)
+                {
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card product-card h-100 shadow-sm">
+                            <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)" class="card-img-top" alt="@prod.Nombre">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@prod.Nombre</h5>
+                                <p class="card-text small">@prod.DescripcionCorta</p>
+                                <p class="price text-primary fw-bold">₡@prod.PrecioPublico.ToString("N2")</p>
+                                <a href="/landing/detalle-producto/@prod.Id" class="btn btn-outline-primary mt-auto">Ver más</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Paginación -->
+            @{
+                var pagination = new OC.Web.Models.PaginationInfo
+                {
+                    CurrentPage = Model.PageIndex,
+                    TotalPages = Model.TotalPages,
+                    GetPageUrl = (page) => Url.Action("Catalogo", new { page, categoria = ViewBag.CategoriaActual, busqueda = ViewBag.Busqueda })
+                };
+            }
+            <partial name="_Pagination" model="pagination" />
+        </div>
+    </div>
+</div>

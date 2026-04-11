@@ -580,6 +580,10 @@ namespace OC.Data.Migrations
                     b.Property<string>("Motivo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RutaDocumentoIncapacidad")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("Tipo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -740,14 +744,31 @@ namespace OC.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Categoria")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("CostoUnitario")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DescripcionCorta")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Destacado")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("PrecioPublico")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RutaImagen")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<string>("SKU")
                         .IsRequired()
@@ -871,6 +892,17 @@ namespace OC.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("HorarioAtencion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Latitud")
+                        .HasPrecision(10, 6)
+                        .HasColumnType("decimal(10,6)");
+
+                    b.Property<decimal?>("Longitud")
+                        .HasPrecision(10, 6)
+                        .HasColumnType("decimal(10,6)");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -879,6 +911,9 @@ namespace OC.Data.Migrations
                     b.Property<string>("Telefono")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TelefonoAdicional")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
