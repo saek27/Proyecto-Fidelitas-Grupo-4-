@@ -61,6 +61,20 @@ namespace OC.Data.Context
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+            modelBuilder.Entity<ValorClinico>(entity =>
+            {
+                // Campos de refracción
+                entity.Property(e => e.EsferaOD).HasPrecision(4, 2);
+                entity.Property(e => e.CilindroOD).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOD).HasPrecision(4, 2);
+                entity.Property(e => e.EsferaOI).HasPrecision(4, 2);
+                entity.Property(e => e.CilindroOI).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOI).HasPrecision(4, 2);
+                // Presión intraocular
+                entity.Property(e => e.PioOd).HasPrecision(4, 1);
+                entity.Property(e => e.PioOi).HasPrecision(4, 1);
+            });
+
             //LandingPage campos adicionales digales praaa
             modelBuilder.Entity<Producto>(entity =>
             {
@@ -235,6 +249,8 @@ namespace OC.Data.Context
                 .HasMaxLength(512);
 
         }
+
+
 
 
 

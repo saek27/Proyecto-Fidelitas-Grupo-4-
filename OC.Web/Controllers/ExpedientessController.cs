@@ -249,19 +249,29 @@ namespace OC.Web.Controllers
             {
                 ExpedienteId = model.ExpedienteId,
                 Diagnostico = model.Diagnostico,
+                // Refracción
                 EsferaOD = model.EsferaOD,
                 CilindroOD = model.CilindroOD,
                 EjeOD = model.EjeOD,
                 EsferaOI = model.EsferaOI,
                 CilindroOI = model.CilindroOI,
                 EjeOI = model.EjeOI,
+                // Agudeza visual
+                AvOdLejos = model.AvOdLejos,
+                AvOiLejos = model.AvOiLejos,
+                AvOdCerca = model.AvOdCerca,
+                AvOiCerca = model.AvOiCerca,
+                // Presión intraocular
+                PioOd = model.PioOd,
+                PioOi = model.PioOi,
+                // Otros
+                PercepcionColores = model.PercepcionColores,
+                MotilidadOcular = model.MotilidadOcular,
+                FondoOjo = model.FondoOjo,
+                CampoVisual = model.CampoVisual,
+                Observaciones = model.Observaciones,
                 FechaRegistro = DateTime.Now
             };
-
-            // Necesitamos un repositorio para ValorClinico
-            // Asumimos que existe _valorClinicoRepo (debes agregarlo al controlador)
-            // Por ahora, lo haremos a través del repositorio genérico de ValorClinico.
-            // Si no lo tienes, agrégalo al constructor.
 
             await _valorClinicoRepo.AddAsync(valorClinico);
 
