@@ -204,7 +204,7 @@ namespace OC.Web.Controllers
                         new("bi-calendar-event", "Mis Citas",       "Ver y gestionar citas",   "/PacienteDashboard",                "#93c5fd", "rgba(59,130,246,.25)"),
                         new("bi-calendar-plus",  "Solicitar Cita",  "Nueva solicitud",         "/PacienteDashboard/AgendarCita",    "#67e8f9", "rgba(6,182,212,.25)"),
                         new("bi-eyeglasses",     "Estado de Orden", "Ver mis lentes",          "/PacienteDashboard/EstadoOrden",    "#c4b5fd", "rgba(139,92,246,.25)"),
-                        new("bi-receipt",        "Mis Facturas",    "Historial de compras",    "/PacienteDashboard/MisFacturas",    "#6ee7b7", "rgba(16,185,129,.25)"),
+                        new("bi-receipt",        "Mis Facturas",    "Historial de compras",    "/landing/mis-facturas",    "#6ee7b7", "rgba(16,185,129,.25)"),
                         new("bi-bell",           "Notificaciones",  "Mis avisos",              "/PacienteDashboard/Notificaciones", "#fcd34d", "rgba(245,158,11,.25)"),
                     }
                 }

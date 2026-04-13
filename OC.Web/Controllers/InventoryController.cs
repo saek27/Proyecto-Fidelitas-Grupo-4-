@@ -47,7 +47,15 @@ namespace OC.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind(nameof(Producto.Nombre), nameof(Producto.SKU), nameof(Producto.CostoUnitario), nameof(Producto.Stock))]
+            [Bind(
+                nameof(Producto.Nombre),
+                nameof(Producto.SKU),
+                nameof(Producto.Categoria),
+                nameof(Producto.PrecioPublico),
+                nameof(Producto.DescripcionCorta),
+                nameof(Producto.CostoUnitario),
+                nameof(Producto.Stock),
+                nameof(Producto.Destacado))]
             Producto model,
             IFormFile? imagenProducto)
         {
@@ -109,7 +117,17 @@ namespace OC.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            [Bind(nameof(Producto.Id), nameof(Producto.Nombre), nameof(Producto.SKU), nameof(Producto.CostoUnitario), nameof(Producto.Stock), nameof(Producto.Activo))]
+            [Bind(
+                nameof(Producto.Id),
+                nameof(Producto.Nombre),
+                nameof(Producto.SKU),
+                nameof(Producto.Categoria),
+                nameof(Producto.PrecioPublico),
+                nameof(Producto.DescripcionCorta),
+                nameof(Producto.CostoUnitario),
+                nameof(Producto.Stock),
+                nameof(Producto.Destacado),
+                nameof(Producto.Activo))]
             Producto model,
             IFormFile? imagenProducto)
         {
@@ -119,30 +137,37 @@ namespace OC.Web.Controllers
             if (existente == null)
                 return NotFound();
 
-            if (!ModelState.IsValid)
-            {
-                existente.Nombre = model.Nombre;
-                existente.CostoUnitario = model.CostoUnitario;
-                existente.Stock = model.Stock;
-                return View(existente);
-            }
-
             if (imagenProducto != null && imagenProducto.Length > 0)
             {
                 var err = ValidarImagen(imagenProducto);
                 if (err != null)
-                {
                     ModelState.AddModelError(nameof(imagenProducto), err);
-                    existente.Nombre = model.Nombre;
-                    existente.CostoUnitario = model.CostoUnitario;
-                    existente.Stock = model.Stock;
-                    return View(existente);
-                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                existente.Nombre = model.Nombre;
+                existente.Categoria = model.Categoria;
+                existente.PrecioPublico = model.PrecioPublico;
+                existente.DescripcionCorta = model.DescripcionCorta;
+                existente.CostoUnitario = model.CostoUnitario;
+                existente.Stock = model.Stock;
+                existente.Destacado = model.Destacado;
+                existente.Activo = model.Activo;
+                return View(existente);
             }
 
             existente.Nombre = model.Nombre;
+            existente.SKU = string.IsNullOrWhiteSpace(model.SKU)
+                ? existente.SKU
+                : model.SKU.Trim().ToUpperInvariant();
+            existente.Categoria = model.Categoria;
+            existente.PrecioPublico = model.PrecioPublico;
+            existente.DescripcionCorta = model.DescripcionCorta;
             existente.CostoUnitario = model.CostoUnitario;
             existente.Stock = model.Stock;
+            existente.Destacado = model.Destacado;
+            existente.Activo = model.Activo;
 
             if (imagenProducto != null && imagenProducto.Length > 0)
             {

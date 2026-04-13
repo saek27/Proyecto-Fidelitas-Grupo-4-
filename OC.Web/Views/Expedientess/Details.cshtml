@@ -1,7 +1,7 @@
 ﻿@model OC.Core.Domain.Entities.Expediente
 
 <div class="card-dashboard">
-    <h4>Expediente Clínico</h4>
+    <h4><i class="bi bi-folder2-open me-2"></i>Expediente Clínico</h4>
 
     @if (TempData["Success"] != null)
     {
@@ -11,74 +11,125 @@
         </div>
     }
 
-    <div class="mb-3">
-        <strong>Paciente:</strong> @Model.Cita?.Paciente?.NombreCompleto<br />
-        <strong>Fecha de la cita:</strong> @Model.Cita?.FechaHora.ToString("dd/MM/yyyy HH:mm")<br />
-        <strong>Fecha de registro expediente:</strong> @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")<br />
-        <strong>Motivo de consulta:</strong> @Model.MotivoConsulta<br />
-        @if (!string.IsNullOrEmpty(Model.Observaciones))
-        {
-            <strong>Observaciones:</strong> 
-            @Model.Observaciones
-        }
+    <!-- Información del paciente y cita -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="bi bi-info-circle"></i> Datos de la consulta
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong><i class="bi bi-person"></i> Paciente:</strong> @Model.Cita?.Paciente?.NombreCompleto</p>
+                    <p><strong><i class="bi bi-calendar"></i> Fecha cita:</strong> @Model.Cita?.FechaHora.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong><i class="bi bi-clock"></i> Fecha registro expediente:</strong> @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+            </div>
+            <p><strong><i class="bi bi-chat-text"></i> Motivo de consulta:</strong> @Model.MotivoConsulta</p>
+            @if (!string.IsNullOrEmpty(Model.Observaciones))
+            {
+                <p><strong><i class="bi bi-file-earmark-text"></i> Observaciones:</strong> @Model.Observaciones</p>
+            }
+        </div>
     </div>
 
-    <hr />
-    <h5>Valores Clínicos</h5>
+    <!-- Valores Clínicos -->
+    <h5><i class="bi bi-clipboard2-pulse me-2"></i>Valores Clínicos</h5>
     @if (Model.ValoresClinicos != null && Model.ValoresClinicos.Any())
     {
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Diagnóstico</th>
-                    <th>Esfera OD</th>
-                    <th>Cilindro OD</th>
-                    <th>Eje OD</th>
-                    <th>Esfera OI</th>
-                    <th>Cilindro OI</th>
-                    <th>Eje OI</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var vc in Model.ValoresClinicos)
-                {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm">
+                <thead class="table-dark">
                     <tr>
-                        <td>@vc.FechaRegistro.ToString("dd/MM/yyyy")</td>
-                        <td>@vc.Diagnostico</td>
-                        <td>@vc.EsferaOD</td>
-                        <td>@vc.CilindroOD</td>
-                        <td>@vc.EjeOD</td>
-                        <td>@vc.EsferaOI</td>
-                        <td>@vc.CilindroOI</td>
-                        <td>@vc.EjeOI</td>
+                        <th>Fecha</th>
+                        <th>Diagnóstico</th>
+                        <th>Refracción OD</th>
+                        <th>Refracción OI</th>
+                        <th>AV OD (lejos/cerca)</th>
+                        <th>AV OI (lejos/cerca)</th>
+                        <th>PIO (mmHg)</th>
+                        <th>Percepción colores</th>
+                        <th>Motilidad ocular</th>
+                        <th>Fondo de ojo</th>
+                        <th>Campo visual</th>
+                        <th>Observaciones</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var vc in Model.ValoresClinicos)
+                    {
+                        <tr>
+                            <td>@vc.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                            <td>@vc.Diagnostico</td>
+                            <!-- Refracción OD -->
+                            <td>
+                                Esf: @(vc.EsferaOD?.ToString("0.00") ?? "-")<br />
+                                Cil: @(vc.CilindroOD?.ToString("0.00") ?? "-")<br />
+                                Eje: @(vc.EjeOD?.ToString("0") ?? "-")
+                            </td>
+                            <!-- Refracción OI -->
+                            <td>
+                                Esf: @(vc.EsferaOI?.ToString("0.00") ?? "-")<br />
+                                Cil: @(vc.CilindroOI?.ToString("0.00") ?? "-")<br />
+                                Eje: @(vc.EjeOI?.ToString("0") ?? "-")
+                            </td>
+                            <!-- AV OD -->
+                            <td>
+                                Lejos: @(vc.AvOdLejos ?? "-")<br />
+                                Cerca: @(vc.AvOdCerca ?? "-")
+                            </td>
+                            <!-- AV OI -->
+                            <td>
+                                Lejos: @(vc.AvOiLejos ?? "-")<br />
+                                Cerca: @(vc.AvOiCerca ?? "-")
+                            </td>
+                            <!-- PIO -->
+                            <td>
+                                OD: @(vc.PioOd?.ToString("0.0") ?? "-")<br />
+                                OI: @(vc.PioOi?.ToString("0.0") ?? "-")
+                            </td>
+                            <td>@(vc.PercepcionColores ?? "-")</td>
+                            <td>@(vc.MotilidadOcular ?? "-")</td>
+                            <td>@(vc.FondoOjo ?? "-")</td>
+                            <td>@(vc.CampoVisual ?? "-")</td>
+                            <td>@(vc.Observaciones ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
     else
     {
-        <p>No hay valores clínicos registrados.</p>
+        <p class="text-muted">No hay valores clínicos registrados.</p>
     }
 
+    <!-- Documentos Adjuntos -->
     <hr />
-    <h5>Documentos Adjuntos</h5>
+    <h5><i class="bi bi-paperclip me-2"></i>Documentos Adjuntos</h5>
     @if (Model.Documentos != null && Model.Documentos.Any())
     {
-        <ul>
+        <ul class="list-group">
             @foreach (var doc in Model.Documentos)
             {
-                <li><a href="@doc.RutaArchivo" target="_blank">@doc.NombreArchivo</a> <span class="text-muted">(subido el @doc.FechaSubida.ToString("dd/MM/yyyy HH:mm"))</span></li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-file-earmark-text"></i>
+                        <a href="@doc.RutaArchivo" target="_blank">@doc.NombreArchivo</a>
+                    </div>
+                    <span class="text-muted small">subido el @doc.FechaSubida.ToString("dd/MM/yyyy HH:mm")</span>
+                </li>
             }
         </ul>
     }
     else
     {
-        <p>No hay documentos adjuntos.</p>
+        <p class="text-muted">No hay documentos adjuntos.</p>
     }
 
-    <div class="mt-3">
+    <!-- Botones de acción -->
+    <div class="mt-4 d-flex gap-2">
         <a asp-action="AddValorClinico" asp-route-expedienteId="@Model.Id" class="btn btn-sm btn-primary">
             <i class="bi bi-plus-circle"></i> Agregar Valor Clínico
         </a>
@@ -90,3 +141,4 @@
         </a>
     </div>
 </div>
+

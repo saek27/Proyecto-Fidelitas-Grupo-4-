@@ -12,8 +12,9 @@ namespace OC.Web.ViewModels
         [Required(ErrorMessage = "El diagnóstico es obligatorio.")]
         [Display(Name = "Diagnóstico")]
         [MaxLength(500, ErrorMessage = "El diagnóstico no puede exceder 500 caracteres.")]
-        public string Diagnostico { get; set; }
+        public string Diagnostico { get; set; } = string.Empty;
 
+        // ========== REFRACCIÓN ==========
         [Display(Name = "Esfera Ojo Derecho")]
         public decimal? EsferaOD { get; set; }
 
@@ -32,7 +33,53 @@ namespace OC.Web.ViewModels
         [Display(Name = "Eje Ojo Izquierdo")]
         public decimal? EjeOI { get; set; }
 
-        // Para mostrar en la vista
+        // ========== AGUDEZA VISUAL ==========
+        [Display(Name = "AV OD (lejos)")]
+        [MaxLength(20)]
+        public string? AvOdLejos { get; set; }
+
+        [Display(Name = "AV OI (lejos)")]
+        [MaxLength(20)]
+        public string? AvOiLejos { get; set; }
+
+        [Display(Name = "AV OD (cerca)")]
+        [MaxLength(20)]
+        public string? AvOdCerca { get; set; }
+
+        [Display(Name = "AV OI (cerca)")]
+        [MaxLength(20)]
+        public string? AvOiCerca { get; set; }
+
+        // ========== PRESIÓN INTRAOCULAR ==========
+        [Display(Name = "PIO OD (mmHg)")]
+        [Range(0, 50)]
+        public decimal? PioOd { get; set; }
+
+        [Display(Name = "PIO OI (mmHg)")]
+        [Range(0, 50)]
+        public decimal? PioOi { get; set; }
+
+        // ========== PERCEPCIÓN DE COLORES ==========
+        [Display(Name = "Percepción de colores")]
+        public string? PercepcionColores { get; set; }
+
+        // ========== MOTILIDAD OCULAR ==========
+        [Display(Name = "Motilidad ocular")]
+        public string? MotilidadOcular { get; set; }
+
+        // ========== FONDO DE OJO ==========
+        [Display(Name = "Fondo de ojo")]
+        public string? FondoOjo { get; set; }
+
+        // ========== CAMPO VISUAL ==========
+        [Display(Name = "Campo visual")]
+        public string? CampoVisual { get; set; }
+
+        // ========== OBSERVACIONES ==========
+        [Display(Name = "Observaciones adicionales")]
+        public string? Observaciones { get; set; }
+
+        // ========== DATOS DE LA CITA (solo visualización) ==========
         public string? NombrePaciente { get; set; }
         public string? MotivoConsulta { get; set; }
     }
