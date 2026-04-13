@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Http; // para sesión
+using Microsoft.AspNetCore.Http;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Core.Domain.Enums;
@@ -13,6 +14,12 @@ namespace OC.Web.Controllers
 {
     public class LandingController : Controller
     {
+        private const decimal TasaIvaCostaRica = 0.13m;
+        private static readonly JsonSerializerOptions CarritoJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<Sucursal> _sucursalRepo;
         private readonly IGenericRepository<Cita> _citaRepo;
@@ -21,7 +28,8 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Venta> _ventaRepo;
         private readonly IGenericRepository<DetalleVenta> _detalleVentaRepo;   // ← agregado
         private readonly IGenericRepository<EnvioNotificacion> _notificacionRepo;
-        private readonly IGenericRepository<Usuario> _usuarioRepo;             // ← agregado
+        private readonly IGenericRepository<Usuario> _usuarioRepo;
+        private readonly IWebHostEnvironment _env;
 
         public LandingController(
             IGenericRepository<Producto> productoRepo,
@@ -32,7 +40,8 @@ namespace OC.Web.Controllers
             IGenericRepository<Venta> ventaRepo,
             IGenericRepository<DetalleVenta> detalleVentaRepo,
             IGenericRepository<EnvioNotificacion> notificacionRepo,
-            IGenericRepository<Usuario> usuarioRepo)
+            IGenericRepository<Usuario> usuarioRepo,
+            IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
             _sucursalRepo = sucursalRepo;
@@ -43,6 +52,7 @@ namespace OC.Web.Controllers
             _detalleVentaRepo = detalleVentaRepo;
             _notificacionRepo = notificacionRepo;
             _usuarioRepo = usuarioRepo;
+            _env = env;
         }
 
         // Redirigir trabajadores que accedan al landing por error
@@ -110,7 +120,14 @@ namespace OC.Web.Controllers
 
         [AllowAnonymous]
         [Route("landing/contacto")]
-        public IActionResult Contacto() => View();
+        public async Task<IActionResult> Contacto()
+        {
+            var sucursales = await _sucursalRepo.GetPagedAsync(
+                1, 200,
+                filter: s => s.Activo,
+                orderBy: q => q.OrderBy(s => s.Nombre));
+            return View(sucursales.Items);
+        }
 
         // ========================= SECCIÓN PARA PACIENTES AUTENTICADOS =========================
         [Authorize(Roles = "Paciente")]
@@ -149,7 +166,8 @@ namespace OC.Web.Controllers
             if (pacienteId == null) return RedirectToAction("Login", "Account");
             var ventas = await _ventaRepo.GetPagedAsync(1, 50,
                 filter: v => v.PacienteId == pacienteId,
-                orderBy: q => q.OrderByDescending(v => v.FechaVenta)
+                orderBy: q => q.OrderByDescending(v => v.FechaVenta),
+                includeProperties: "Detalles,Sucursal"
             );
             return View(ventas.Items);
         }
@@ -290,13 +308,19 @@ namespace OC.Web.Controllers
         // ========================= CARRITO DE COMPRAS =========================
         [Authorize(Roles = "Paciente")]
         [Route("landing/carrito")]
-        public IActionResult Carrito()
+        public async Task<IActionResult> Carrito()
         {
+            var sucursales = await _sucursalRepo.GetPagedAsync(
+                1, 200,
+                filter: s => s.Activo,
+                orderBy: q => q.OrderBy(s => s.Nombre));
+            ViewBag.Sucursales = sucursales.Items;
+
             var carritoJson = HttpContext.Session.GetString("CarritoPaciente");
             var carrito = string.IsNullOrEmpty(carritoJson)
                 ? new List<DetalleVentaInputModel>()
-                : JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson);
-            return View(carrito ?? new List<DetalleVentaInputModel>());
+                : JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson, CarritoJsonOptions) ?? new List<DetalleVentaInputModel>();
+            return View(carrito);
         }
 
         [HttpPost]
@@ -307,18 +331,24 @@ namespace OC.Web.Controllers
         {
             var producto = await _productoRepo.GetByIdAsync(productoId);
             if (producto == null || producto.Stock < cantidad)
-                return Json(new { success = false, message = "Producto no disponible o stock insuficiente" });
+            {
+                TempData["Error"] = "Producto no disponible o stock insuficiente.";
+                return RedirectToAction(nameof(DetalleProducto), new { id = productoId });
+            }
 
             var carritoJson = HttpContext.Session.GetString("CarritoPaciente");
             var carrito = string.IsNullOrEmpty(carritoJson)
                 ? new List<DetalleVentaInputModel>()
-                : JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson);
+                : JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson, CarritoJsonOptions) ?? new List<DetalleVentaInputModel>();
 
             var itemExistente = carrito.FirstOrDefault(x => x.ProductoId == productoId);
             if (itemExistente != null)
             {
                 if (itemExistente.Cantidad + cantidad > producto.Stock)
-                    return Json(new { success = false, message = "Stock insuficiente" });
+                {
+                    TempData["Error"] = "Stock insuficiente para la cantidad solicitada.";
+                    return RedirectToAction(nameof(DetalleProducto), new { id = productoId });
+                }
                 itemExistente.Cantidad += cantidad;
             }
             else
@@ -332,16 +362,18 @@ namespace OC.Web.Controllers
                 });
             }
 
-            HttpContext.Session.SetString("CarritoPaciente", JsonSerializer.Serialize(carrito));
-            return Json(new { success = true, message = "Producto agregado al carrito" });
+            HttpContext.Session.SetString("CarritoPaciente", JsonSerializer.Serialize(carrito, CarritoJsonOptions));
+            TempData["Success"] = "Producto agregado al carrito.";
+            return RedirectToAction(nameof(Carrito));
         }
 
         [HttpPost]
         [Authorize(Roles = "Paciente")]
         [Route("landing/actualizar-carrito")]
-        public IActionResult ActualizarCarrito([FromBody] List<DetalleVentaInputModel> detalles)
+        public IActionResult ActualizarCarrito([FromBody] List<DetalleVentaInputModel>? detalles)
         {
-            HttpContext.Session.SetString("CarritoPaciente", JsonSerializer.Serialize(detalles));
+            detalles ??= new List<DetalleVentaInputModel>();
+            HttpContext.Session.SetString("CarritoPaciente", JsonSerializer.Serialize(detalles, CarritoJsonOptions));
             return Json(new { success = true });
         }
 
@@ -349,29 +381,63 @@ namespace OC.Web.Controllers
         [Authorize(Roles = "Paciente")]
         [ValidateAntiForgeryToken]
         [Route("landing/finalizar-compra")]
-        public async Task<IActionResult> FinalizarCompra([FromForm] int metodoPago, [FromForm] string? notas)
+        [RequestSizeLimit(12 * 1024 * 1024)]
+        public async Task<IActionResult> FinalizarCompra(
+            [FromForm] int metodoPago,
+            [FromForm] int sucursalId,
+            [FromForm] string? notas,
+            [FromForm] List<DetalleVentaInputModel>? detalles,
+            IFormFile? comprobantePago)
         {
             var pacienteId = ObtenerPacienteId();
             if (pacienteId == null) return RedirectToAction("Login", "Account");
 
-            var carritoJson = HttpContext.Session.GetString("CarritoPaciente");
-            if (string.IsNullOrEmpty(carritoJson))
+            if (metodoPago != (int)MetodoPago.Efectivo && metodoPago != (int)MetodoPago.SINPE)
+            {
+                TempData["Error"] = "En la tienda en línea solo se acepta efectivo o SINPE Móvil.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            if (metodoPago == (int)MetodoPago.SINPE && (comprobantePago == null || comprobantePago.Length == 0))
+            {
+                TempData["Error"] = "Con SINPE Móvil debe adjuntar un comprobante (imagen o PDF).";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            if (sucursalId <= 0)
+            {
+                TempData["Error"] = "Debe seleccionar una sucursal.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            var sucursal = await _sucursalRepo.GetByIdAsync(sucursalId);
+            if (sucursal == null || !sucursal.Activo)
+            {
+                TempData["Error"] = "Seleccione una sucursal válida.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            if (detalles == null || !detalles.Any())
+            {
+                var carritoJson = HttpContext.Session.GetString("CarritoPaciente");
+                detalles = string.IsNullOrEmpty(carritoJson)
+                    ? new List<DetalleVentaInputModel>()
+                    : JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson, CarritoJsonOptions) ?? new List<DetalleVentaInputModel>();
+            }
+
+            detalles = detalles
+                .Where(d => d.ProductoId.HasValue && d.Cantidad > 0 && d.PrecioUnitario >= 0)
+                .ToList();
+
+            if (!detalles.Any())
             {
                 TempData["Error"] = "El carrito está vacío.";
                 return RedirectToAction(nameof(Carrito));
             }
 
-            var carrito = JsonSerializer.Deserialize<List<DetalleVentaInputModel>>(carritoJson);
-            if (carrito == null || !carrito.Any())
+            foreach (var item in detalles.Where(x => x.ProductoId.HasValue))
             {
-                TempData["Error"] = "El carrito está vacío.";
-                return RedirectToAction(nameof(Carrito));
-            }
-
-            // Validar stock
-            foreach (var item in carrito.Where(x => x.ProductoId.HasValue))
-            {
-                var producto = await _productoRepo.GetByIdAsync(item.ProductoId.Value);
+                var producto = await _productoRepo.GetByIdAsync(item.ProductoId!.Value);
                 if (producto == null || producto.Stock < item.Cantidad)
                 {
                     TempData["Error"] = $"Stock insuficiente para {item.DescripcionSnapshot}";
@@ -379,33 +445,53 @@ namespace OC.Web.Controllers
                 }
             }
 
-            // Obtener un usuario administrador para asignar la venta (por defecto el primero)
-            var adminUser = (await _usuarioRepo.GetPagedAsync(1, 1, filter: u => u.Rol.Nombre == "Admin")).Items.FirstOrDefault();
+            var adminUser = (await _usuarioRepo.GetPagedAsync(1, 1, filter: u => u.Rol.Nombre == "Admin", includeProperties: "Rol")).Items.FirstOrDefault();
             if (adminUser == null)
-                throw new Exception("No hay usuario administrador en el sistema");
+                throw new InvalidOperationException("No hay usuario administrador en el sistema");
 
-            // Crear la venta
+            var subtotalBase = detalles.Sum(x => x.Cantidad * x.PrecioUnitario);
+            var montoIva = Math.Round(subtotalBase * TasaIvaCostaRica, 2, MidpointRounding.AwayFromZero);
+            var totalConIva = subtotalBase + montoIva;
+
+            string? rutaComprobante = null;
+            if (comprobantePago != null && comprobantePago.Length > 0)
+            {
+                var err = ValidarComprobante(comprobantePago);
+                if (err != null)
+                {
+                    TempData["Error"] = err;
+                    return RedirectToAction(nameof(Carrito));
+                }
+                rutaComprobante = await GuardarComprobanteAsync(comprobantePago);
+            }
+
+            var notasFinales = string.IsNullOrWhiteSpace(notas) ? "" : notas.Trim();
+            if (!string.IsNullOrEmpty(rutaComprobante))
+            {
+                var lineaComp = $"Comprobante adjunto: {rutaComprobante}";
+                notasFinales = string.IsNullOrEmpty(notasFinales) ? lineaComp : $"{notasFinales}\n{lineaComp}";
+            }
+
             var venta = new Venta
             {
                 NumeroFactura = GenerarNumeroFactura(),
                 PacienteId = pacienteId.Value,
                 UsuarioId = adminUser.Id,
-                SucursalId = adminUser.SucursalId,
+                SucursalId = sucursalId,
                 MetodoPago = (MetodoPago)metodoPago,
-                Notas = notas,
+                Notas = string.IsNullOrEmpty(notasFinales) ? null : notasFinales,
                 FechaVenta = DateTime.Now,
-                Total = carrito.Sum(x => x.Cantidad * x.PrecioUnitario)
+                Total = totalConIva
             };
             await _ventaRepo.AddAsync(venta);
 
-            // Crear detalles y actualizar stock
-            foreach (var item in carrito)
+            foreach (var item in detalles)
             {
                 var detalle = new DetalleVenta
                 {
                     VentaId = venta.Id,
                     ProductoId = item.ProductoId,
-                    DescripcionSnapshot = item.DescripcionSnapshot,
+                    DescripcionSnapshot = item.DescripcionSnapshot ?? "",
                     Cantidad = item.Cantidad,
                     PrecioUnitario = item.PrecioUnitario,
                     Subtotal = item.Cantidad * item.PrecioUnitario
@@ -420,20 +506,51 @@ namespace OC.Web.Controllers
                 }
             }
 
-            // Limpiar carrito de la sesión
             HttpContext.Session.Remove("CarritoPaciente");
 
             TempData["Success"] = "Compra realizada con éxito. Factura generada.";
             return RedirectToAction(nameof(Factura), new { id = venta.Id });
         }
 
+        private static string? ValidarComprobante(IFormFile file)
+        {
+            if (file.Length > 10 * 1024 * 1024)
+                return "El comprobante no puede superar 10 MB.";
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var ok = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf" };
+            if (!ok.Contains(ext))
+                return "Imagen o PDF.";
+            return null;
+        }
+
+        private async Task<string> GuardarComprobanteAsync(IFormFile file)
+        {
+            var folder = Path.Combine(_env.WebRootPath ?? "", "uploads", "comprobantes-ventas");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var ok = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf" };
+            if (!ok.Contains(ext)) ext = ".pdf";
+
+            var name = $"{Guid.NewGuid():N}{ext}";
+            var path = Path.Combine(folder, name);
+            await using (var stream = new FileStream(path, FileMode.Create))
+                await file.CopyToAsync(stream);
+
+            return "/uploads/comprobantes-ventas/" + name;
+        }
+
         [Authorize(Roles = "Paciente")]
         [Route("landing/factura/{id}")]
         public async Task<IActionResult> Factura(int id)
         {
+            var pacienteId = ObtenerPacienteId();
+            if (pacienteId == null) return RedirectToAction("Login", "Account");
+
             var venta = (await _ventaRepo.GetPagedAsync(
                 1, 1,
-                filter: v => v.Id == id && v.PacienteId == ObtenerPacienteId(),
+                filter: v => v.Id == id && v.PacienteId == pacienteId.Value,
                 includeProperties: "Paciente,Usuario,Sucursal,Detalles.Producto"
             )).Items.FirstOrDefault();
 

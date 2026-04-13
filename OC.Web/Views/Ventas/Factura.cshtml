@@ -3,7 +3,7 @@
     Layout = null; @* Sin sidebar ni navbar — es un documento *@
     var venta = Model.Venta;
     var vc    = Model.ValorClinico;
-    var volverUrl = User.IsInRole("Paciente") ? "/PacienteDashboard/MisFacturas" : "/Ventas";
+    var volverUrl = User.IsInRole("Paciente") ? "/landing" : "/Ventas";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -352,8 +352,21 @@
             </tbody>
         </table>
 
-        @* ── Total ───────────────────────────────────────────────────────── *@
+        @* ── Total (subtotal + IVA 13 % Costa Rica) ─────────────────────── *@
+        @{
+            var subGravado = (venta.Detalles ?? Enumerable.Empty<OC.Core.Domain.Entities.DetalleVenta>()).Sum(d => d.Subtotal);
+            var ivaDoc = Math.Max(0m, venta.Total - subGravado);
+        }
                 <div class="total-box p-3 rounded shadow-sm bg-light">
+                    <div class="small text-muted mb-2">Desglose de impuesto (referencia)</div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Subtotal gravado</span>
+                        <span>₡ @subGravado.ToString("N2")</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span>IVA 13%</span>
+                        <span>₡ @ivaDoc.ToString("N2")</span>
+                    </div>
 
                     <div class="d-flex justify-content-between align-items-center">
 

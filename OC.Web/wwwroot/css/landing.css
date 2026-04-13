@@ -177,3 +177,16 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+
+.landing-contact-card {
+    border-left: 4px solid var(--primary);
+}
+
+.landing-factura-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .landing-factura-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12) !important;
+    }

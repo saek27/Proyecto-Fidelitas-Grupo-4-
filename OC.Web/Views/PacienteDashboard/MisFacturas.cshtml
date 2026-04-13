@@ -28,7 +28,7 @@
                         <td>@f.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>₡ @f.Total.ToString("N2")</td>
                         <td class="text-end">
-                            <a asp-controller="Ventas" asp-action="Factura" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary">
+                            <a href="/landing/factura/@f.Id" class="btn btn-sm btn-outline-primary">
                                 Ver factura
                             </a>
                         </td>

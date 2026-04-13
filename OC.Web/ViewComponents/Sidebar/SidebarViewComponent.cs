@@ -238,7 +238,7 @@ namespace OC.Web.ViewComponents.Sidebar
                         new MenuItem { Title = "Mis Citas", Url = "/PacienteDashboard", Icon = "bi-calendar-event" },
                         new MenuItem { Title = "Solicitar Cita", Url = "/PacienteDashboard/AgendarCita", Icon = "bi-calendar-plus" },
                         new MenuItem { Title = "Estado de Orden", Url = "/PacienteDashboard/EstadoOrden", Icon = "bi-eyeglasses" },
-                        new MenuItem { Title = "Mis Facturas", Url = "/PacienteDashboard/MisFacturas", Icon = "bi-receipt" },
+                        new MenuItem { Title = "Mis Facturas", Url = "/landing/mis-facturas", Icon = "bi-receipt" },
                         new MenuItem { Title = "Notificaciones", Url = "/PacienteDashboard/Notificaciones", Icon = "bi-bell" }
                     }
                 });
