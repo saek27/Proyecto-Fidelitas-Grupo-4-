@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Web.Helpers;
+using OC.Web.Services;
 using OC.Web.ViewModels;
 using System.Security.Claims;
 
@@ -14,10 +15,14 @@ namespace OC.Web.Controllers
     public class PacienteAccountController : Controller
     {
         private readonly IGenericRepository<Paciente> _pacientesRepo;
+        private readonly ITotpService _totpService;
 
-        public PacienteAccountController(IGenericRepository<Paciente> pacientesRepo)
+        public PacienteAccountController(
+            IGenericRepository<Paciente> pacientesRepo,
+            ITotpService totpService)
         {
             _pacientesRepo = pacientesRepo;
+            _totpService = totpService;
         }
 
         [HttpGet]
@@ -137,52 +142,108 @@ namespace OC.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult RecuperarContrasena() => View();
+        public IActionResult RecuperarContrasena() => View(new RecuperarContrasenaTotpViewModel());
 
-        // Recuperación por cédula: token con expiración 1h
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RecuperarContrasena(string cedula)
+        public async Task<IActionResult> RecuperarContrasena(RecuperarContrasenaTotpViewModel model)
         {
-            var cedulaNorm = CedulaValidation.Normalizar(cedula);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var cedulaNorm = CedulaValidation.Normalizar(model.Cedula);
             if (!CedulaValidation.EsFormatoValido(cedulaNorm))
             {
-                ModelState.AddModelError("", "La cédula debe tener el formato X-XXXX-XXXX. Ejemplo: 1-2345-6789");
-                return View();
+                ModelState.AddModelError(string.Empty, "Datos incorrectos.");
+                return View(model);
             }
 
+            var correoNorm = (model.Correo ?? string.Empty).Trim().ToLowerInvariant();
             var pacientes = await _pacientesRepo.GetPagedAsync(
                 pageIndex: 1,
                 pageSize: 1,
-                filter: p => p.Cedula == cedulaNorm
+                filter: p => p.Cedula == cedulaNorm && p.Email != null && p.Email.ToLower() == correoNorm
             );
             var paciente = pacientes.Items.FirstOrDefault();
-
             if (paciente == null)
             {
-                TempData["Info"] = "Si la cédula está registrada, recibirá instrucciones para restablecer su contraseña.";
-                return RedirectToAction(nameof(RecuperarContrasena));
+                ModelState.AddModelError(string.Empty, "Datos incorrectos.");
+                return View(model);
             }
 
+            // Ventana de recuperación de 15 minutos.
             var token = Guid.NewGuid().ToString("N");
             paciente.TokenRecuperacion = token;
-            paciente.FechaExpiracionToken = DateTime.UtcNow.AddHours(1);
-            await _pacientesRepo.UpdateAsync(paciente);
+            paciente.FechaExpiracionToken = DateTime.UtcNow.AddMinutes(15);
 
-            var link = Url.Action(nameof(RestablecerContrasena), "PacienteAccount", new { token }, Request.Scheme)!;
-            TempData["TokenRecuperacion"] = link;
-            TempData["Success"] = "Siga el enlace que se muestra a continuación para restablecer su contraseña. El enlace es válido por 1 hora y no debe compartirse.";
-            return RedirectToAction(nameof(InstruccionesRecuperacion));
+            if (string.IsNullOrWhiteSpace(paciente.TotpSecretProtegido))
+            {
+                var secret = _totpService.GenerateSecretBase32();
+                paciente.TotpSecretProtegido = _totpService.ProtectSecret(secret);
+                paciente.TotpHabilitado = true;
+                paciente.TotpConfiguradoEnUtc = DateTime.UtcNow;
+            }
+
+            await _pacientesRepo.UpdateAsync(paciente);
+            return RedirectToAction(nameof(ValidarTotpRecuperacion), new { token });
         }
 
         [HttpGet]
-        public IActionResult InstruccionesRecuperacion()
+        public async Task<IActionResult> ValidarTotpRecuperacion(string? token)
         {
-            var link = TempData["TokenRecuperacion"] as string;
-            if (string.IsNullOrEmpty(link))
+            if (string.IsNullOrWhiteSpace(token))
                 return RedirectToAction(nameof(Login));
-            ViewBag.LinkRecuperacion = link;
-            return View("InstruccionesRecuperacion");
+
+            var paciente = await BuscarPacientePorTokenAsync(token);
+            if (paciente == null)
+            {
+                TempData["Error"] = "La sesión de recuperación expiró. Inicie nuevamente.";
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+            if (string.IsNullOrWhiteSpace(paciente.TotpSecretProtegido))
+            {
+                TempData["Error"] = "No se pudo iniciar TOTP. Intente nuevamente.";
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            ViewBag.Token = token;
+            ViewBag.Correo = paciente.Email;
+            ViewBag.ManualKey = _totpService.GetManualEntryKey(_totpService.UnprotectSecret(paciente.TotpSecretProtegido!));
+            return View(new ValidarTotpViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ValidarTotpRecuperacion(string token, ValidarTotpViewModel model)
+        {
+            var paciente = await BuscarPacientePorTokenAsync(token);
+            if (paciente == null)
+            {
+                TempData["Error"] = "La sesión de recuperación expiró. Inicie nuevamente.";
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+            if (string.IsNullOrWhiteSpace(paciente.TotpSecretProtegido))
+            {
+                TempData["Error"] = "No se pudo iniciar TOTP. Intente nuevamente.";
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            ViewBag.Token = token;
+            ViewBag.Correo = paciente.Email;
+            ViewBag.ManualKey = _totpService.GetManualEntryKey(_totpService.UnprotectSecret(paciente.TotpSecretProtegido!));
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var secret = _totpService.UnprotectSecret(paciente.TotpSecretProtegido!);
+            var valid = _totpService.VerifyCode(secret, model.Codigo);
+            if (!valid)
+            {
+                ModelState.AddModelError(string.Empty, "Código inválido o expirado.");
+                return View(model);
+            }
+
+            return RedirectToAction(nameof(RestablecerContrasena), new { token });
         }
 
         [HttpGet]
@@ -221,10 +282,13 @@ namespace OC.Web.Controllers
             paciente.Contrasena = BCrypt.Net.BCrypt.HashPassword(model.NuevaContrasena);
             paciente.TokenRecuperacion = null;
             paciente.FechaExpiracionToken = null;
+            paciente.IntentosFallidosLogin = 0;
+            paciente.BloqueadoHastaUtc = null;
+            paciente.BloqueadoPermanentemente = false;
             await _pacientesRepo.UpdateAsync(paciente);
 
-            TempData["Success"] = "Su contraseña se ha restablecido correctamente. Ya puede iniciar sesión.";
-            return RedirectToAction(nameof(Login));
+            TempData["Success"] = "Contraseña actualizada correctamente. Ya puede iniciar sesión.";
+            return RedirectToAction(nameof(Login), "Account");
         }
 
         private async Task<Paciente?> BuscarPacientePorTokenAsync(string token)

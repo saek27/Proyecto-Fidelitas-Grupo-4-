@@ -17,6 +17,9 @@ namespace OC.Core.Domain.Entities
 
         public string? TokenRecuperacion { get; set; }
         public DateTime? FechaExpiracionToken { get; set; }
+        public string? TotpSecretProtegido { get; set; }
+        public bool TotpHabilitado { get; set; } = false;
+        public DateTime? TotpConfiguradoEnUtc { get; set; }
 
         // WEB-HU-028: bloqueo temporal por intentos fallidos
         public int IntentosFallidosLogin { get; set; } = 0;

@@ -1,25 +1,29 @@
+@model OC.Web.ViewModels.RecuperarContrasenaTotpViewModel
 @{
     ViewData["Title"] = "Recuperar contraseña";
 }
 
 <div class="card-dashboard">
-    <h4>Recuperar contraseña</h4>
-    <p class="text-muted">Ingrese su cédula en formato X-XXXX-XXXX. Si está registrada, podrá generar un enlace seguro para restablecer su contraseña. El enlace será válido por 1 hora.</p>
-
-    @if (TempData["Info"] != null)
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @TempData["Info"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    <h4>Recuperar contraseña con TOTP</h4>
+    <p class="text-muted">Ingrese su correo y cédula. Si los datos son correctos, validará un código de su aplicación autenticadora para restablecer la contraseña.</p>
 
     <form asp-action="RecuperarContrasena" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
         <div class="mb-3">
-            <label for="cedula" class="form-label">Cédula</label>
-            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" title="Formato: X-XXXX-XXXX" required />
+            <label asp-for="Correo" class="form-label"></label>
+            <input asp-for="Correo" class="form-control" autocomplete="email" />
+            <span asp-validation-for="Correo" class="text-danger"></span>
         </div>
-        <button type="submit" class="btn btn-brand">Enviar enlace de recuperación</button>
+        <div class="mb-3">
+            <label asp-for="Cedula" class="form-label"></label>
+            <input asp-for="Cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" title="Formato: X-XXXX-XXXX" />
+            <span asp-validation-for="Cedula" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-brand">Continuar con TOTP</button>
         <a asp-action="Login" class="btn btn-secondary">Volver al inicio de sesión</a>
     </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
