@@ -30,7 +30,6 @@ namespace OC.Web.ViewComponents.Sidebar
                     {
                         new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" },
                         new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" },
-                        new MenuItem { Title = "Expedientes", Url = "/Expedientess", Icon = "bi-folder2-open" },
                         new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" }
                     }
                 });
