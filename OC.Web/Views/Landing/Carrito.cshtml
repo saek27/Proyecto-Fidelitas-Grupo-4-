@@ -5,128 +5,166 @@
 }
 @model List<OC.Web.ViewModels.DetalleVentaInputModel>
 
-<div class="container my-5 landing-carrito">
-    <h1 class="text-center mb-4 fw-bold">Mi carrito</h1>
+<div class="container my-5 pt-5 landing-carrito">
+
+    <div class="text-center mb-5 animate-on-scroll">
+        <h6 class="text-uppercase tracking-wide mb-2" style="color: var(--brand-accent); letter-spacing: 2px;">Resumen de tu pedido</h6>
+        <h1 class="display-5 fw-bold text-white">Mi Carrito</h1>
+    </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+        <div class="alert alert-success shadow-sm rounded-3 animate-on-scroll">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        </div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
+        <div class="alert alert-danger shadow-sm rounded-3 animate-on-scroll">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+        </div>
     }
 
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-info text-center shadow-sm">
-            Tu carrito está vacío. <a href="/landing/catalogo" class="alert-link">Ver productos</a>
+        <div class="card card-premium border-0 shadow-lg text-center py-5 animate-on-scroll">
+            <div class="card-body py-5">
+                <i class="bi bi-cart-x display-1 text-light opacity-25 mb-4 d-block"></i>
+                <h3 class="text-white fw-bold mb-3">Tu carrito está vacío</h3>
+                <p class="text-light opacity-75 mb-4">Aún no has agregado ningún lente a tu pedido.</p>
+                <a href="/landing/catalogo" class="btn btn-premium btn-lg px-4">Explorar catálogo <i class="bi bi-arrow-right ms-2"></i></a>
+            </div>
         </div>
     }
     else
     {
-        <form id="formCarrito" method="post" asp-controller="Landing" asp-action="FinalizarCompra" enctype="multipart/form-data">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <label class="form-label fw-semibold"><i class="bi bi-shop"></i> Sucursal de retiro / atención <span class="text-danger">*</span></label>
-                    <select name="sucursalId" id="sucursalId" class="form-select form-select-lg" required>
-                        <option value="">Seleccione una sucursal</option>
+        <form id="formCarrito" method="post" asp-controller="Landing" asp-action="FinalizarCompra" enctype="multipart/form-data" class="animate-on-scroll">
+
+            <div class="card card-premium border-0 shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <label class="form-label text-white fw-semibold mb-3 fs-5"><i class="bi bi-shop text-primary me-2"></i> Sucursal de retiro / atención <span class="text-danger">*</span></label>
+                    <select name="sucursalId" id="sucursalId" class="form-select form-select-lg input-premium" style="color-scheme: dark;" required>
+                        <option value="">Seleccione la sucursal más cercana...</option>
                         @foreach (var s in sucursales)
                         {
                             <option value="@s.Id">@(s.Nombre + " - " + s.Direccion)</option>
                         }
                     </select>
-                    <div class="form-text">Obligatorio. La compra quedará asociada a la sucursal elegida.</div>
+                    <div class="form-text text-light opacity-50 mt-2"><i class="bi bi-info-circle me-1"></i> Obligatorio. La compra quedará asociada a la sucursal elegida para su retiro o examen.</div>
                 </div>
             </div>
 
-            <div class="table-responsive card border-0 shadow-sm mb-4">
-                <table class="table table-hover align-middle mb-0" id="tablaCarrito">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Producto</th>
-                            <th style="width:110px">Cantidad</th>
-                            <th style="width:130px" class="text-end">Precio unit.</th>
-                            <th style="width:130px" class="text-end">Subtotal</th>
-                            <th style="width:56px"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.Count; i++)
-                        {
-                            <tr data-index="@i">
-                                <td>
-                                    @Model[i].DescripcionSnapshot
-                                    <input type="hidden" name="detalles[@i].ProductoId" value="@Model[i].ProductoId" />
-                                    <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
-                                </td>
-                                <td>
-                                    <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad" />
-                                </td>
-                                <td class="text-end">
-                                    <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end" />
-                                </td>
-                                <td class="text-end subtotal">₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))</td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-outline-danger eliminar-item" title="Quitar línea"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="3" class="text-end">Subtotal gravado</th>
-                            <th class="text-end" id="filaSubtotal">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                        <tr>
-                            <th colspan="3" class="text-end">IVA 13%</th>
-                            <th class="text-end" id="filaIva">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                        <tr class="fs-5">
-                            <th colspan="3" class="text-end">Total a pagar</th>
-                            <th class="text-end text-primary" id="totalGeneral">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
+            <div class="card card-premium border-0 shadow-lg mb-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle mb-0 text-light" id="tablaCarrito" style="--bs-table-bg: transparent; --bs-table-color: var(--text-main);">
+                            <thead style="border-bottom: 2px solid var(--glass-border);">
+                                <tr>
+                                    <th class="py-3 px-4 text-uppercase small text-light opacity-75 fw-medium">Producto</th>
+                                    <th style="width:130px" class="py-3 px-2 text-uppercase small text-light opacity-75 fw-medium text-center">Cantidad</th>
+                                    <th style="width:150px" class="py-3 px-4 text-uppercase small text-light opacity-75 fw-medium text-end">Precio unit.</th>
+                                    <th style="width:150px" class="py-3 px-4 text-uppercase small text-light opacity-75 fw-medium text-end">Subtotal</th>
+                                    <th style="width:70px"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count; i++)
+                                {
+                                    <tr data-index="@i" style="border-bottom: 1px solid var(--glass-border);">
+                                        <td class="py-4 px-4 fw-bold">
+                                            @Model[i].DescripcionSnapshot
+                                            <input type="hidden" name="detalles[@i].ProductoId" value="@Model[i].ProductoId" />
+                                            <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
+                                        </td>
+                                        <td class="py-4 px-2">
+                                            <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control text-center input-premium cantidad" style="max-width: 90px; margin: 0 auto;" />
+                                        </td>
+                                        <td class="py-4 px-4 text-end">
+                                            <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control text-end input-premium precio" />
+                                        </td>
+                                        <td class="py-4 px-4 text-end fw-bold text-white subtotal">₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))</td>
+                                        <td class="py-4 px-3 text-end">
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle eliminar-item" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Quitar línea">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot style="background: rgba(14, 165, 233, 0.05); border-top: 2px solid var(--brand-primary);">
+                                <tr>
+                                    <th colspan="3" class="text-end py-3 px-4 text-light opacity-75 fw-normal">Subtotal gravado</th>
+                                    <th class="text-end py-3 px-4 fw-bold text-white" id="filaSubtotal">₡ 0.00</th>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <th colspan="3" class="text-end py-3 px-4 text-light opacity-75 fw-normal">IVA 13%</th>
+                                    <th class="text-end py-3 px-4 fw-bold text-white" id="filaIva">₡ 0.00</th>
+                                    <th></th>
+                                </tr>
+                                <tr class="fs-4">
+                                    <th colspan="3" class="text-end py-4 px-4 fw-bold text-white">Total a pagar</th>
+                                    <th class="text-end py-4 px-4 fw-bold" style="color: var(--brand-accent);" id="totalGeneral">₡ 0.00</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div class="row g-4">
                 <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Método de pago</h5>
-                            <p class="small text-muted">En la tienda en línea solo aceptamos efectivo o SINPE Móvil.</p>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked>
-                                <label class="form-check-label" for="mpEfectivo">Efectivo</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="metodoPago" value="2" id="mpSINPE">
-                                <label class="form-check-label" for="mpSINPE">SINPE Móvil</label>
+                    <div class="card card-premium border-0 shadow-lg h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title text-white fw-bold mb-3"><i class="bi bi-wallet2 text-primary me-2"></i> Método de pago</h5>
+                            <p class="small text-light opacity-75 mb-4">En la tienda en línea solo aceptamos pagos mediante Efectivo o SINPE Móvil.</p>
+
+                            <div class="d-flex flex-column gap-3">
+                                <div class="form-check p-3 rounded-3" style="border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
+                                    <input class="form-check-input ms-1 me-3 mt-1" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked style="transform: scale(1.3);">
+                                    <label class="form-check-label text-white fw-medium stretched-link" for="mpEfectivo">
+                                        <i class="bi bi-cash-stack text-success me-2"></i> Efectivo al retirar
+                                    </label>
+                                </div>
+                                <div class="form-check p-3 rounded-3" style="border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
+                                    <input class="form-check-input ms-1 me-3 mt-1" type="radio" name="metodoPago" value="2" id="mpSINPE" style="transform: scale(1.3);">
+                                    <label class="form-check-label text-white fw-medium stretched-link" for="mpSINPE">
+                                        <i class="bi bi-phone-vibrate text-primary me-2"></i> Transferencia SINPE Móvil
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Comprobante y notas</h5>
-                            <label class="form-label" id="lblComprobante">Comprobante de pago <span class="text-muted" id="hintComprobante">(opcional con efectivo)</span></label>
-                            <input type="file" name="comprobantePago" id="comprobantePago" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
-                            <div class="form-text mb-3">Imagen o PDF</div>
-                            <label class="form-label">Notas (opcional)</label>
-                            <textarea name="notas" class="form-control" rows="3" placeholder="Indicaciones de entrega, teléfono alternativo, etc."></textarea>
+                    <div class="card card-premium border-0 shadow-lg h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title text-white fw-bold mb-3"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i> Comprobante y Notas</h5>
+
+                            <div class="mb-4">
+                                <label class="form-label text-light fw-medium" id="lblComprobante">Adjuntar Comprobante <span class="text-light opacity-50 small ms-1" id="hintComprobante">(opcional con efectivo)</span></label>
+                                <input type="file" name="comprobantePago" id="comprobantePago" class="form-control input-premium" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
+                                <div class="form-text text-light opacity-50 mt-1"><i class="bi bi-paperclip me-1"></i> Imagen o PDF del pago.</div>
+                            </div>
+
+                            <div>
+                                <label class="form-label text-light fw-medium">Notas del pedido <span class="text-light opacity-50 small ms-1">(opcional)</span></label>
+                                <textarea name="notas" class="form-control input-premium" rows="3" placeholder="Ej: Pasaré a recoger los lentes el día martes por la mañana..."></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="text-end mt-4 d-flex flex-wrap gap-2 justify-content-end">
-                <a href="/landing/catalogo" class="btn btn-outline-secondary btn-lg">Seguir comprando</a>
-                <button type="submit" class="btn btn-success btn-lg">Confirmar compra</button>
+            <div class="d-flex flex-column flex-md-row justify-content-end gap-3 mt-5 pb-5">
+                <a href="/landing/catalogo" class="btn btn-outline-premium btn-lg px-4">
+                    <i class="bi bi-arrow-left me-2"></i> Seguir comprando
+                </a>
+                <button type="submit" class="btn btn-premium btn-lg px-5 fs-5">
+                    Confirmar pedido <i class="bi bi-check2-circle ms-2"></i>
+                </button>
             </div>
         </form>
     }

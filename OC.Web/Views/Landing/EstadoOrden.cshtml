@@ -4,60 +4,92 @@
 }
 @model IEnumerable<OC.Core.Domain.Entities.OrdenTrabajo>
 
-<div class="container my-5">
-    <h1 class="text-center mb-4">Estado de mi orden de lentes</h1>
+<div class="container my-5 pt-5">
+
+    <div class="text-center mb-5 animate-on-scroll">
+        <h6 class="text-uppercase tracking-wide mb-2" style="color: var(--brand-accent); letter-spacing: 2px;">Seguimiento en tiempo real</h6>
+        <h1 class="display-5 fw-bold text-white">Estado de mi orden</h1>
+        <p class="text-light opacity-75 mb-0">Revisa el progreso de tus lentes desde el laboratorio hasta tus manos.</p>
+    </div>
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info text-center">No tienes órdenes de trabajo registradas.</div>
+        <div class="card card-premium border-0 shadow-lg text-center py-5 animate-on-scroll">
+            <div class="card-body py-5">
+                <i class="bi bi-box-seam display-1 text-light opacity-25 mb-4 d-block"></i>
+                <h3 class="text-white fw-bold mb-3">No tienes órdenes en curso</h3>
+                <p class="text-light opacity-75 mb-5 max-w-50 mx-auto">Actualmente no hay trabajos de laboratorio o pedidos registrados asociados a tu cuenta.</p>
+                <a href="/landing/catalogo" class="btn btn-premium btn-lg px-5">Explorar catálogo <i class="bi bi-arrow-right ms-2"></i></a>
+            </div>
+        </div>
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Referencia</th>
-                        <th>Fecha de creación</th>
-                        <th>Estado</th>
-                        <th>Sucursal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var orden in Model)
-                    {
-                        <tr>
-                            <td>@orden.Referencia</td>
-                            <td>@orden.FechaCreacion.ToString("dd/MM/yyyy")</td>
-                            <td>
-                                @switch (orden.Estado)
-                                {
-                                    case "Recibida":
-                                        <span class="badge bg-secondary">Recibida</span>
-                                        break;
-                                    case "EnProceso":
+        <div class="card card-premium shadow-lg border-0 animate-on-scroll">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle text-light mb-0" style="--bs-table-bg: transparent; --bs-table-color: var(--text-main);">
+                        <thead style="border-bottom: 2px solid var(--glass-border);">
+                            <tr>
+                                <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Referencia</th>
+                                <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Fecha de creación</th>
+                                <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Estado</th>
+                                <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Sucursal de retiro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var orden in Model)
+                            {
+                                <tr style="border-bottom: 1px solid var(--glass-border); transition: background 0.3s;" onmouseover="this.style.background='rgba(14, 165, 233, 0.05)'" onmouseout="this.style.background='transparent'">
 
-                                        <span class="badge bg-primary">En proceso</span>
-                                        break;
-                                    case "Lista":
+                                    <td class="py-3 px-4 fw-bold">
+                                        <i class="bi bi-hash text-primary opacity-50"></i>@orden.Referencia
+                                    </td>
 
-                                        <span class="badge bg-success">Lista para retirar</span>
-                                        break;
-                                    case "Entregada":
+                                    <td class="py-3 px-4 text-light opacity-75">
+                                        <i class="bi bi-calendar-event me-2 text-primary opacity-75"></i>@orden.FechaCreacion.ToString("dd/MM/yyyy")
+                                    </td>
 
-                                        <span class="badge bg-info">Entregada</span>
-                                        break;
-                                    default:
+                                    <td class="py-3 px-4">
+                                        @switch (orden.Estado)
+                                        {
+                                            case "Recibida":
+                                                <span class="badge rounded-pill border border-secondary text-light px-3 py-2 fw-normal" style="background: rgba(255, 255, 255, 0.1);">
+                                                    <i class="bi bi-inbox me-1"></i> Recibida
+                                                </span>
+                                                break;
+                                            case "EnProceso":
+                                                <span class="badge rounded-pill px-3 py-2 fw-normal shadow-sm" style="background: var(--brand-primary);">
+                                                    <i class="bi bi-gear-wide-connected me-1"></i> En proceso
+                                                </span>
+                                                break;
+                                            case "Lista":
+                                                <span class="badge rounded-pill bg-success px-3 py-2 fw-normal shadow-sm">
+                                                    <i class="bi bi-check2-circle me-1"></i> Lista para retirar
+                                                </span>
+                                                break;
+                                            case "Entregada":
+                                                <span class="badge rounded-pill bg-info text-dark px-3 py-2 fw-medium shadow-sm">
+                                                    <i class="bi bi-bag-check me-1"></i> Entregada
+                                                </span>
+                                                break;
+                                            default:
+                                                <span class="badge rounded-pill bg-secondary px-3 py-2 fw-normal">
+                                                    @orden.Estado
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
 
-                                        <span class="badge bg-secondary">@orden.Estado</span>
-                                        break;
-                                }
-                            </td>
-                            <td>@orden.Sucursal?.Nombre</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                    <td class="py-3 px-4 text-light opacity-75">
+                                        <i class="bi bi-shop me-2 text-primary opacity-75"></i>@(orden.Sucursal?.Nombre ?? "No asignada")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     }
 </div>
