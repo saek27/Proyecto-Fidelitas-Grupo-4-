@@ -1,129 +1,100 @@
-﻿@{
+@{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Mis Citas";
+    var pagination = new OC.Web.Models.PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("MisCitas", new { page }) ?? "#"
+    };
 }
-@model IEnumerable<OC.Core.Domain.Entities.Cita>
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Cita>
 
-<div class="container my-5 pt-5">
-
-    <div class="text-center mb-5 animate-on-scroll">
-        <h6 class="text-uppercase tracking-wide mb-2" style="color: var(--brand-accent); letter-spacing: 2px;">Agenda Personal</h6>
-        <h1 class="display-5 fw-bold text-white">Mis Citas</h1>
-        <p class="text-light opacity-75 mb-0">Consulta y gestiona tus citas programadas con nuestros especialistas.</p>
+<div class="container my-5">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold">Mis Citas</h1>
+        <p class="text-muted">Consulta y gestiona tus citas programadas</p>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="row justify-content-center animate-on-scroll">
-            <div class="col-12 col-lg-10">
-                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
-                    <i class="bi bi-check-circle me-2"></i> @TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            @if (!Model.Any())
-            {
-                <div class="card card-premium border-0 shadow-lg text-center py-5 animate-on-scroll">
-                    <div class="card-body py-5">
-                        <i class="bi bi-calendar-x display-1 text-light opacity-25 mb-4 d-block"></i>
-                        <h3 class="text-white fw-bold mb-3">No tienes citas registradas</h3>
-                        <p class="text-light opacity-75 mb-5 max-w-50 mx-auto">Aún no has agendado ninguna revisión o examen visual. Puedes reservar tu espacio fácilmente.</p>
-                        <a href="/landing/agendar-cita" class="btn btn-premium btn-lg px-5">
-                            <i class="bi bi-plus-circle me-2"></i> Agendar nueva cita
-                        </a>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="card card-premium shadow-lg border-0 animate-on-scroll">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-borderless align-middle text-light mb-0" style="--bs-table-bg: transparent; --bs-table-color: var(--text-main);">
-                                <thead style="border-bottom: 2px solid var(--glass-border);">
-                                    <tr>
-                                        <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Fecha y Hora</th>
-                                        <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Sucursal</th>
-                                        <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Estado</th>
-                                        <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium">Motivo</th>
-                                        <th class="py-4 px-4 text-uppercase small text-light opacity-75 tracking-wide fw-medium text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var cita in Model)
-                                    {
-                                        <tr style="border-bottom: 1px solid var(--glass-border); transition: background 0.3s;" onmouseover="this.style.background='rgba(14, 165, 233, 0.05)'" onmouseout="this.style.background='transparent'">
-
-                                            <td class="py-3 px-4 fw-bold text-white">
-                                                <i class="bi bi-calendar-event me-2 text-primary opacity-75"></i>@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")
-                                            </td>
-
-                                            <td class="py-3 px-4 text-light opacity-75">
-                                                <i class="bi bi-shop me-2 text-primary opacity-50"></i>@(cita.Sucursal?.Nombre ?? "No asignada")
-                                            </td>
-
-                                            <td class="py-3 px-4">
-                                                @switch (cita.Estado)
-                                                {
-                                                    case "Confirmada":
-                                                        <span class="badge rounded-pill bg-primary px-3 py-2 fw-normal shadow-sm">
-                                                            <i class="bi bi-check-circle me-1"></i> Confirmada
-                                                        </span>
-                                                        break;
-                                                    case "Atendida":
-                                                        <span class="badge rounded-pill bg-success px-3 py-2 fw-normal shadow-sm">
-                                                            <i class="bi bi-check-all me-1"></i> Atendida
-                                                        </span>
-                                                        break;
-                                                    case "Cancelada":
-                                                        <span class="badge rounded-pill text-light px-3 py-2 fw-normal" style="background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);">
-                                                            <i class="bi bi-x-circle me-1"></i> Cancelada
-                                                        </span>
-                                                        break;
-                                                    case "Pendiente":
-                                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2 fw-medium shadow-sm">
-                                                            <i class="bi bi-hourglass-split me-1"></i> Pendiente
-                                                        </span>
-                                                        break;
-                                                    default:
-                                                        <span class="badge rounded-pill bg-secondary px-3 py-2 fw-normal">
-                                                            @cita.Estado
-                                                        </span>
-                                                        break;
-                                                }
-                                            </td>
-
-                                            <td class="py-3 px-4 text-light opacity-75">
-                                                @(cita.MotivoConsulta ?? "Sin observaciones")
-                                            </td>
-
-                                            <td class="py-3 px-4 text-end">
-                                                @if (cita.Estado == "Confirmada" && cita.FechaHora > DateTime.Now)
-                                                {
-                                                    <a href="#" class="btn btn-sm btn-outline-danger rounded-pill px-3 transition" onclick="return confirm('¿Está seguro que desea cancelar esta cita?')">
-                                                        <i class="bi bi-x-lg me-1"></i> Cancelar
-                                                    </a>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-end mt-4 pt-2 animate-on-scroll">
-                    <a href="/landing/agendar-cita" class="btn btn-premium btn-lg px-4 shadow-sm">
-                        <i class="bi bi-plus-lg me-2"></i> Nueva cita
-                    </a>
-                </div>
-            }
-        </div>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="/landing/agendar-cita" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Agendar nueva cita
+        </a>
     </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h3 class="mt-3">No tienes citas registradas</h3>
+            <p class="text-muted">Puedes agendar una nueva cita fácilmente.</p>
+            <a href="/landing/agendar-cita" class="btn btn-primary btn-lg mt-3">
+                <i class="bi bi-plus-circle"></i> Agendar nueva cita
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Sucursal</th>
+                        <th>Estado</th>
+                        <th>Motivo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cita in Model.Items)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(cita.Sucursal?.Nombre ?? "No asignada")</td>
+                            <td>
+                                @switch (cita.Estado)
+                                {
+                                    case "Confirmada":
+                                        <span class="badge bg-primary rounded-pill px-3">Confirmada</span>
+                                        break;
+                                    case "Atendida":
+                                        <span class="badge bg-success rounded-pill px-3">Atendida</span>
+                                        break;
+                                    case "Cancelada":
+                                        <span class="badge bg-secondary rounded-pill px-3">Cancelada</span>
+                                        break;
+                                    case "Pendiente":
+                                        <span class="badge bg-warning text-dark rounded-pill px-3">Pendiente</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary rounded-pill px-3">@cita.Estado</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@(cita.MotivoConsulta ?? "Sin observaciones")</td>
+                            <td>
+                                @if (cita.Estado == "Confirmada" && cita.FechaHora > DateTime.Now)
+                                {
+                                    <a href="#" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Cancelar esta cita?')">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <partial name="_Pagination" model="pagination" />
+    }
 </div>

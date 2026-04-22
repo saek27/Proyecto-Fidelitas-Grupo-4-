@@ -132,58 +132,67 @@ namespace OC.Web.Controllers
         // ========================= SECCIÓN PARA PACIENTES AUTENTICADOS =========================
         [Authorize(Roles = "Paciente")]
         [Route("landing/mis-citas")]
-        public async Task<IActionResult> MisCitas()
+        public async Task<IActionResult> MisCitas(int page = 1)
         {
             var pacienteId = ObtenerPacienteId();
             if (pacienteId == null) return RedirectToAction("Login", "Account");
-            var citas = await _citaRepo.GetPagedAsync(1, 50,
+            var citas = await _citaRepo.GetPagedAsync(page, 10,
                 filter: c => c.PacienteId == pacienteId,
                 orderBy: q => q.OrderByDescending(c => c.FechaHora),
                 includeProperties: "Sucursal"
             );
-            return View(citas.Items);
+            return View(citas);
         }
 
         [Authorize(Roles = "Paciente")]
         [Route("landing/estado-orden")]
-        public async Task<IActionResult> EstadoOrden()
+        public async Task<IActionResult> EstadoOrden(int page = 1)
         {
             var pacienteId = ObtenerPacienteId();
             if (pacienteId == null) return RedirectToAction("Login", "Account");
-            var ordenes = await _ordenRepo.GetPagedAsync(1, 50,
+            var ordenes = await _ordenRepo.GetPagedAsync(page, 10,
                 filter: o => o.PacienteId == pacienteId,
                 orderBy: q => q.OrderByDescending(o => o.FechaCreacion),
                 includeProperties: "Sucursal"
             );
-            return View(ordenes.Items);
+            return View(ordenes);
         }
 
         [Authorize(Roles = "Paciente")]
         [Route("landing/mis-facturas")]
-        public async Task<IActionResult> MisFacturas()
+        public async Task<IActionResult> MisFacturas(DateTime? desde, DateTime? hasta, int page = 1)
         {
             var pacienteId = ObtenerPacienteId();
             if (pacienteId == null) return RedirectToAction("Login", "Account");
-            var ventas = await _ventaRepo.GetPagedAsync(1, 50,
-                filter: v => v.PacienteId == pacienteId,
+
+            var fechaDesde = desde?.Date;
+            var fechaHasta = hasta?.Date.AddDays(1).AddTicks(-1);
+
+            var ventas = await _ventaRepo.GetPagedAsync(page, 9,
+                filter: v => v.PacienteId == pacienteId
+                             && (!fechaDesde.HasValue || v.FechaVenta >= fechaDesde.Value)
+                             && (!fechaHasta.HasValue || v.FechaVenta <= fechaHasta.Value),
                 orderBy: q => q.OrderByDescending(v => v.FechaVenta),
                 includeProperties: "Detalles,Sucursal"
             );
-            return View(ventas.Items);
+
+            ViewBag.Desde = desde;
+            ViewBag.Hasta = hasta;
+            return View(ventas);
         }
 
         [Authorize(Roles = "Paciente")]
         [Route("landing/notificaciones")]
-        public async Task<IActionResult> Notificaciones()
+        public async Task<IActionResult> Notificaciones(int page = 1)
         {
             var pacienteId = ObtenerPacienteId();
             if (pacienteId == null) return RedirectToAction("Login", "Account");
-            var notificaciones = await _notificacionRepo.GetPagedAsync(1, 50,
+            var notificaciones = await _notificacionRepo.GetPagedAsync(page, 10,
                 filter: n => n.OrdenTrabajo.PacienteId == pacienteId,
                 orderBy: q => q.OrderByDescending(n => n.FechaHoraEnvio),
                 includeProperties: "OrdenTrabajo"
             );
-            return View(notificaciones.Items);
+            return View(notificaciones);
         }
 
         [Authorize(Roles = "Paciente")]
@@ -519,7 +528,7 @@ namespace OC.Web.Controllers
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             var ok = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf" };
             if (!ok.Contains(ext))
-                return "Imagen o PDF.";
+                return "Formato no permitido. Solo JPG, JPEG, PNG, GIF, WEBP o PDF.";
             return null;
         }
 

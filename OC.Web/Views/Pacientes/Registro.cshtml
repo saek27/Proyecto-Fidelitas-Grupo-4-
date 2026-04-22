@@ -1,117 +1,89 @@
 @model OC.Web.ViewModels.PacienteViewModel
 @{
-    ViewData["Title"] = "Registro de Paciente";
     Layout = "_LayoutLanding";
+    ViewData["Title"] = "Registro de paciente";
 }
 
-<div class="container my-5 pt-5">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8 animate-on-scroll">
+<div class="card-dashboard">
+    <h4>Registro de Paciente</h4>
 
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm" style="width: 80px; height: 80px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--glass-border);">
-                    <i class="bi bi-person-badge fs-1 text-primary"></i>
-                </div>
-                <h2 class="display-6 fw-bold text-white">Crear Cuenta</h2>
-                <p class="text-light opacity-75">Únete a Óptica Comunal y gestiona tu salud visual.</p>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <p class="text-muted">Complete el formulario para registrarse. Al final deberá configurar el autenticador TOTP (obligatorio) con QR.</p>
+
+    <form asp-action="Registro" method="post">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Nombres"></label>
+                <input asp-for="Nombres" class="form-control" />
+                <span asp-validation-for="Nombres" class="text-danger"></span>
             </div>
 
-            <div class="card card-premium shadow-lg border-0">
-                <div class="card-body p-4 p-md-5">
-
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-                            <i class="bi bi-check-circle me-2"></i> @TempData["Success"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-                    @if (TempData["Error"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i> @TempData["Error"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-
-                    <div class="d-flex align-items-center p-3 mb-4 rounded-3" style="background: rgba(14, 165, 233, 0.1); border: 1px solid var(--glass-border);">
-                        <i class="bi bi-shield-lock fs-3 text-primary me-3"></i>
-                        <div>
-                            <strong class="text-white d-block mb-1">Seguridad en dos pasos requerida</strong>
-                            <p class="mb-0 text-light opacity-75 small">Complete el formulario. Al finalizar, el sistema le guiará para configurar su autenticador TOTP (código QR) para proteger sus datos médicos.</p>
-                        </div>
-                    </div>
-
-                    <form asp-action="Registro" method="post">
-
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <label asp-for="Nombres" class="form-label text-light fw-medium"></label>
-                                <input asp-for="Nombres" class="form-control input-premium" placeholder="Ej: Juan Carlos" />
-                                <span asp-validation-for="Nombres" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <div class="col-md-6 mb-4">
-                                <label asp-for="Apellidos" class="form-label text-light fw-medium"></label>
-                                <input asp-for="Apellidos" class="form-control input-premium" placeholder="Ej: Pérez Gómez" />
-                                <span asp-validation-for="Apellidos" class="text-danger small mt-1 d-block"></span>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-4">
-                                <label asp-for="Cedula" class="form-label text-light fw-medium"></label>
-                                <input asp-for="Cedula" class="form-control input-premium" placeholder="Ej: 1-2345-6789" maxlength="11" />
-                                <span asp-validation-for="Cedula" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <div class="col-md-4 mb-4">
-                                <label asp-for="Telefono" class="form-label text-light fw-medium"></label>
-                                <input asp-for="Telefono" class="form-control input-premium" placeholder="8888-8888" />
-                                <span asp-validation-for="Telefono" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <div class="col-md-4 mb-4">
-                                <label asp-for="FechaNacimiento" class="form-label text-light fw-medium"></label>
-                                <input asp-for="FechaNacimiento" type="date" class="form-control input-premium" style="color-scheme: dark;" />
-                                <span asp-validation-for="FechaNacimiento" class="text-danger small mt-1 d-block"></span>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label asp-for="Email" class="form-label text-light fw-medium"></label>
-                            <input asp-for="Email" type="email" class="form-control input-premium" placeholder="correo@ejemplo.com" />
-                            <small class="text-light opacity-50 mt-1 d-block"><i class="bi bi-info-circle me-1"></i> Este será su usuario para iniciar sesión.</small>
-                            <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
-                        </div>
-
-                        <div class="row border-top pt-4 mt-4" style="border-color: var(--glass-border) !important;">
-                            <div class="col-md-6 mb-4">
-                                <label asp-for="Contrasena" class="form-label text-light fw-medium"></label>
-                                <input asp-for="Contrasena" type="password" class="form-control input-premium" placeholder="••••••••" />
-                                <span asp-validation-for="Contrasena" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <div class="col-md-6 mb-4">
-                                <label asp-for="ConfirmarContrasena" class="form-label text-light fw-medium"></label>
-                                <input asp-for="ConfirmarContrasena" type="password" class="form-control input-premium" placeholder="••••••••" />
-                                <span asp-validation-for="ConfirmarContrasena" class="text-danger small mt-1 d-block"></span>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-premium w-100 py-3 mt-2 fs-5">
-                            <i class="bi bi-person-plus me-2"></i> Registrar Paciente
-                        </button>
-                    </form>
-
-                    <div class="text-center mt-4">
-                        <p class="text-light opacity-75 small">¿Ya tienes una cuenta? <a href="/Account/Login" class="text-primary text-decoration-none fw-medium">Inicia sesión aquí</a></p>
-                    </div>
-
-                </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Apellidos"></label>
+                <input asp-for="Apellidos" class="form-control" />
+                <span asp-validation-for="Apellidos" class="text-danger"></span>
             </div>
         </div>
-    </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label asp-for="Cedula"></label>
+                <input asp-for="Cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" />
+                <span asp-validation-for="Cedula" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label asp-for="Telefono"></label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label asp-for="FechaNacimiento"></label>
+                <input asp-for="FechaNacimiento" type="date" class="form-control" />
+                <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email"></label>
+            <input asp-for="Email" type="email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+            <small class="form-text text-muted">Este será su correo para iniciar sesión.</small>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Contrasena"></label>
+                <input asp-for="Contrasena" type="password" class="form-control" />
+                <span asp-validation-for="Contrasena" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="ConfirmarContrasena"></label>
+                <input asp-for="ConfirmarContrasena" type="password" class="form-control" />
+                <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-brand">
+            <i class="bi bi-person-plus"></i> Registrar Paciente
+        </button>
+    </form>
 </div>
 
 @section Scripts {

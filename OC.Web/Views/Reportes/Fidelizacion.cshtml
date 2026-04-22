@@ -1,4 +1,4 @@
-﻿@model OC.Web.ViewModels.ReporteFidelizacionViewModel
+@model OC.Web.ViewModels.ReporteFidelizacionViewModel
 @{
     ViewData["Title"] = "Reporte de Fidelización";
     var labPie = System.Text.Json.JsonSerializer.Serialize(new[] { "Nuevo", "Regular", "Frecuente", "Esporádico" });
@@ -123,6 +123,8 @@
                             <tr>
                                 <th>Paciente</th>
                                 <th>Cédula</th>
+                                <th>Teléfono</th>
+                                <th>Correo</th>
                                 <th class="text-center">Visitas</th>
                                 <th>Última visita</th>
                                 <th>Categoría</th>
@@ -141,6 +143,8 @@
                                 <tr>
                                     <td>@p.NombreCompleto</td>
                                     <td class="text-muted">@p.Cedula</td>
+                                    <td>@(string.IsNullOrWhiteSpace(p.Telefono) ? "-" : p.Telefono)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(p.Email) ? "-" : p.Email)</td>
                                     <td class="text-center fw-bold">@p.VisitasEnPeriodo</td>
                                     <td>@p.UltimaVisita.ToString("dd/MM/yyyy")</td>
                                     <td><span class="badge @badgeClass">@p.Clasificacion</span></td>
