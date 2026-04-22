@@ -5,69 +5,116 @@
     var productosCarrusel = ViewBag.ProductosCarrusel as IEnumerable<OC.Core.Domain.Entities.Producto>;
 }
 
-<!-- CARRUSEL HERO -->
+
+
+@* carrousel dividido *@
+
+
 @if (productosCarrusel != null && productosCarrusel.Any())
 {
-    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
-        <div class="carousel-indicators">
+    <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" style="min-height: 80vh; margin-top: -5rem; background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), var(--brand-dark) 60%);">
+        <div class="carousel-indicators mb-4" style="z-index: 10;">
             @for (int i = 0; i < productosCarrusel.Count(); i++)
             {
-                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "") rounded-circle" style="width: 10px; height: 10px; margin: 0 6px;" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
             }
         </div>
-        <div class="carousel-inner">
+
+        <div class="carousel-inner h-100">
             @foreach (var (prod, index) in productosCarrusel.Select((value, i) => (value, i)))
             {
-                <div class="carousel-item @(index == 0 ? "active" : "")">
-                    <div class="carousel-bg" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)') center/cover;"></div>
-                    <div class="carousel-caption d-flex flex-column justify-content-center h-100">
-                        <h1 class="display-4 fw-bold">@prod.Nombre</h1>
-                        <p class="lead">@prod.DescripcionCorta</p>
-                        <p class="h3 text-warning">₡@prod.PrecioPublico.ToString("N2")</p>
-                        <a href="/landing/detalle-producto/@prod.Id" class="btn btn-primary btn-lg mt-3">Ver detalles</a>
+                <div class="carousel-item h-100 @(index == 0 ? "active" : "")" style="min-height: 80vh;">
+                    <div class="container h-100">
+                        <div class="row h-100 align-items-center pt-5">
+
+                            <div class="col-12 col-lg-6 position-relative z-1 mb-5 mb-lg-0 text-center text-lg-start">
+                                <div class="hero-glass-panel ms-0 ms-lg-4 mx-auto mx-lg-0">
+                                    <span class="badge bg-primary mb-3 px-3 py-2 fw-normal rounded-pill">Colección Actual</span>
+                                    <h1 class="display-4 fw-bold mb-3 text-white" style="line-height: 1.1;">@prod.Nombre</h1>
+                                    <p class="lead text-light opacity-75 mb-4">@prod.DescripcionCorta</p>
+                                    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-lg-start gap-4">
+                                        <p class="h3 fw-bold m-0" style="color: var(--brand-accent);">₡@prod.PrecioPublico.ToString("N2")</p>
+                                        <a href="/landing/detalle-producto/@prod.Id" class="btn btn-premium">Conoce más <i class="bi bi-arrow-right ms-2"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 d-flex justify-content-center align-items-center position-relative">
+                                <div class="position-absolute rounded-circle" style="width: 40vw; height: 40vw; max-width: 400px; max-height: 400px; background: rgba(14, 165, 233, 0.15); filter: blur(60px); z-index: 0;"></div>
+
+                                <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)"
+                                     alt="@prod.Nombre"
+                                     class="img-fluid position-relative z-1 px-4"
+                                     style="max-height: 55vh; object-fit: contain; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.4)); transition: transform 0.5s ease;"
+                                     onmouseover="this.style.transform='scale(1.05) translateY(-10px)'"
+                                     onmouseout="this.style.transform='scale(1) translateY(0)'" />
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             }
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" style="width: 5%; z-index: 10;">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
             <span class="visually-hidden">Anterior</span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" style="width: 5%; z-index: 10;">
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
             <span class="visually-hidden">Siguiente</span>
         </button>
     </div>
 }
+
+
 else
 {
-    <!-- Hero estático por si no hay productos -->
-    <section class="hero py-5 text-center text-white" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/images/hero-bg.jpg') center/cover; background-size: cover; min-height: 60vh;">
-        <div class="container d-flex flex-column justify-content-center h-100">
-            <h1 class="display-4 fw-bold">Tu visión, nuestra pasión</h1>
-            <p class="lead">Los mejores lentes con tecnología de punta y atención personalizada.</p>
-            <a href="/landing/catalogo" class="btn btn-primary btn-lg mt-3">Ver catálogo</a>
+    <section class="hero d-flex align-items-center" style="background: linear-gradient(to right, rgba(6, 11, 20, 0.95), rgba(6, 11, 20, 0.7)), url('/images/hero-bg.jpg') center/cover; min-height: 80vh; margin-top: -5rem;">
+        <div class="container animate-on-scroll">
+            <div class="col-lg-6 hero-glass-panel ms-0">
+                <h1 class="display-4 fw-bold mb-3">Precisión que transforma tu visión.</h1>
+                <p class="lead text-light opacity-75 mb-4">Tecnología óptica de vanguardia y atención clínica especializada para el cuidado de tus ojos.</p>
+                <a href="/landing/catalogo" class="btn btn-premium btn-lg">Explorar Catálogo</a>
+            </div>
         </div>
     </section>
 }
 
-<!-- Productos Destacados -->
-<section class="container my-5">
-    <h2 class="text-center mb-4">Productos Destacados</h2>
-    <div class="row g-4">
-        @foreach (var prod in destacados)
+<section class="container my-5 py-5">
+    <div class="d-flex justify-content-between align-items-end mb-5 animate-on-scroll">
+        <div>
+            <h6 class="text-uppercase tracking-wide" style="color: var(--brand-accent); letter-spacing: 2px;">Colección Exclusiva</h6>
+            <h2 class="display-6 fw-bold m-0 text-white">Productos Destacados</h2>
+        </div>
+        <a href="/landing/catalogo" class="btn btn-outline-premium d-none d-md-inline-block">Ver todos</a>
+    </div>
+
+    <div class="row g-4 g-lg-5">
+        @if (destacados != null && destacados.Any())
         {
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card product-card h-100 shadow-sm">
-                    <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)" class="card-img-top" alt="@prod.Nombre">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@prod.Nombre</h5>
-                        <p class="card-text small">@prod.DescripcionCorta</p>
-                        <p class="price text-primary fw-bold">₡@prod.PrecioPublico.ToString("N2")</p>
-                        <a href="/landing/detalle-producto/@prod.Id" class="btn btn-outline-primary mt-auto">Ver más</a>
+            @foreach (var prod in destacados)
+            {
+                <div class="col-12 col-sm-6 col-lg-3 animate-on-scroll">
+                    <div class="card product-card h-100">
+                        <div class="img-wrapper relative">
+                            <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)" alt="@prod.Nombre">
+                        </div>
+                        <div class="card-body d-flex flex-column p-4">
+                            <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>
+
+                            <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@prod.DescripcionCorta</p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: var(--glass-border) !important;">
+                                <span class="price-tag fw-bold">₡@prod.PrecioPublico.ToString("N2")</span>
+                                <a href="/landing/detalle-producto/@prod.Id" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
         }
     </div>
 </section>

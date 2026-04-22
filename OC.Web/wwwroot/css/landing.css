@@ -190,3 +190,376 @@ body {
         transform: translateY(-4px);
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12) !important;
     }
+
+
+
+
+/* =========================================
+   VARIABLES PREMIUM (Deep Ocean & Ice)
+========================================= */
+:root {
+    --brand-dark: #060b14; /* Fondo principal oscuro */
+    --brand-surface: #0f172a; /* Color de tarjetas */
+    --brand-primary: #0ea5e9; /* Azul brillante/Cian para acentos */
+    --brand-accent: #38bdf8; /* Hover del acento */
+    --text-main: #f8fafc; /* Texto blanco invierno */
+    --text-muted: #94a3b8; /* Texto secundario */
+    --glass-bg: rgba(15, 23, 42, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    background-color: var(--brand-dark);
+    color: var(--text-main);
+    font-family: 'Montserrat', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   NAVBAR (Glassmorphism)
+========================================= */
+.navbar.glass-nav {
+    background: rgba(6, 11, 20, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.navbar-dark .nav-link {
+    color: var(--text-main);
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+    .navbar-dark .nav-link:hover {
+        color: var(--brand-primary);
+    }
+
+/* =========================================
+   BOTONES PREMIUM
+========================================= */
+.btn-premium {
+    background: linear-gradient(135deg, var(--brand-primary), #0284c7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+}
+
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        color: white;
+    }
+
+.btn-outline-premium {
+    background: transparent;
+    color: var(--brand-accent);
+    border: 1px solid var(--brand-accent);
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+    .btn-outline-premium:hover {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--brand-accent);
+        transform: translateY(-2px);
+    }
+
+/* =========================================
+   HERO CAROUSEL & CARDS
+========================================= */
+.hero-glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 3rem;
+    max-width: 600px;
+    text-align: left;
+    margin: 0 auto;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease forwards;
+}
+
+.product-card {
+    background: var(--brand-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(56, 189, 248, 0.3);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(14, 165, 233, 0.1);
+    }
+
+    .product-card .img-wrapper {
+        overflow: hidden;
+        aspect-ratio: 4/3;
+    }
+
+    .product-card img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.5s ease;
+    }
+
+    .product-card:hover img {
+        transform: scale(1.08);
+    }
+
+.price-tag {
+    font-size: 1.25rem;
+    color: var(--brand-accent);
+    letter-spacing: -0.5px;
+}
+
+/*Daniel*/
+
+/* =========================================
+   VARIABLES PREMIUM (Deep Ocean & Ice)
+========================================= */
+:root {
+    --brand-dark: #060b14;       /* Fondo principal oscuro */
+    --brand-surface: #0f172a;    /* Color de tarjetas */
+    --brand-primary: #0ea5e9;    /* Azul brillante/Cian para acentos */
+    --brand-accent: #38bdf8;     /* Hover del acento */
+    --text-main: #f8fafc;        /* Texto blanco invierno */
+    --text-muted: #94a3b8;       /* Texto secundario */
+    --glass-bg: rgba(15, 23, 42, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    background-color: var(--brand-dark);
+    color: var(--text-main);
+    font-family: 'Montserrat', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   NAVBAR (Glassmorphism)
+========================================= */
+.navbar.glass-nav {
+    background: rgba(6, 11, 20, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.navbar-dark .nav-link {
+    color: var(--text-main);
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.navbar-dark .nav-link:hover { color: var(--brand-primary); }
+
+/* =========================================
+   BOTONES PREMIUM
+========================================= */
+.btn-premium {
+    background: linear-gradient(135deg, var(--brand-primary), #0284c7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+}
+
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+    color: white;
+}
+
+.btn-outline-premium {
+    background: transparent;
+    color: var(--brand-accent);
+    border: 1px solid var(--brand-accent);
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-premium:hover {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--brand-accent);
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   HERO CAROUSEL & CARDS
+========================================= */
+.hero-glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 3rem;
+    max-width: 600px;
+    text-align: left;
+    margin: 0 auto;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease forwards;
+}
+
+.product-card {
+    background: var(--brand-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(14, 165, 233, 0.1);
+}
+
+.product-card .img-wrapper {
+    overflow: hidden;
+    aspect-ratio: 4/3;
+}
+
+.product-card img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s ease;
+}
+
+.product-card:hover img {
+    transform: scale(1.08);
+}
+
+.price-tag {
+    font-size: 1.25rem;
+    color: var(--brand-accent);
+    letter-spacing: -0.5px;
+}
+
+/* =========================================
+   ANIMACIONES SUTILES (Scroll)
+========================================= */
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+footer { background-color: #04080f !important; border-top: 1px solid var(--glass-border); }
+
+
+/* =========================================
+   TARJETAS Y FORMULARIOS PREMIUM (Dark Mode)
+========================================= */
+.card-premium {
+    background: var(--brand-surface);
+    border: 1px solid var(--glass-border) !important;
+    color: var(--text-main);
+    border-radius: 16px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .card-premium:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+.input-premium {
+    background: rgba(6, 11, 20, 0.5);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+    .input-premium:focus {
+        background: rgba(6, 11, 20, 0.8);
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25);
+        color: var(--text-main);
+    }
+
+    .input-premium::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+/* =========================================
+   SIDEBAR FILTERS (Catálogo)
+========================================= */
+.list-group-premium .list-group-item {
+    background: transparent;
+    color: var(--text-main);
+    opacity: 0.8;
+    border: none;
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+    .list-group-premium .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .list-group-premium .list-group-item:hover {
+        color: var(--brand-primary);
+        background: rgba(14, 165, 233, 0.05);
+        opacity: 1;
+        padding-left: 1.8rem; /* Efecto sutil de sangría al pasar el mouse */
+    }
+
+    .list-group-premium .list-group-item.active {
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--brand-accent);
+        font-weight: 600;
+        opacity: 1;
+        border-left: 3px solid var(--brand-accent);
+    }
+
+/* =========================================
+   PAGINATION DARK MODE
+========================================= */
+.pagination-premium .pagination {
+    margin-bottom: 0;
+}
+
+.pagination-premium .page-link {
+    background-color: var(--brand-surface);
+    border-color: var(--glass-border);
+    color: var(--text-main);
+    transition: all 0.3s ease;
+}
+
+    .pagination-premium .page-link:hover {
+        background-color: rgba(14, 165, 233, 0.2);
+        color: var(--brand-accent);
+    }
+
+.pagination-premium .page-item.active .page-link {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}

@@ -12,12 +12,12 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg fixed-top">
+        <nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav">
             <div class="container">
                 <a class="navbar-brand" href="/landing">
                     <img src="/uploads/productos/logo.png" alt="Óptica Comunal" height="45" />
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarMain">
@@ -28,34 +28,34 @@
                         <li class="nav-item"><a class="nav-link" href="/landing/tecnologias">Tecnologías</a></li>
                         <li class="nav-item"><a class="nav-link" href="/landing/contacto">Contacto</a></li>
                     </ul>
-                    <div class="d-flex">
+                    <div class="d-flex align-items-center">
                         @if (User.Identity.IsAuthenticated && User.IsInRole("Paciente"))
                         {
                             <div class="dropdown">
-                                <button class="btn btn-outline-primary dropdown-toggle me-2" type="button" id="cuentaDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-outline-premium dropdown-toggle me-3" type="button" id="cuentaDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-person-circle"></i> Mi Cuenta
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cuentaDropdown">
-                                    <li><a class="dropdown-item" href="/landing/mis-citas"><i class="bi bi-calendar-event"></i> Mis Citas</a></li>
-                                    <li><a class="dropdown-item" href="/landing/estado-orden"><i class="bi bi-eyeglasses"></i> Estado de Orden</a></li>
-                                    <li><a class="dropdown-item" href="/landing/mis-facturas"><i class="bi bi-receipt"></i> Mis Facturas</a></li>
-                                    <li><a class="dropdown-item" href="/landing/notificaciones"><i class="bi bi-bell"></i> Notificaciones</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="/Account/Logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow" aria-labelledby="cuentaDropdown">
+                                    <li><a class="dropdown-item" href="/landing/mis-citas"><i class="bi bi-calendar-event me-2"></i>Mis Citas</a></li>
+                                    <li><a class="dropdown-item" href="/landing/estado-orden"><i class="bi bi-eyeglasses me-2"></i>Estado de Orden</a></li>
+                                    <li><a class="dropdown-item" href="/landing/mis-facturas"><i class="bi bi-receipt me-2"></i>Mis Facturas</a></li>
+                                    <li><a class="dropdown-item" href="/landing/notificaciones"><i class="bi bi-bell me-2"></i>Notificaciones</a></li>
+                                    <li><hr class="dropdown-divider border-secondary"></li>
+                                    <li><a class="dropdown-item text-danger" href="/Account/Logout"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
                                 </ul>
                             </div>
-                            <a href="/landing/carrito" class="btn btn-outline-secondary me-2">
+                            <a href="/landing/carrito" class="btn btn-premium d-flex align-items-center gap-2">
                                 <i class="bi bi-cart"></i> Carrito
                             </a>
                         }
                         else if (User.Identity.IsAuthenticated)
                         {
-                            <a href="/Home/Index" class="btn btn-primary">Ir al Panel</a>
+                            <a href="/Home/Index" class="btn btn-premium">Ir al Panel</a>
                         }
                         else
                         {
-                            <a href="/Account/Login" class="btn btn-primary me-2">Iniciar Sesión</a>
-                            <a href="/Pacientes/Registro" class="btn btn-outline-primary">Registrarse</a>
+                            <a href="/Account/Login" class="btn btn-outline-premium me-3">Iniciar Sesión</a>
+                            <a href="/Pacientes/Registro" class="btn btn-premium">Registrarse</a>
                         }
                     </div>
                 </div>
@@ -63,49 +63,63 @@
         </nav>
     </header>
 
-    <main role="main" class="pb-3">
+    <main role="main" class="pb-3 pt-5 mt-4">
         @RenderBody()
     </main>
 
-    <footer class="footer bg-dark text-white pt-5 pb-3">
-        <div class="container">
+    <footer class="footer pt-5 pb-3">
+        <div class="container text-white">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <h5>Óptica Comunal</h5>
-                    <p>Tu salud visual es nuestra prioridad.</p>
-                    <p><i class="bi bi-geo-alt"></i> San José, Costa Rica</p>
-                    <p><i class="bi bi-telephone"></i> +506 2221-1187</p>
-                    <p><i class="bi bi-envelope"></i> lentesyprocesos@hotmail.com</p>
+                    <h5 class="text-white fw-bold mb-3">Óptica Comunal</h5>
+                    <p>Tu salud visual es nuestra prioridad, combinando artesanía clínica con tecnología de precisión.</p>
+                    <p class="mb-1"><i class="bi bi-geo-alt me-2 text-primary"></i> San José, Costa Rica</p>
+                    <p class="mb-1"><i class="bi bi-telephone me-2 text-primary"></i> +506 2221-1187</p>
+                    <p><i class="bi bi-envelope me-2 text-primary"></i> lentesyprocesos@hotmail.com</p>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5>Horarios</h5>
-                    <p><i class="bi bi-clock"></i> Lunes a Viernes: 8:00 - 18:00</p>
-                    <p><i class="bi bi-clock"></i> Sábados: 9:00 - 14:00</p>
-                    <p><i class="bi bi-clock"></i> Domingos: Cerrado</p>
+                    <h5 class="text-white fw-bold mb-3">Horarios</h5>
+                    <p class="mb-1"><i class="bi bi-clock me-2"></i> Lunes a Viernes: 8:00 - 18:00</p>
+                    <p class="mb-1"><i class="bi bi-clock me-2"></i> Sábados: 9:00 - 14:00</p>
+                    <p><i class="bi bi-clock me-2"></i> Domingos: Cerrado</p>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5>Síguenos</h5>
+                    <h5 class="text-white fw-bold mb-3">Síguenos</h5>
                     <div class="d-flex gap-3">
-                        <a href="https://www.facebook.com/opticacomunalsj" target="_blank" class="text-white fs-4"><i class="bi bi-facebook"></i></a>
-                        <a href="https://www.instagram.com/optica.comunal/" target="_blank" class="text-white fs-4"><i class="bi bi-instagram"></i></a>
-                        <a href="https://wa.me/50686970611" target="_blank" class="text-white fs-4"><i class="bi bi-whatsapp"></i></a>
+                        <a href="https://www.facebook.com/opticacomunalsj" target="_blank" class="text-white fs-4 transition"><i class="bi bi-facebook hover-primary"></i></a>
+                        <a href="https://www.instagram.com/optica.comunal/" target="_blank" class="text-white fs-4"><i class="bi bi-instagram hover-primary"></i></a>
+                        <a href="https://wa.me/50686970611" target="_blank" class="text-white fs-4"><i class="bi bi-whatsapp hover-primary"></i></a>
                     </div>
-                    <p class="mt-3 small">Conecta con nosotros y recibe promociones especiales.</p>
                 </div>
             </div>
-            <hr class="bg-white" />
-            <p class="text-center mb-0">&copy; @DateTime.Now.Year - Óptica Comunal | Todos los derechos reservados</p>
+            <hr class="border-secondary mt-4 mb-4" />
+            <p class="text-center mb-0 small">&copy; @DateTime.Now.Year - Óptica Comunal | Todos los derechos reservados</p>
         </div>
     </footer>
 
-    <!-- Botón flotante de WhatsApp -->
-    <a href="https://wa.me/50686970611" class="btn-whatsapp" target="_blank">
+    <a href="https://wa.me/50686970611" class="btn-whatsapp shadow-lg" target="_blank" style="position:fixed; bottom:30px; right:30px; background:#25D366; color:white; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; font-size:28px; z-index:1000; transition: transform 0.3s;">
         <i class="bi bi-whatsapp"></i>
     </a>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/landing.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+                observer.observe(el);
+            });
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
