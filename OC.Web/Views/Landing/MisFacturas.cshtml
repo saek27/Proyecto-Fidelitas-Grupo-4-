@@ -1,7 +1,20 @@
-@model IEnumerable<OC.Core.Domain.Entities.Venta>
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Venta>
 @{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Mis facturas";
+    DateTime? desde = (DateTime?)ViewBag.Desde;
+    DateTime? hasta = (DateTime?)ViewBag.Hasta;
+    var pagination = new OC.Web.Models.PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("MisFacturas", new
+        {
+            page,
+            desde = desde?.ToString("yyyy-MM-dd"),
+            hasta = hasta?.ToString("yyyy-MM-dd")
+        }) ?? "#"
+    };
     string MetodoTexto(OC.Core.Domain.Enums.MetodoPago m) => m switch
     {
         OC.Core.Domain.Enums.MetodoPago.Efectivo => "Efectivo",
@@ -26,7 +39,28 @@
         <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
     }
 
-    @if (!Model.Any())
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="MisFacturas" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="desde" class="form-control" value="@desde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="hasta" class="form-control" value="@hasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <a href="/landing/mis-facturas" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Items.Any())
     {
         <div class="card border-0 shadow-sm text-center py-5">
             <div class="card-body">
@@ -39,7 +73,7 @@
     else
     {
         <div class="row g-4">
-            @foreach (var venta in Model)
+            @foreach (var venta in Model.Items)
             {
                 var sub = (venta.Detalles ?? Enumerable.Empty<OC.Core.Domain.Entities.DetalleVenta>()).Sum(d => d.Subtotal);
                 var iva = Math.Max(0, venta.Total - sub);
@@ -80,5 +114,6 @@
                 </div>
             }
         </div>
+        <partial name="_Pagination" model="pagination" />
     }
 </div>

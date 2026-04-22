@@ -1,4 +1,4 @@
-﻿namespace OC.Web.ViewModels
+namespace OC.Web.ViewModels
 {
     public class ReporteVentasViewModel
     {
@@ -51,6 +51,8 @@
     {
         public string NombreCompleto { get; set; } = string.Empty;
         public string Cedula { get; set; } = string.Empty;
+        public string? Telefono { get; set; }
+        public string? Email { get; set; }
         public int VisitasEnPeriodo { get; set; }
         public string Clasificacion { get; set; } = string.Empty;
         public DateTime UltimaVisita { get; set; }

@@ -1,8 +1,14 @@
-﻿@{
+@{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Mis Citas";
+    var pagination = new OC.Web.Models.PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("MisCitas", new { page }) ?? "#"
+    };
 }
-@model IEnumerable<OC.Core.Domain.Entities.Cita>
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Cita>
 
 <div class="container my-5">
     <div class="text-center mb-4">
@@ -18,7 +24,13 @@
         </div>
     }
 
-    @if (!Model.Any())
+    <div class="d-flex justify-content-end mb-3">
+        <a href="/landing/agendar-cita" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Agendar nueva cita
+        </a>
+    </div>
+
+    @if (!Model.Items.Any())
     {
         <div class="text-center py-5">
             <i class="bi bi-calendar-x display-1 text-muted"></i>
@@ -43,7 +55,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var cita in Model)
+                    @foreach (var cita in Model.Items)
                     {
                         <tr>
                             <td class="fw-semibold">@cita.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
@@ -83,10 +95,6 @@
             </table>
         </div>
 
-        <div class="text-center mt-4">
-            <a href="/landing/agendar-cita" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Agendar nueva cita
-            </a>
-        </div>
+        <partial name="_Pagination" model="pagination" />
     }
 </div>
