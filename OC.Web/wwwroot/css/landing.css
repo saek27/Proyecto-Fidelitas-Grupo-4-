@@ -507,6 +507,13 @@ footer { background-color: #04080f !important; border-top: 1px solid var(--glass
         color: rgba(255, 255, 255, 0.3);
     }
 
+.input-premium[type="date"]::-webkit-calendar-picker-indicator,
+.input-premium[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.35);
+    opacity: 0.95;
+    cursor: pointer;
+}
+
 /* =========================================
    SIDEBAR FILTERS (Catálogo)
 ========================================= */
@@ -562,4 +569,106 @@ footer { background-color: #04080f !important; border-top: 1px solid var(--glass
     background-color: var(--brand-primary);
     border-color: var(--brand-primary);
     color: white;
+}
+
+/* =========================================
+   PACIENTE: MIS FACTURAS / NOTIFICACIONES
+========================================= */
+.landing-subtitle {
+    color: #cbd5e1;
+}
+
+.landing-label {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.landing-mis-facturas .card-premium .btn-outline-secondary {
+    border-color: #64748b;
+    color: #cbd5e1;
+}
+
+.landing-mis-facturas .card-premium .btn-outline-secondary:hover {
+    background-color: rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+}
+
+.landing-notificaciones-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.landing-notificacion-item {
+    background: var(--brand-surface);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+}
+
+.landing-notificacion-item h5,
+.landing-notificacion-item p {
+    color: var(--text-main);
+}
+
+.landing-paciente .card-premium h1,
+.landing-paciente .card-premium h2,
+.landing-paciente .card-premium h3,
+.landing-paciente .card-premium h4,
+.landing-paciente .card-premium h5,
+.landing-paciente .card-premium h6,
+.landing-paciente .card-premium p,
+.landing-paciente .card-premium label,
+.landing-paciente .card-premium span,
+.landing-paciente .card-premium td,
+.landing-paciente .card-premium th {
+    color: var(--text-main);
+}
+
+.landing-table-dark {
+    color: var(--text-main);
+}
+
+.landing-table-dark tbody tr {
+    background-color: rgba(15, 23, 42, 0.9);
+}
+
+.landing-table-dark tbody td,
+.landing-table-dark tbody th {
+    color: var(--text-main) !important;
+    border-color: var(--glass-border) !important;
+}
+
+.landing-table-dark tbody tr:hover {
+    background-color: rgba(56, 189, 248, 0.08);
+}
+
+.landing-table-dark.table-striped > tbody > tr:nth-of-type(odd) > * {
+    color: var(--text-main);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.landing-table-dark.table-hover > tbody > tr:hover > * {
+    color: var(--text-main);
+}
+
+.landing-table-dark .table-light,
+.landing-table-dark tfoot,
+.landing-table-dark thead.table-light,
+.landing-table-dark .table-light th,
+.landing-table-dark .table-light td {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    color: var(--text-main) !important;
+    border-color: var(--glass-border) !important;
+}
+
+/* Bootstrap table vars specific override for Mis Citas */
+.landing-citas-table {
+    --bs-table-bg: rgba(15, 23, 42, 0.92);
+    --bs-table-striped-bg: rgba(15, 23, 42, 0.98);
+    --bs-table-striped-color: var(--text-main);
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+    --bs-table-hover-bg: rgba(56, 189, 248, 0.12);
+    --bs-table-hover-color: var(--text-main);
 }

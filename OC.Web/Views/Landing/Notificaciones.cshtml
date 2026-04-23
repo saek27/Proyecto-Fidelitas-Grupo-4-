@@ -15,20 +15,22 @@
 
     @if (!Model.Items.Any())
     {
-        <div class="alert alert-info text-center">No tienes notificaciones.</div>
+        <div class="card card-premium text-center p-4">
+            <p class="landing-subtitle mb-0">No tienes notificaciones.</p>
+        </div>
     }
     else
     {
-        <div class="list-group">
+        <div class="list-group landing-notificaciones-list">
             @foreach (var notif in Model.Items)
             {
-                <div class="list-group-item">
+                <div class="list-group-item landing-notificacion-item">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-1">@notif.TipoNotificacion</h5>
-                        <small>@notif.FechaHoraEnvio.ToString("dd/MM/yyyy HH:mm")</small>
+                        <small class="landing-subtitle">@notif.FechaHoraEnvio.ToString("dd/MM/yyyy HH:mm")</small>
                     </div>
                     <p class="mb-1">@notif.MensajeResumen</p>
-                    <small class="text-muted">Canal: @notif.Canal</small>
+                    <small class="landing-subtitle">Canal: @notif.Canal</small>
                 </div>
             }
         </div>
