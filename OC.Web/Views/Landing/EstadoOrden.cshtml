@@ -1,20 +1,28 @@
-﻿@{
+@{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Estado de mi orden";
+    var pagination = new OC.Web.Models.PaginationInfo
+    {
+        CurrentPage = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        GetPageUrl = (page) => Url.Action("EstadoOrden", new { page }) ?? "#"
+    };
 }
-@model IEnumerable<OC.Core.Domain.Entities.OrdenTrabajo>
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.OrdenTrabajo>
 
-<div class="container my-5">
+<div class="container my-5 landing-paciente">
     <h1 class="text-center mb-4">Estado de mi orden de lentes</h1>
 
-    @if (!Model.Any())
+    @if (!Model.Items.Any())
     {
-        <div class="alert alert-info text-center">No tienes órdenes de trabajo registradas.</div>
+        <div class="card card-premium text-center p-4">
+            <p class="landing-subtitle mb-0">No tienes ordenes de trabajo registradas.</p>
+        </div>
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
+        <div class="table-responsive card card-premium p-2">
+            <table class="table table-striped align-middle landing-table-dark mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th>Referencia</th>
@@ -24,7 +32,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var orden in Model)
+                    @foreach (var orden in Model.Items)
                     {
                         <tr>
                             <td>@orden.Referencia</td>
@@ -59,5 +67,6 @@
                 </tbody>
             </table>
         </div>
+        <partial name="_Pagination" model="pagination" />
     }
 </div>

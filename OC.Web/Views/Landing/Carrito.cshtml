@@ -5,7 +5,7 @@
 }
 @model List<OC.Web.ViewModels.DetalleVentaInputModel>
 
-<div class="container my-5 landing-carrito">
+<div class="container my-5 landing-carrito landing-paciente">
     <h1 class="text-center mb-4 fw-bold">Mi carrito</h1>
 
     @if (TempData["Success"] != null)
@@ -19,29 +19,29 @@
 
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-info text-center shadow-sm">
+        <div class="card card-premium text-center shadow-sm p-4">
             Tu carrito está vacío. <a href="/landing/catalogo" class="alert-link">Ver productos</a>
         </div>
     }
     else
     {
         <form id="formCarrito" method="post" asp-controller="Landing" asp-action="FinalizarCompra" enctype="multipart/form-data">
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card card-premium border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <label class="form-label fw-semibold"><i class="bi bi-shop"></i> Sucursal de retiro / atención <span class="text-danger">*</span></label>
-                    <select name="sucursalId" id="sucursalId" class="form-select form-select-lg" required>
+                    <select name="sucursalId" id="sucursalId" class="form-select form-select-lg input-premium" required>
                         <option value="">Seleccione una sucursal</option>
                         @foreach (var s in sucursales)
                         {
                             <option value="@s.Id">@(s.Nombre + " - " + s.Direccion)</option>
                         }
                     </select>
-                    <div class="form-text">Obligatorio. La compra quedará asociada a la sucursal elegida.</div>
+                    <div class="form-text landing-subtitle">Obligatorio. La compra quedara asociada a la sucursal elegida.</div>
                 </div>
             </div>
 
-            <div class="table-responsive card border-0 shadow-sm mb-4">
-                <table class="table table-hover align-middle mb-0" id="tablaCarrito">
+            <div class="table-responsive card card-premium border-0 shadow-sm mb-4">
+                <table class="table table-hover align-middle mb-0 landing-table-dark" id="tablaCarrito">
                     <thead class="table-light">
                         <tr>
                             <th>Producto</th>
@@ -61,10 +61,10 @@
                                     <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
                                 </td>
                                 <td>
-                                    <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad" />
+                                    <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad input-premium" />
                                 </td>
                                 <td class="text-end">
-                                    <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end" />
+                                    <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end input-premium" />
                                 </td>
                                 <td class="text-end subtotal">₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))</td>
                                 <td>
@@ -95,10 +95,10 @@
 
             <div class="row g-4">
                 <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm h-100">
+                    <div class="card card-premium border-0 shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">Método de pago</h5>
-                            <p class="small text-muted">En la tienda en línea solo aceptamos efectivo o SINPE Móvil.</p>
+                            <p class="small landing-subtitle">En la tienda en linea solo aceptamos efectivo o SINPE Movil.</p>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked>
                                 <label class="form-check-label" for="mpEfectivo">Efectivo</label>
@@ -111,14 +111,14 @@
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm h-100">
+                    <div class="card card-premium border-0 shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">Comprobante y notas</h5>
-                            <label class="form-label" id="lblComprobante">Comprobante de pago <span class="text-muted" id="hintComprobante">(opcional con efectivo)</span></label>
-                            <input type="file" name="comprobantePago" id="comprobantePago" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
-                            <div class="form-text mb-3">Imagen o PDF</div>
+                            <label class="form-label" id="lblComprobante">Comprobante de pago <span class="landing-subtitle" id="hintComprobante">(opcional con efectivo)</span></label>
+                            <input type="file" name="comprobantePago" id="comprobantePago" class="form-control input-premium" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
+                            <div class="form-text mb-3 landing-subtitle">Tipos permitidos: JPG, JPEG, PNG, GIF, WEBP o PDF. Tamano maximo: 10 MB.</div>
                             <label class="form-label">Notas (opcional)</label>
-                            <textarea name="notas" class="form-control" rows="3" placeholder="Indicaciones de entrega, teléfono alternativo, etc."></textarea>
+                            <textarea name="notas" class="form-control input-premium" rows="3" placeholder="Indicaciones de entrega, telefono alternativo, etc."></textarea>
                         </div>
                     </div>
                 </div>

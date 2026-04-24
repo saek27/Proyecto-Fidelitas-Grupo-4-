@@ -1,4 +1,8 @@
 @model OC.Web.ViewModels.PacienteViewModel
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Registro de paciente";
+}
 
 <div class="card-dashboard">
     <h4>Registro de Paciente</h4>
@@ -10,8 +14,15 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-    <p class="text-muted">Complete el formulario para registrarse como paciente y poder solicitar citas.</p>
+    <p class="text-muted">Complete el formulario para registrarse. Al final deberá configurar el autenticador TOTP (obligatorio) con QR.</p>
 
     <form asp-action="Registro" method="post">
         <div class="row">

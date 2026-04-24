@@ -91,6 +91,7 @@ builder.Services.Configure<RecordatorioCitasOptions>(
     builder.Configuration.GetSection(RecordatorioCitasOptions.SectionName));
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHostedService<RecordatorioCitasBackgroundService>();
+builder.Services.AddScoped<ITotpService, TotpService>();
 
 // --- LA L?NEA FRONTERIZA (Solo una vez) ---
 var app = builder.Build();

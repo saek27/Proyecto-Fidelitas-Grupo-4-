@@ -4,6 +4,10 @@
     var v = Model.Venta;
     var subtotal = (v.Detalles ?? Enumerable.Empty<OC.Core.Domain.Entities.DetalleVenta>()).Sum(d => d.Subtotal);
     var iva = Math.Max(0m, v.Total - subtotal);
+    var notasLimpias = (v.Notas ?? string.Empty)
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        .Where(l => !l.TrimStart().StartsWith("Comprobante adjunto:", StringComparison.OrdinalIgnoreCase));
+    var notasMostrar = string.Join('\n', notasLimpias).Trim();
 }
 @functions {
     private static string MetodoTexto(OC.Core.Domain.Enums.MetodoPago m) => m switch
@@ -362,11 +366,11 @@
                 </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(v.Notas))
+            @if (!string.IsNullOrEmpty(notasMostrar))
             {
                 <div class="notas">
                     <strong>Notas</strong>
-                    @v.Notas
+                    @notasMostrar
                 </div>
             }
 

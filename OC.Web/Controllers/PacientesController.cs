@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
 using OC.Web.Helpers;
+using OC.Web.Services;
 using OC.Web.ViewModels;
+using System.Text.Json;
 
 namespace OC.Web.Controllers
 {
@@ -11,10 +13,16 @@ namespace OC.Web.Controllers
     public class PacientesController : Controller
     {
         private readonly IGenericRepository<Paciente> _pacientesRepo;
+        private readonly ITotpService _totpService;
+        private const string RegistroPendienteSessionKey = "RegistroPacientePendiente";
+        private const string RegistroTotpSecretSessionKey = "RegistroPacienteTotpSecret";
 
-        public PacientesController(IGenericRepository<Paciente> pacientesRepo)
+        public PacientesController(
+            IGenericRepository<Paciente> pacientesRepo,
+            ITotpService totpService)
         {
             _pacientesRepo = pacientesRepo;
+            _totpService = totpService;
         }
 
         // LISTAR con búsqueda por nombre o cédula
@@ -49,6 +57,8 @@ namespace OC.Web.Controllers
         [HttpGet]
         public IActionResult Registro()
         {
+            HttpContext.Session.Remove(RegistroPendienteSessionKey);
+            HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
             return View();
         }
 
@@ -93,21 +103,107 @@ namespace OC.Web.Controllers
                 return View(model);
             }
 
+            HttpContext.Session.SetString(RegistroPendienteSessionKey, JsonSerializer.Serialize(model));
+            var secret = _totpService.GenerateSecretBase32();
+            HttpContext.Session.SetString(RegistroTotpSecretSessionKey, secret);
+
+            return RedirectToAction(nameof(ConfigurarTotpRegistro));
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult ConfigurarTotpRegistro()
+        {
+            var modelJson = HttpContext.Session.GetString(RegistroPendienteSessionKey);
+            var secret = HttpContext.Session.GetString(RegistroTotpSecretSessionKey);
+            if (string.IsNullOrWhiteSpace(modelJson) || string.IsNullOrWhiteSpace(secret))
+                return RedirectToAction(nameof(Registro));
+
+            var model = JsonSerializer.Deserialize<PacienteViewModel>(modelJson);
+            if (model == null || string.IsNullOrWhiteSpace(model.Email))
+                return RedirectToAction(nameof(Registro));
+
+            var issuer = "OpticaComunal";
+            var label = $"{issuer}:{model.Email}";
+            var otpauth = $"otpauth://totp/{Uri.EscapeDataString(label)}?secret={secret}&issuer={Uri.EscapeDataString(issuer)}&digits=6&period=30";
+            var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=" + Uri.EscapeDataString(otpauth);
+
+            ViewBag.Correo = model.Email;
+            ViewBag.ManualKey = _totpService.GetManualEntryKey(secret);
+            ViewBag.QrUrl = qrUrl;
+            return View(new ValidarTotpViewModel());
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfigurarTotpRegistro(ValidarTotpViewModel model)
+        {
+            var modelJson = HttpContext.Session.GetString(RegistroPendienteSessionKey);
+            var secret = HttpContext.Session.GetString(RegistroTotpSecretSessionKey);
+            if (string.IsNullOrWhiteSpace(modelJson) || string.IsNullOrWhiteSpace(secret))
+                return RedirectToAction(nameof(Registro));
+
+            var pendiente = JsonSerializer.Deserialize<PacienteViewModel>(modelJson);
+            if (pendiente == null || string.IsNullOrWhiteSpace(pendiente.Email))
+                return RedirectToAction(nameof(Registro));
+
+            var issuer = "OpticaComunal";
+            var label = $"{issuer}:{pendiente.Email}";
+            var otpauth = $"otpauth://totp/{Uri.EscapeDataString(label)}?secret={secret}&issuer={Uri.EscapeDataString(issuer)}&digits=6&period=30";
+            ViewBag.QrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=" + Uri.EscapeDataString(otpauth);
+            ViewBag.Correo = pendiente.Email;
+            ViewBag.ManualKey = _totpService.GetManualEntryKey(secret);
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            if (!_totpService.VerifyCode(secret, model.Codigo))
+            {
+                ModelState.AddModelError(string.Empty, "Código TOTP inválido o expirado.");
+                return View(model);
+            }
+
+            // Revalidar unicidad por si cambió mientras configuraba TOTP.
+            var cedulaNorm = CedulaValidation.Normalizar(pendiente.Cedula);
+            var cedulaDup = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Cedula == cedulaNorm);
+            if (cedulaDup.Items.Any())
+            {
+                HttpContext.Session.Remove(RegistroPendienteSessionKey);
+                HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
+                TempData["Error"] = "No se pudo completar el registro: la cédula ya existe.";
+                return RedirectToAction(nameof(Registro));
+            }
+
+            var emailDup = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Email == pendiente.Email);
+            if (emailDup.Items.Any())
+            {
+                HttpContext.Session.Remove(RegistroPendienteSessionKey);
+                HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
+                TempData["Error"] = "No se pudo completar el registro: el correo ya está en uso.";
+                return RedirectToAction(nameof(Registro));
+            }
+
             var entity = new Paciente
             {
-                Nombres = model.Nombres,
-                Apellidos = model.Apellidos,
-                Cedula = cedulaNormalizada,
-                Telefono = model.Telefono,
-                Email = model.Email,
-                Contrasena = BCrypt.Net.BCrypt.HashPassword(model.Contrasena!),
-                FechaNacimiento = model.FechaNacimiento,
-                FechaRegistro = DateTime.Now
+                Nombres = pendiente.Nombres,
+                Apellidos = pendiente.Apellidos,
+                Cedula = cedulaNorm,
+                Telefono = pendiente.Telefono,
+                Email = pendiente.Email,
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(pendiente.Contrasena!),
+                FechaNacimiento = pendiente.FechaNacimiento,
+                FechaRegistro = DateTime.Now,
+                TotpSecretProtegido = _totpService.ProtectSecret(secret),
+                TotpHabilitado = true,
+                TotpConfiguradoEnUtc = DateTime.UtcNow
             };
 
             await _pacientesRepo.AddAsync(entity);
+            HttpContext.Session.Remove(RegistroPendienteSessionKey);
+            HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
 
-            TempData["Success"] = "Paciente registrado exitosamente. Ahora puede iniciar sesión como paciente.";
+            TempData["Success"] = "Paciente registrado exitosamente con autenticador TOTP. Ya puede iniciar sesión.";
             return RedirectToAction("Login", "PacienteAccount");
         }
 

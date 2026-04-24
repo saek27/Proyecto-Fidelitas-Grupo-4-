@@ -44,7 +44,6 @@ namespace OC.Web.Controllers
                     {
                         new("bi-person-heart",   "Pacientes",       "Gestión de pacientes",    "/Pacientes",                   "#93c5fd", "rgba(59,130,246,.25)"),
                         new("bi-calendar-event", "Citas",           "Agendar y gestionar",     "/CitasPublicas/CitasPaciente", "#67e8f9", "rgba(6,182,212,.25)"),
-                        new("bi-folder2-open",   "Expedientes",     "Historial clínico",       "/Expedientess",                "#c4b5fd", "rgba(139,92,246,.25)"),
                         new("bi-eyeglasses",     "Órdenes Trabajo", "Seguimiento de órdenes",  "/OrdenesTrabajo",              "#93c5fd", "rgba(59,130,246,.2)"),
                     }
                 },

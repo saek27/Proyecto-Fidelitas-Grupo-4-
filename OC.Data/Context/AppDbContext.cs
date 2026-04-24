@@ -112,6 +112,7 @@ namespace OC.Data.Context
             modelBuilder.Entity<Paciente>(e =>
             {
                 e.Property(p => p.Cedula).HasMaxLength(9);
+                e.Property(p => p.TotpSecretProtegido).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<Producto>(e =>

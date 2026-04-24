@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
@@ -240,6 +240,8 @@ namespace OC.Web.Controllers
                         {
                             NombreCompleto = paciente.NombreCompleto,
                             Cedula = paciente.Cedula,
+                            Telefono = paciente.Telefono,
+                            Email = paciente.Email,
                             VisitasEnPeriodo = visitas,
                             Clasificacion = clasificacion,
                             UltimaVisita = g.Max(c => c.FechaHora)
@@ -297,6 +299,8 @@ namespace OC.Web.Controllers
                         {
                             NombreCompleto = paciente.NombreCompleto,
                             Cedula = paciente.Cedula,
+                            Telefono = paciente.Telefono,
+                            Email = paciente.Email,
                             VisitasEnPeriodo = visitas,
                             Clasificacion = cls,
                             UltimaVisita = g.Max(c => c.FechaHora)
@@ -311,9 +315,9 @@ namespace OC.Web.Controllers
                 ws.Cell(1, 1).Value = "Reporte de Fidelización — Óptica Comunal";
                 ws.Cell(1, 1).Style.Font.Bold = true;
                 ws.Cell(1, 1).Style.Font.FontSize = 14;
-                ws.Range(1, 1, 1, 5).Merge();
+                ws.Range(1, 1, 1, 7).Merge();
 
-                string[] headers = { "Paciente", "Cédula", "Visitas en Período", "Última Visita", "Clasificación" };
+                string[] headers = { "Paciente", "Cédula", "Teléfono", "Correo", "Visitas en Período", "Última Visita", "Clasificación" };
                 for (int i = 0; i < headers.Length; i++)
                 {
                     var cell = ws.Cell(3, i + 1);
@@ -328,9 +332,11 @@ namespace OC.Web.Controllers
                 {
                     ws.Cell(row, 1).Value = p.NombreCompleto;
                     ws.Cell(row, 2).Value = p.Cedula;
-                    ws.Cell(row, 3).Value = p.VisitasEnPeriodo;
-                    ws.Cell(row, 4).Value = p.UltimaVisita.ToString("dd/MM/yyyy");
-                    ws.Cell(row, 5).Value = p.Clasificacion;
+                    ws.Cell(row, 3).Value = p.Telefono ?? "";
+                    ws.Cell(row, 4).Value = p.Email ?? "";
+                    ws.Cell(row, 5).Value = p.VisitasEnPeriodo;
+                    ws.Cell(row, 6).Value = p.UltimaVisita.ToString("dd/MM/yyyy");
+                    ws.Cell(row, 7).Value = p.Clasificacion;
 
                     var color = p.Clasificacion switch
                     {
