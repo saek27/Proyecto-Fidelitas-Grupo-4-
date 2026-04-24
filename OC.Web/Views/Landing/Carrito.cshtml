@@ -5,131 +5,171 @@
 }
 @model List<OC.Web.ViewModels.DetalleVentaInputModel>
 
-<div class="container my-5 landing-carrito landing-paciente">
-    <h1 class="text-center mb-4 fw-bold">Mi carrito</h1>
+<div class="container my-5 landing-carrito landing-paciente animate-on-scroll">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
-    }
+            <h1 class="text-center mb-4 fw-bold text-white">
+                <i class="bi bi-cart3 text-info me-2"></i>Mi carrito
+            </h1>
 
-    @if (Model == null || !Model.Any())
-    {
-        <div class="card card-premium text-center shadow-sm p-4">
-            Tu carrito está vacío. <a href="/landing/catalogo" class="alert-link">Ver productos</a>
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success shadow-sm rounded-4 border-0">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger shadow-sm rounded-4 border-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="card-premium text-center shadow-sm p-5 rounded-4 border-0 mt-4">
+                    <i class="bi bi-cart-x display-1 text-info opacity-50 mb-3 d-block"></i>
+                    <h4 class="text-white fw-medium mb-3">Tu carrito está vacío</h4>
+                    <p class="text-light opacity-75 mb-4">Aún no has agregado ningún lente o producto a tu carrito de compras.</p>
+                    <a href="/landing/catalogo" class="btn btn-premium px-4 py-2">
+                        <i class="bi bi-shop me-2"></i>Ver productos
+                    </a>
+                </div>
+            }
+            else
+            {
+                <form id="formCarrito" method="post" asp-controller="Landing" asp-action="FinalizarCompra" enctype="multipart/form-data">
+
+                    <div class="card-premium border-0 shadow-sm mb-4 rounded-4">
+                        <div class="card-body p-4">
+                            <label class="form-label text-light fw-semibold mb-3">
+                                <i class="bi bi-shop text-info me-2"></i>Sucursal de retiro / atención <span class="text-danger">*</span>
+                            </label>
+                            <select name="sucursalId" id="sucursalId" class="form-select form-select-lg input-premium text-light" style="color-scheme: dark;" required>
+                                <option value="" style="background-color: #060b14; color: #f8fafc;">Seleccione una sucursal</option>
+                                @foreach (var s in sucursales)
+                                {
+                                    <option value="@s.Id" style="background-color: #060b14; color: #f8fafc;">@(s.Nombre + " - " + s.Direccion)</option>
+                                }
+                            </select>
+                            <div class="form-text text-light opacity-75 mt-2">
+                                <i class="bi bi-info-circle me-1"></i>Obligatorio. La compra quedará asociada a la sucursal elegida.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive card-premium border-0 shadow-sm mb-4 rounded-4 p-3">
+                        <table class="table table-hover align-middle mb-0 landing-table-dark landing-citas-table" id="tablaCarrito" style="text-shadow: none !important;">
+                            <thead class="border-bottom border-secondary border-opacity-25">
+                                <tr class="text-light opacity-75">
+                                    <th class="fw-medium pb-3 border-0">Producto</th>
+                                    <th style="width:120px" class="fw-medium pb-3 border-0">Cantidad</th>
+                                    <th style="width:140px" class="text-end fw-medium pb-3 border-0">Precio unit.</th>
+                                    <th style="width:140px" class="text-end fw-medium pb-3 border-0">Subtotal</th>
+                                    <th style="width:56px" class="pb-3 border-0"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count; i++)
+                                {
+                                    <tr data-index="@i" class="border-bottom border-secondary border-opacity-10">
+                                        <td class="py-3 border-0" style="text-shadow: none !important; transform: translateZ(0); -webkit-font-smoothing: auto;">
+                                            <span class="text-light fw-medium d-block">@Model[i].DescripcionSnapshot</span>
+                                            <input type="hidden" name="detalles[@i].ProductoId" value="@Model[i].ProductoId" />
+                                            <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
+                                        </td>
+                                        <td class="py-3 border-0">
+                                            <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad input-premium text-light text-center" />
+                                        </td>
+                                        <td class="text-end py-3 border-0">
+                                            <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end input-premium text-light" />
+                                        </td>
+                                        <td class="text-end subtotal text-info fw-semibold py-3 border-0">
+                                            ₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))
+                                        </td>
+                                        <td class="text-end py-3 border-0">
+                                            <button type="button" class="btn btn-sm btn-outline-danger eliminar-item rounded-3" title="Quitar línea">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="border-top border-secondary border-opacity-25 text-light">
+                                <tr>
+                                    <th colspan="3" class="text-end fw-normal pt-3 border-0">Subtotal gravado</th>
+                                    <th class="text-end pt-3 border-0" id="filaSubtotal">₡ 0.00</th>
+                                    <th class="border-0"></th>
+                                </tr>
+                                <tr>
+                                    <th colspan="3" class="text-end fw-normal pt-2 border-0">IVA 13%</th>
+                                    <th class="text-end pt-2 text-info opacity-75 border-0" id="filaIva">₡ 0.00</th>
+                                    <th class="border-0"></th>
+                                </tr>
+                                <tr class="fs-5">
+                                    <th colspan="3" class="text-end fw-bold pt-3 pb-2 border-0">Total a pagar</th>
+                                    <th class="text-end text-info fw-bold pt-3 pb-2 border-0" id="totalGeneral">₡ 0.00</th>
+                                    <th class="border-0"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-6">
+                            <div class="card-premium border-0 shadow-sm h-100 rounded-4 p-4">
+                                <h5 class="card-title text-white fw-bold mb-3">
+                                    <i class="bi bi-wallet2 text-info me-2"></i>Método de pago
+                                </h5>
+                                <p class="small text-light opacity-75 mb-4">En la tienda en línea solo aceptamos efectivo o SINPE Móvil.</p>
+
+                                <div class="form-check mb-3 p-3 rounded-3 border border-secondary border-opacity-25">
+                                    <input class="form-check-input ms-1" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked>
+                                    <label class="form-check-label text-light fw-medium ms-2" for="mpEfectivo">
+                                        <i class="bi bi-cash-coin me-1"></i> Efectivo
+                                    </label>
+                                </div>
+                                <div class="form-check p-3 rounded-3 border border-secondary border-opacity-25">
+                                    <input class="form-check-input ms-1" type="radio" name="metodoPago" value="2" id="mpSINPE">
+                                    <label class="form-check-label text-light fw-medium ms-2" for="mpSINPE">
+                                        <i class="bi bi-phone-vibrate me-1"></i> SINPE Móvil
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card-premium border-0 shadow-sm h-100 rounded-4 p-4">
+                                <h5 class="card-title text-white fw-bold mb-3">
+                                    <i class="bi bi-receipt text-info me-2"></i>Comprobante y notas
+                                </h5>
+
+                                <label class="form-label text-light fw-medium" id="lblComprobante">
+                                    Comprobante de pago <span class="text-light opacity-50 fw-normal small" id="hintComprobante">(opcional con efectivo)</span>
+                                </label>
+                                <input type="file" name="comprobantePago" id="comprobantePago" class="form-control input-premium text-light mb-1" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
+                                <div class="form-text text-light opacity-50 small mb-4">
+                                    Tipos permitidos: JPG, PNG, WEBP o PDF. Máximo: 10 MB.
+                                </div>
+
+                                <label class="form-label text-light fw-medium">Notas <span class="text-light opacity-50 fw-normal small">(opcional)</span></label>
+                                <textarea name="notas" class="form-control input-premium text-light" rows="2" placeholder="Indicaciones de entrega, teléfono alternativo, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end d-flex flex-wrap gap-3 justify-content-end align-items-center">
+                        <a href="/landing/catalogo" class="btn btn-outline-premium py-2 px-4">
+                            <i class="bi bi-arrow-left me-2"></i>Seguir comprando
+                        </a>
+                        <button type="submit" class="btn btn-premium py-2 px-5 shadow-sm fw-semibold fs-5">
+                            <i class="bi bi-check-circle me-2"></i>Confirmar compra
+                        </button>
+                    </div>
+                </form>
+            }
         </div>
-    }
-    else
-    {
-        <form id="formCarrito" method="post" asp-controller="Landing" asp-action="FinalizarCompra" enctype="multipart/form-data">
-            <div class="card card-premium border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <label class="form-label fw-semibold"><i class="bi bi-shop"></i> Sucursal de retiro / atención <span class="text-danger">*</span></label>
-                    <select name="sucursalId" id="sucursalId" class="form-select form-select-lg input-premium" required>
-                        <option value="">Seleccione una sucursal</option>
-                        @foreach (var s in sucursales)
-                        {
-                            <option value="@s.Id">@(s.Nombre + " - " + s.Direccion)</option>
-                        }
-                    </select>
-                    <div class="form-text landing-subtitle">Obligatorio. La compra quedara asociada a la sucursal elegida.</div>
-                </div>
-            </div>
-
-            <div class="table-responsive card card-premium border-0 shadow-sm mb-4">
-                <table class="table table-hover align-middle mb-0 landing-table-dark" id="tablaCarrito">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Producto</th>
-                            <th style="width:110px">Cantidad</th>
-                            <th style="width:130px" class="text-end">Precio unit.</th>
-                            <th style="width:130px" class="text-end">Subtotal</th>
-                            <th style="width:56px"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.Count; i++)
-                        {
-                            <tr data-index="@i">
-                                <td>
-                                    @Model[i].DescripcionSnapshot
-                                    <input type="hidden" name="detalles[@i].ProductoId" value="@Model[i].ProductoId" />
-                                    <input type="hidden" name="detalles[@i].DescripcionSnapshot" value="@Model[i].DescripcionSnapshot" />
-                                </td>
-                                <td>
-                                    <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad input-premium" />
-                                </td>
-                                <td class="text-end">
-                                    <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end input-premium" />
-                                </td>
-                                <td class="text-end subtotal">₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))</td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-outline-danger eliminar-item" title="Quitar línea"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="3" class="text-end">Subtotal gravado</th>
-                            <th class="text-end" id="filaSubtotal">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                        <tr>
-                            <th colspan="3" class="text-end">IVA 13%</th>
-                            <th class="text-end" id="filaIva">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                        <tr class="fs-5">
-                            <th colspan="3" class="text-end">Total a pagar</th>
-                            <th class="text-end text-primary" id="totalGeneral">₡ 0.00</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="card card-premium border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Método de pago</h5>
-                            <p class="small landing-subtitle">En la tienda en linea solo aceptamos efectivo o SINPE Movil.</p>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="metodoPago" value="1" id="mpEfectivo" checked>
-                                <label class="form-check-label" for="mpEfectivo">Efectivo</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="metodoPago" value="2" id="mpSINPE">
-                                <label class="form-check-label" for="mpSINPE">SINPE Móvil</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card card-premium border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Comprobante y notas</h5>
-                            <label class="form-label" id="lblComprobante">Comprobante de pago <span class="landing-subtitle" id="hintComprobante">(opcional con efectivo)</span></label>
-                            <input type="file" name="comprobantePago" id="comprobantePago" class="form-control input-premium" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" />
-                            <div class="form-text mb-3 landing-subtitle">Tipos permitidos: JPG, JPEG, PNG, GIF, WEBP o PDF. Tamano maximo: 10 MB.</div>
-                            <label class="form-label">Notas (opcional)</label>
-                            <textarea name="notas" class="form-control input-premium" rows="3" placeholder="Indicaciones de entrega, telefono alternativo, etc."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-end mt-4 d-flex flex-wrap gap-2 justify-content-end">
-                <a href="/landing/catalogo" class="btn btn-outline-secondary btn-lg">Seguir comprando</a>
-                <button type="submit" class="btn btn-success btn-lg">Confirmar compra</button>
-            </div>
-        </form>
-    }
+    </div>
 </div>
 
 @section Scripts {

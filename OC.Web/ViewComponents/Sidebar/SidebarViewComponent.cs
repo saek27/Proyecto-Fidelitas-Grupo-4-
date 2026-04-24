@@ -105,7 +105,6 @@ namespace OC.Web.ViewComponents.Sidebar
                     {
                         new MenuItem { Title = "Pacientes", Url = "/Pacientes", Icon = "bi-person-heart" },
                         new MenuItem { Title = "Citas", Url = "/CitasPublicas/CitasPaciente", Icon = "bi-calendar-event" },
-                        new MenuItem { Title = "Historial", Url = "/CitasPublicas/HistorialPaciente", Icon = "bi-clipboard2-pulse" },
                         new MenuItem { Title = "Órdenes Trabajo", Url = "/OrdenesTrabajo", Icon = "bi-eyeglasses" }
                     }
                 });
