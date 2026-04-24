@@ -19,33 +19,36 @@
                 <i class="bi bi-people me-2 text-success"></i>Reporte de Fidelización
             </span>
         </div>
-
-        <form method="get" asp-action="Fidelizacion"
-              class="d-flex flex-wrap align-items-center gap-2">
-            <input type="date" name="desde" class="form-control form-control-sm"
-                   style="width:140px"
-                   value="@Model.Desde?.ToString("yyyy-MM-dd")" />
-            <input type="date" name="hasta" class="form-control form-control-sm"
-                   style="width:140px"
-                   value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
-            <select name="sucursalId" class="form-select form-select-sm" style="width:160px">
-                <option value="">Todas las sucursales</option>
-                @foreach (var s in Model.Sucursales)
-                {
-                    <option value="@s.Id" selected="@(Model.SucursalId == s.Id)">@s.Nombre</option>
-                }
-            </select>
-            <button type="submit" class="btn btn-success btn-sm">
-                <i class="bi bi-funnel me-1"></i>Filtrar
-            </button>
-            <a asp-action="ExportarFidelizacionExcel"
-               asp-route-desde="@Model.Desde?.ToString("yyyy-MM-dd")"
-               asp-route-hasta="@Model.Hasta?.ToString("yyyy-MM-dd")"
-               asp-route-sucursalId="@Model.SucursalId"
-               class="btn btn-sm btn-outline-success">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar
-            </a>
-        </form>
+        <a asp-action="ExportarFidelizacionExcel"
+           asp-route-desde="@Model.Desde?.ToString("yyyy-MM-dd")"
+           asp-route-hasta="@Model.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-sucursalId="@Model.SucursalId"
+           target="_blank"
+           class="btn btn-sm btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <form method="get" asp-action="Fidelizacion"
+                  class="d-flex flex-wrap align-items-center gap-2">
+                <input type="date" name="desde" class="form-control form-control-sm"
+                       style="width:140px"
+                       value="@Model.Desde?.ToString("yyyy-MM-dd")" />
+                <input type="date" name="hasta" class="form-control form-control-sm"
+                       style="width:140px"
+                       value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
+                <select name="sucursalId" class="form-select form-select-sm" style="width:160px">
+                    <option value="">Todas las sucursales</option>
+                    @foreach (var s in Model.Sucursales)
+                    {
+                        <option value="@s.Id" selected="@(Model.SucursalId == s.Id)">@s.Nombre</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+            </form>
+            
+        </div>
     </div>
 
     @* ── Contenido principal ─────────────────────────────────────────────────── *@
