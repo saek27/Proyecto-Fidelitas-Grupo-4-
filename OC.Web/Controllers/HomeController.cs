@@ -122,6 +122,8 @@ namespace OC.Web.Controllers
                     Items = new()
                     {
                         new("bi-file-earmark-text","Mis Planillas", "Comprobantes de pago",    "/Planillas/MisPlanillas",      "#fcd34d", "rgba(245,158,11,.2)"),
+                 new("bi-clock",          "Asistencia",      "Registro de asistencia",  "/Asistencia",                  "#93c5fd", "rgba(59,130,246,.2)"),
+                        new("bi-clock",          "Permiso",         "Solicitud de permisos",   "/Permiso",                     "#93c5fd", "rgba(59,130,246,.2)"),
                     }
                 },
                 new ModuloGroup
@@ -155,6 +157,8 @@ namespace OC.Web.Controllers
                     Items = new()
                     {
                         new("bi-file-earmark-text","Mis Planillas", "Comprobantes de pago",    "/Planillas/MisPlanillas",      "#fcd34d", "rgba(245,158,11,.2)"),
+                        new("bi-clock",          "Asistencia",      "Registro de asistencia",  "/Asistencia",                  "#93c5fd", "rgba(59,130,246,.2)"),
+                        new("bi-clock",          "Permiso",         "Solicitud de permisos",   "/Permiso",                     "#93c5fd", "rgba(59,130,246,.2)"),
                     }
                 },
                 new ModuloGroup
@@ -178,6 +182,7 @@ namespace OC.Web.Controllers
                     {
                         new("bi-file-earmark-text","Mis Planillas", "Comprobantes de pago",    "/Planillas/MisPlanillas",      "#fcd34d", "rgba(245,158,11,.2)"),
                         new("bi-clock",          "Permiso",         "Solicitud de permisos",   "/Permiso",                     "#93c5fd", "rgba(59,130,246,.2)"),
+                        new("bi-clock",          "Asistencia",      "Registro de asistencia",  "/Asistencia",                  "#93c5fd", "rgba(59,130,246,.2)"),
                     }
                 },
                 new ModuloGroup
