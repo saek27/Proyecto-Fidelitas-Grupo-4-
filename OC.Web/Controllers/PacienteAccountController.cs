@@ -25,9 +25,6 @@ namespace OC.Web.Controllers
             _totpService = totpService;
         }
 
-        [HttpGet]
-        public IActionResult Login() => View();
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string cedula, string contrasena)

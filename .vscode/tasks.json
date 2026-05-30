@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet build",
+            "type": "process",
+            "args": [
+                "${workspaceFolder}/OC.Web/OC.Web.csproj"
+            ],
+            "problemMatcher": [],
+            "group": "build",
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}

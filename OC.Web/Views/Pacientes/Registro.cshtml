@@ -56,7 +56,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label asp-for="Telefono" class="form-label text-light fw-medium"></label>
-                            <input asp-for="Telefono" class="form-control input-premium" />
+                            <input asp-for="Telefono" class="form-control input-premium" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="20" placeholder="Ej: 8888-8888" />
                             <span asp-validation-for="Telefono" class="text-danger small"></span>
                         </div>
 
@@ -105,4 +105,9 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        document.querySelector('input[name="@Html.NameFor(m => m.Telefono)"]').addEventListener('input', function (e) {
+            this.value = this.value.replace(/\D/g, '');
+        });
+    </script>
 }

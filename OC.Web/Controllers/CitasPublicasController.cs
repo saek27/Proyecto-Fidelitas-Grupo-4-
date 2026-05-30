@@ -114,20 +114,36 @@ namespace OC.Web.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> CitasPaciente(string estado)
+        public async Task<IActionResult> CitasPaciente(string estado, string fechaDesde, string fechaHasta, int page = 1, int pageSize = 15)
         {
-            var citas = await _citasRepo.GetPagedAsync(
+            ViewBag.Estado = estado;
+            ViewBag.FechaDesde = fechaDesde;
+            ViewBag.FechaHasta = fechaHasta;
+
+            var todasLasCitas = await _citasRepo.GetPagedAsync(
                 pageIndex: 1,
-                pageSize: 200,
+                pageSize: int.MaxValue,
                 orderBy: q => q.OrderByDescending(c => c.FechaHora),
                 includeProperties: "Paciente"
             );
 
-            var resultado = citas.Items.AsQueryable();
-            if (!string.IsNullOrEmpty(estado))
-                resultado = resultado.Where(c => c.Estado == estado);
+            var query = todasLasCitas.Items.AsQueryable();
 
-            return View(resultado.ToList());
+            if (!string.IsNullOrEmpty(estado))
+                query = query.Where(c => c.Estado == estado);
+
+            if (!string.IsNullOrEmpty(fechaDesde) && DateTime.TryParse(fechaDesde, out var fDesde))
+                query = query.Where(c => c.FechaHora.Date >= fDesde.Date);
+
+            if (!string.IsNullOrEmpty(fechaHasta) && DateTime.TryParse(fechaHasta, out var fHasta))
+                query = query.Where(c => c.FechaHora.Date <= fHasta.Date);
+
+            var filtradas = query.ToList();
+            var items = filtradas.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var resultado = new OC.Core.Common.PagedResult<Cita>(items, filtradas.Count, page, pageSize);
+
+            return View(resultado);
         }
 
         [Authorize(Roles = "Optometrista, Recepcion, Admin")]

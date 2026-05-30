@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch .NET Core Web App",
+            "type": "dotnet",
+            "request": "launch",
+            "program": "${workspaceFolder}/OC.Web/bin/Debug/net8.0/OC.Web.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/OC.Web",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}

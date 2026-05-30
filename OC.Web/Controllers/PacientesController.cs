@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
@@ -5,6 +7,7 @@ using OC.Core.Domain.Entities;
 using OC.Web.Helpers;
 using OC.Web.Services;
 using OC.Web.ViewModels;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace OC.Web.Controllers
@@ -203,8 +206,22 @@ namespace OC.Web.Controllers
             HttpContext.Session.Remove(RegistroPendienteSessionKey);
             HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
 
-            TempData["Success"] = "Paciente registrado exitosamente con autenticador TOTP. Ya puede iniciar sesión.";
-            return RedirectToAction("Login", "PacienteAccount");
+            // Login automático del paciente recién registrado
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, entity.NombreCompleto),
+                new Claim(ClaimTypes.Role, "Paciente"),
+                new Claim("PacienteId", entity.Id.ToString()),
+                new Claim("Cedula", entity.Cedula)
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                new AuthenticationProperties { IsPersistent = false });
+
+            TempData["Success"] = "Paciente registrado exitosamente. ¡Bienvenido!";
+            return RedirectToAction("Index", "Landing");
         }
 
         // CREATE (Solo Admin y Recepcion)

@@ -65,21 +65,6 @@
             <span asp-validation-for="Email" class="text-danger"></span>
         </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="Contrasena">Nueva Contraseña (opcional)</label>
-                <input asp-for="Contrasena" type="password" class="form-control" />
-                <span asp-validation-for="Contrasena" class="text-danger"></span>
-                <small class="form-text text-muted">Deje en blanco si no desea cambiar la contraseña.</small>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label asp-for="ConfirmarContrasena">Confirmar Nueva Contraseña</label>
-                <input asp-for="ConfirmarContrasena" type="password" class="form-control" />
-                <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
-            </div>
-        </div>
-
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-save"></i> Guardar Cambios
         </button>

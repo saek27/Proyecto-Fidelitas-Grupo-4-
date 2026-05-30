@@ -83,7 +83,8 @@
                                             <input type="number" name="detalles[@i].Cantidad" value="@Model[i].Cantidad" min="1" class="form-control cantidad input-premium text-light text-center" />
                                         </td>
                                         <td class="text-end py-3 border-0">
-                                            <input type="number" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" class="form-control precio text-end input-premium text-light" />
+                                            <input type="hidden" name="detalles[@i].PrecioUnitario" value="@Model[i].PrecioUnitario.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)" />
+                                            <span class="text-light">₡ @Model[i].PrecioUnitario.ToString("N2")</span>
                                         </td>
                                         <td class="text-end subtotal text-info fw-semibold py-3 border-0">
                                             ₡ @((Model[i].Cantidad * Model[i].PrecioUnitario).ToString("N2"))
@@ -194,7 +195,8 @@
                 $('#tablaCarrito tbody tr').each(function () {
                     const $row = $(this);
                     const cantidad = parseFloat(String($row.find('.cantidad').val()).replace(',', '.')) || 0;
-                    const precio = parseFloat(String($row.find('.precio').val()).replace(',', '.')) || 0;
+                    const precioInput = $row.find('input[name$=".PrecioUnitario"]').val();
+                    const precio = precioInput ? parseFloat(precioInput.replace(',', '.')) : 0;
                     const linea = cantidad * precio;
                     $row.find('td.subtotal').text('₡ ' + linea.toFixed(2));
                     subtotal += linea;
@@ -215,7 +217,7 @@
                         productoId: pid ? parseInt(pid, 10) : null,
                         descripcionSnapshot: $row.find('input[name$=".DescripcionSnapshot"]').val() || '',
                         cantidad: parseInt($row.find('.cantidad').val(), 10) || 1,
-                        precioUnitario: parseFloat(String($row.find('.precio').val()).replace(',', '.')) || 0
+                        precioUnitario: $row.find('input[name$=".PrecioUnitario"]').val() ? parseFloat($row.find('input[name$=".PrecioUnitario"]').val()) : 0
                     });
                 });
                 $.ajax({
@@ -230,7 +232,7 @@
             $(function () {
                 actualizarSubtotales();
 
-                $(document).on('input change', '.cantidad, .precio', function () {
+                $(document).on('input change', '.cantidad', function () {
                     actualizarSubtotales();
                     sincronizarCarrito();
                 });

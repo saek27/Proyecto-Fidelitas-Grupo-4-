@@ -85,6 +85,26 @@ else
     </section>
 }
 
+@if (!User.Identity?.IsAuthenticated ?? true)
+{
+    <section class="container py-5" style="margin-top: 3rem;">
+        <div class="text-center animate-on-scroll">
+            <h2 style="font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 700; color: var(--text-main); margin-bottom: 0.6rem;">
+                ¿Aún no tienes cuenta?
+            </h2>
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Regístrate como paciente para agendar citas y comprar productos con beneficios exclusivos.
+            </p>
+            <a href="/Pacientes/Registro" class="btn btn-premium">
+                <i class="bi bi-person-plus-fill me-2"></i>Registrarme como Paciente
+            </a>
+            <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                ¿Ya tienes cuenta? <a href="/Account/Login" style="color: var(--brand-accent); text-decoration: none;">Inicia sesión aquí</a>
+            </p>
+        </div>
+    </section>
+}
+
 <section class="container my-5 py-5">
     <div class="d-flex justify-content-between align-items-end mb-5 animate-on-scroll">
         <div>
