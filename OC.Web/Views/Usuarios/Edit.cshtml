@@ -25,7 +25,7 @@
 
                     <div class="col-md-6">
                         <label asp-for="Cedula" class="form-label fw-bold">Cédula</label>
-                        <input asp-for="Cedula" class="form-control" />
+                        <input asp-for="Cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" />
                         <span asp-validation-for="Cedula" class="text-danger"></span>
                     </div>
 
@@ -72,11 +72,7 @@
                             <span asp-validation-for="FechaContratacion" class="text-danger"></span>
                         </div>
 
-                        <div class="col-md-12">
-                            <label asp-for="NumeroCuentaIBAN" class="form-label fw-bold">Número de Cuenta IBAN</label>
-                            <input asp-for="NumeroCuentaIBAN" class="form-control" />
-                            <span asp-validation-for="NumeroCuentaIBAN" class="text-danger"></span>
-                        </div>
+                        <partial name="_UsuarioIbanFields" />
                     }
                 </div>
 

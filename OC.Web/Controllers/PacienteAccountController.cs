@@ -114,13 +114,19 @@ namespace OC.Web.Controllers
                 return View();
             }
 
-            // Login exitoso: resetear contador y bloqueo
             if (paciente!.IntentosFallidosLogin != 0 || paciente.BloqueadoHastaUtc.HasValue || paciente.BloqueadoPermanentemente)
             {
                 paciente.IntentosFallidosLogin = 0;
                 paciente.BloqueadoHastaUtc = null;
                 paciente.BloqueadoPermanentemente = false;
                 await _pacientesRepo.UpdateAsync(paciente);
+            }
+
+            if (paciente.TotpHabilitado && !string.IsNullOrWhiteSpace(paciente.TotpSecretProtegido))
+            {
+                HttpContext.Session.SetInt32(AuthSessionKeys.PacientePendingId, paciente.Id);
+                HttpContext.Session.SetString(AuthSessionKeys.PacientePendingRememberMe, "False");
+                return RedirectToAction("VerificarTotpPaciente", "Account");
             }
 
             var claims = new List<Claim>
@@ -162,9 +168,9 @@ namespace OC.Web.Controllers
                 filter: p => p.Cedula == cedulaNorm && p.Email != null && p.Email.ToLower() == correoNorm
             );
             var paciente = pacientes.Items.FirstOrDefault();
-            if (paciente == null)
+            if (paciente == null || !paciente.TotpHabilitado || string.IsNullOrWhiteSpace(paciente.TotpSecretProtegido))
             {
-                ModelState.AddModelError(string.Empty, "Datos incorrectos.");
+                ModelState.AddModelError(string.Empty, "Datos incorrectos o cuenta sin autenticador configurado.");
                 return View(model);
             }
 

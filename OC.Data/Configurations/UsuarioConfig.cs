@@ -32,6 +32,14 @@ namespace OC.Data.Configurations
                 .WithMany(s => s.Usuarios)
                 .HasForeignKey(u => u.SucursalId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(u => u.Cedula).HasMaxLength(9);
+            builder.Property(u => u.Banco).HasMaxLength(100);
+            builder.Property(u => u.NumeroCuentaIBAN).HasMaxLength(22);
+            builder.Property(u => u.TotpSecretProtegido).HasMaxLength(1024);
+            builder.Property(u => u.TokenRecuperacion).HasMaxLength(64);
+            builder.Property(u => u.DebeCambiarContrasena).HasDefaultValue(false);
+            builder.Property(u => u.TotpHabilitado).HasDefaultValue(false);
         }
     }
 }

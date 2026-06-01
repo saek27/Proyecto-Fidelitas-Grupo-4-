@@ -24,7 +24,7 @@
 
                     <div class="col-md-6">
                         <label asp-for="Cedula" class="form-label fw-bold">Cédula</label>
-                        <input asp-for="Cedula" class="form-control" placeholder="Ej: 123456789" />
+                        <input asp-for="Cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" />
                         <span asp-validation-for="Cedula" class="text-danger"></span>
                     </div>
 
@@ -35,8 +35,9 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label asp-for="Password" class="form-label fw-bold">Contraseña</label>
-                        <input asp-for="Password" class="form-control" placeholder="******" />
+                        <label asp-for="Password" class="form-label fw-bold">Contraseña temporal</label>
+                        <input asp-for="Password" class="form-control" placeholder="Ej: Optica123" />
+                        <small class="text-muted">El trabajador deberá cambiarla en su primer ingreso.</small>
                         <span asp-validation-for="Password" class="text-danger"></span>
                     </div>
 
@@ -70,11 +71,7 @@
                             <span asp-validation-for="FechaContratacion" class="text-danger"></span>
                         </div>
 
-                        <div class="col-md-12">
-                            <label asp-for="NumeroCuentaIBAN" class="form-label fw-bold">Número de Cuenta IBAN</label>
-                            <input asp-for="NumeroCuentaIBAN" class="form-control" placeholder="Ej: CR12345678901234567890" />
-                            <span asp-validation-for="NumeroCuentaIBAN" class="text-danger"></span>
-                        </div>
+                        <partial name="_UsuarioIbanFields" />
                     }
                 </div>
 

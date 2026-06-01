@@ -43,12 +43,20 @@ namespace OC.Web.ViewModels
         [DataType(DataType.Date)]
         public DateTime? FechaContratacion { get; set; }
 
-        [Display(Name = "Número de Cuenta IBAN")]
-        [MaxLength(50)]
+        [Display(Name = "Banco")]
+        public string? Banco { get; set; }
+
+        [Display(Name = "IBAN (20 dígitos)")]
+        public string? IbanBloque1 { get; set; }
+        public string? IbanBloque2 { get; set; }
+        public string? IbanBloque3 { get; set; }
+        public string? IbanBloque4 { get; set; }
+        public string? IbanBloque5 { get; set; }
+
         public string? NumeroCuentaIBAN { get; set; }
         // =========================
 
-        // Listas para los Dropdowns (<select>)
+        public IEnumerable<SelectListItem>? BancosList { get; set; }
         public IEnumerable<SelectListItem>? RolesList { get; set; }
         public IEnumerable<SelectListItem>? SucursalesList { get; set; }
     }

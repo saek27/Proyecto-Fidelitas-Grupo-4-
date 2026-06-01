@@ -118,6 +118,7 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsureEnviosNotificacionTable(context);
         OC.Data.Context.DbInitializer.EnsureCitasNotificationColumns(context);
         OC.Data.Context.DbInitializer.EnsurePacienteLockoutColumns(context);
+        OC.Data.Context.DbInitializer.EnsureUsuarioSeguridadColumns(context);
         OC.Data.Context.DbInitializer.EnsurePermisoRutaDocumentoIncapacidadColumn(context);
         OC.Data.Context.DbInitializer.EnsureProductoRutaImagenColumn(context);
         OC.Data.Context.DbInitializer.Initialize(context);

@@ -142,6 +142,37 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>Columnas de seguridad (TOTP, contraseña temporal, banco) en Usuarios.</summary>
+        public static void EnsureUsuarioSeguridadColumns(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Usuarios','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'Banco')
+        ALTER TABLE Usuarios ADD Banco nvarchar(100) NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'DebeCambiarContrasena')
+        ALTER TABLE Usuarios ADD DebeCambiarContrasena bit NOT NULL CONSTRAINT DF_Usuarios_DebeCambiarContrasena DEFAULT (0);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'TotpHabilitado')
+        ALTER TABLE Usuarios ADD TotpHabilitado bit NOT NULL CONSTRAINT DF_Usuarios_TotpHabilitado DEFAULT (0);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'TotpSecretProtegido')
+        ALTER TABLE Usuarios ADD TotpSecretProtegido nvarchar(1024) NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'TotpConfiguradoEnUtc')
+        ALTER TABLE Usuarios ADD TotpConfiguradoEnUtc datetime2 NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'TokenRecuperacion')
+        ALTER TABLE Usuarios ADD TokenRecuperacion nvarchar(64) NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Usuarios') AND name = 'FechaExpiracionToken')
+        ALTER TABLE Usuarios ADD FechaExpiracionToken datetime2 NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         /// <summary>Columna para documento de incapacidad en permisos (RR.HH.).</summary>
         public static void EnsureProductoRutaImagenColumn(AppDbContext context)
         {

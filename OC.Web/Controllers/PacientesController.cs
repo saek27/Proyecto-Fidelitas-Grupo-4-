@@ -16,15 +16,18 @@ namespace OC.Web.Controllers
     public class PacientesController : Controller
     {
         private readonly IGenericRepository<Paciente> _pacientesRepo;
+        private readonly IGenericRepository<Usuario> _usuariosRepo;
         private readonly ITotpService _totpService;
         private const string RegistroPendienteSessionKey = "RegistroPacientePendiente";
         private const string RegistroTotpSecretSessionKey = "RegistroPacienteTotpSecret";
 
         public PacientesController(
             IGenericRepository<Paciente> pacientesRepo,
+            IGenericRepository<Usuario> usuariosRepo,
             ITotpService totpService)
         {
             _pacientesRepo = pacientesRepo;
+            _usuariosRepo = usuariosRepo;
             _totpService = totpService;
         }
 
@@ -84,27 +87,12 @@ namespace OC.Web.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Cedula == model.Cedula
-            );
-            if (pacientesExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
+            await IdentidadDuplicadaValidation.ValidarCedulaUnicaAsync(
+                _pacientesRepo, _usuariosRepo, model.Cedula, ModelState, nameof(model.Cedula));
+            await IdentidadDuplicadaValidation.ValidarCorreoUnicoAsync(
+                _pacientesRepo, _usuariosRepo, model.Email, ModelState, nameof(model.Email));
+            if (!ModelState.IsValid)
                 return View(model);
-            }
-
-            var emailsExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Email == model.Email
-            );
-            if (emailsExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso. Por favor, use otro.");
-                return View(model);
-            }
 
             HttpContext.Session.SetString(RegistroPendienteSessionKey, JsonSerializer.Serialize(model));
             var secret = _totpService.GenerateSecretBase32();
@@ -169,21 +157,25 @@ namespace OC.Web.Controllers
 
             // Revalidar unicidad por si cambió mientras configuraba TOTP.
             var cedulaNorm = CedulaValidation.Normalizar(pendiente.Cedula);
-            var cedulaDup = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Cedula == cedulaNorm);
-            if (cedulaDup.Items.Any())
+            var cedulaDupPac = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Cedula == cedulaNorm);
+            var cedulaDupUsr = await _usuariosRepo.GetPagedAsync(1, 1, u => u.Cedula == cedulaNorm);
+            if (cedulaDupPac.Items.Any() || cedulaDupUsr.Items.Any())
             {
                 HttpContext.Session.Remove(RegistroPendienteSessionKey);
                 HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
-                TempData["Error"] = "No se pudo completar el registro: la cédula ya existe.";
+                TempData["Error"] = "No se pudo completar el registro: la cédula ya está registrada en el sistema.";
                 return RedirectToAction(nameof(Registro));
             }
 
-            var emailDup = await _pacientesRepo.GetPagedAsync(1, 1, p => p.Email == pendiente.Email);
-            if (emailDup.Items.Any())
+            var correoNorm = (pendiente.Email ?? string.Empty).Trim().ToLowerInvariant();
+            var emailDupPac = await _pacientesRepo.GetPagedAsync(1, 1,
+                p => p.Email != null && p.Email.ToLower() == correoNorm);
+            var emailDupUsr = await _usuariosRepo.GetPagedAsync(1, 1, u => u.Correo.ToLower() == correoNorm);
+            if (emailDupPac.Items.Any() || emailDupUsr.Items.Any())
             {
                 HttpContext.Session.Remove(RegistroPendienteSessionKey);
                 HttpContext.Session.Remove(RegistroTotpSecretSessionKey);
-                TempData["Error"] = "No se pudo completar el registro: el correo ya está en uso.";
+                TempData["Error"] = "No se pudo completar el registro: el correo ya está registrado en el sistema.";
                 return RedirectToAction(nameof(Registro));
             }
 
@@ -251,27 +243,12 @@ namespace OC.Web.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Cedula == model.Cedula
-            );
-            if (pacientesExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
+            await IdentidadDuplicadaValidation.ValidarCedulaUnicaAsync(
+                _pacientesRepo, _usuariosRepo, model.Cedula, ModelState, nameof(model.Cedula));
+            await IdentidadDuplicadaValidation.ValidarCorreoUnicoAsync(
+                _pacientesRepo, _usuariosRepo, model.Email, ModelState, nameof(model.Email));
+            if (!ModelState.IsValid)
                 return View(model);
-            }
-
-            var emailsExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Email == model.Email
-            );
-            if (emailsExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso. Por favor, use otro.");
-                return View(model);
-            }
 
             var entity = new Paciente
             {
@@ -330,27 +307,12 @@ namespace OC.Web.Controllers
             var entity = await _pacientesRepo.GetByIdAsync(model.Id);
             if (entity == null) return NotFound();
 
-            var pacientesExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Cedula == model.Cedula && p.Id != model.Id
-            );
-            if (pacientesExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Cedula), "La cédula ya existe. No puede continuar.");
+            await IdentidadDuplicadaValidation.ValidarCedulaUnicaAsync(
+                _pacientesRepo, _usuariosRepo, model.Cedula, ModelState, nameof(model.Cedula), excludePacienteId: model.Id);
+            await IdentidadDuplicadaValidation.ValidarCorreoUnicoAsync(
+                _pacientesRepo, _usuariosRepo, model.Email, ModelState, nameof(model.Email), excludePacienteId: model.Id);
+            if (!ModelState.IsValid)
                 return View(model);
-            }
-
-            var emailsExistentes = await _pacientesRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: 1,
-                filter: p => p.Email == model.Email && p.Id != model.Id
-            );
-            if (emailsExistentes.Items.Any())
-            {
-                ModelState.AddModelError(nameof(model.Email), "Este correo electrónico ya está en uso.");
-                return View(model);
-            }
 
             entity.Nombres = model.Nombres;
             entity.Apellidos = model.Apellidos;

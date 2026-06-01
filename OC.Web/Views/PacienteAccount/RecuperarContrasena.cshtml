@@ -16,7 +16,7 @@
         </div>
         <div class="mb-3">
             <label asp-for="Cedula" class="form-label"></label>
-            <input asp-for="Cedula" class="form-control" placeholder="Ej: 1-2345-6789" maxlength="11" title="Formato: X-XXXX-XXXX" />
+            <input asp-for="Cedula" class="form-control cedula-format" placeholder="Ej: 1-2345-6789" maxlength="11" inputmode="numeric" title="Formato: X-XXXX-XXXX" autocomplete="off" />
             <span asp-validation-for="Cedula" class="text-danger"></span>
         </div>
         <button type="submit" class="btn btn-brand">Continuar con TOTP</button>

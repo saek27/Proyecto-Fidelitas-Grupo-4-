@@ -176,6 +176,39 @@
                 text-decoration: underline;
             }
 
+        .login-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .login-remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .login-links-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .login-links-col .login-forgot {
+            display: block;
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        .login-link-paciente {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
         .login-btn {
             width: 100%;
             padding: 13px;
@@ -374,13 +407,17 @@
                           style="font-size:12px;color:#fca5a5;margin-top:4px;display:block;"></span>
                 </div>
 
-                <div class="login-animate-item" data-delay="350" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <div class="login-options login-animate-item" data-delay="350">
+                    <label class="login-remember">
                         <input asp-for="RememberMe" type="checkbox" class="login-check" />
                         <span class="login-check-label">Recordarme</span>
                     </label>
-                    <a asp-controller="PacienteAccount" asp-action="RecuperarContrasena"
-                       class="login-forgot">¿Olvidaste tu contraseña?</a>
+                    <div class="login-links-col">
+                        <a asp-controller="Account" asp-action="RecuperarContrasena"
+                           class="login-forgot">¿Olvidaste tu contraseña?</a>
+                        <a asp-controller="PacienteAccount" asp-action="RecuperarContrasena"
+                           class="login-forgot login-link-paciente">Recuperación paciente</a>
+                    </div>
                 </div>
 
                 <button type="submit" class="login-btn login-animate-item" id="loginBtn" data-delay="400">
