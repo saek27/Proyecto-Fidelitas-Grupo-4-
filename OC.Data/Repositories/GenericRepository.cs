@@ -35,6 +35,24 @@ namespace OC.Data.Repositories
 
         public async Task UpdateAsync(T entity)
         {
+            var entry = _context.Entry(entity);
+            if (entry.State == EntityState.Detached)
+            {
+                var key = _context.Model.FindEntityType(typeof(T))?.FindPrimaryKey();
+                if (key != null && key.Properties.Count == 1)
+                {
+                    var keyValue = entry.Property(key.Properties[0].Name).CurrentValue;
+                    var tracked = _dbSet.Local
+                        .FirstOrDefault(e => _context.Entry(e).Property(key.Properties[0].Name).CurrentValue?.Equals(keyValue) == true);
+                    if (tracked != null)
+                    {
+                        _context.Entry(tracked).CurrentValues.SetValues(entity);
+                        await _context.SaveChangesAsync();
+                        return;
+                    }
+                }
+            }
+
             _dbSet.Update(entity);
             await _context.SaveChangesAsync();
         }

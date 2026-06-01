@@ -6,12 +6,16 @@ namespace OC.Web.Services
 {
     public class TotpService : ITotpService
     {
-        private readonly IDataProtector _protector;
+        private readonly IDataProtector _pacienteProtector;
+        private readonly IDataProtector _staffProtector;
 
         public TotpService(IDataProtectionProvider dataProtectionProvider)
         {
-            _protector = dataProtectionProvider.CreateProtector("PacienteTotpSecret.v1");
+            _pacienteProtector = dataProtectionProvider.CreateProtector("PacienteTotpSecret.v1");
+            _staffProtector = dataProtectionProvider.CreateProtector("UsuarioTotpSecret.v1");
         }
+
+        private IDataProtector GetProtector(bool forStaff) => forStaff ? _staffProtector : _pacienteProtector;
 
         public string GenerateSecretBase32()
         {
@@ -19,14 +23,14 @@ namespace OC.Web.Services
             return Base32Encoding.ToString(bytes);
         }
 
-        public string ProtectSecret(string base32Secret)
+        public string ProtectSecret(string base32Secret, bool forStaff = false)
         {
-            return _protector.Protect(base32Secret);
+            return GetProtector(forStaff).Protect(NormalizeBase32Secret(base32Secret));
         }
 
-        public string UnprotectSecret(string protectedSecret)
+        public string UnprotectSecret(string protectedSecret, bool forStaff = false)
         {
-            return _protector.Unprotect(protectedSecret);
+            return GetProtector(forStaff).Unprotect(protectedSecret);
         }
 
         public bool VerifyCode(string base32Secret, string code)
@@ -38,7 +42,15 @@ namespace OC.Web.Services
             if (normalizedCode.Length != 6)
                 return false;
 
-            var secretBytes = Base32Encoding.ToBytes(base32Secret);
+            byte[] secretBytes;
+            try
+            {
+                secretBytes = Base32Encoding.ToBytes(NormalizeBase32Secret(base32Secret));
+            }
+            catch
+            {
+                return false;
+            }
             var totp = new Totp(secretBytes, step: 30, mode: OtpHashMode.Sha1, totpSize: 6);
 
             return totp.VerifyTotp(
@@ -58,5 +70,8 @@ namespace OC.Web.Services
                 });
             return string.Join(" ", chunks);
         }
+
+        private static string NormalizeBase32Secret(string secret) =>
+            new string(secret.Trim().Where(c => !char.IsWhiteSpace(c)).ToArray()).ToUpperInvariant();
     }
 }

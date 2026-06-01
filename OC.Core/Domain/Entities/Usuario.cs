@@ -36,9 +36,23 @@ namespace OC.Core.Domain.Entities
         [DataType(DataType.Date)]
         public DateTime? FechaContratacion { get; set; }
 
+        [Display(Name = "Banco")]
+        [MaxLength(100)]
+        public string? Banco { get; set; }
+
         [Display(Name = "Número de Cuenta IBAN")]
-        [MaxLength(50)]
+        [MaxLength(22)]
         public string? NumeroCuentaIBAN { get; set; }
+
+        /// <summary>Trabajador nuevo: debe cambiar la contraseña temporal en el primer acceso.</summary>
+        public bool DebeCambiarContrasena { get; set; }
+
+        public string? TotpSecretProtegido { get; set; }
+        public bool TotpHabilitado { get; set; }
+        public DateTime? TotpConfiguradoEnUtc { get; set; }
+
+        public string? TokenRecuperacion { get; set; }
+        public DateTime? FechaExpiracionToken { get; set; }
         // ==================================
     }
 }
