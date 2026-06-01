@@ -1,0 +1,87 @@
+@model IEnumerable<OC.Core.Domain.Entities.TecnologiaLente>
+@{
+    ViewData["Title"] = "Tecnologías de Lente";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex flex-column flex-md-row gap-3 justify-content-md-between align-items-md-center mb-4">
+        <h2 class="text-dark mb-0">
+            <i class="bi bi-eyedropper me-2"></i> Tecnologías de Lente
+        </h2>
+        <div class="btn-toolbar page-header-toolbar mb-0 justify-content-md-end">
+            <a asp-action="Create" class="btn btn-brand btn-ripple">
+                <i class="bi bi-plus-circle me-2"></i> Nueva tecnología
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card-dashboard animate-on-scroll" data-delay="0">
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-eyedropper text-muted" style="font-size:3rem"></i>
+                    <p class="text-muted mt-3">No hay tecnologías registradas.</p>
+                    <a asp-action="Create" class="btn btn-brand"><i class="bi bi-plus-circle me-2"></i>Agregar primera</a>
+                </div>
+            }
+            else
+            {
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><strong>@item.Nombre</strong></td>
+                                <td>₡@item.Precio.ToString("N2")</td>
+                                <td class="text-center">
+                                    <div class="btn-toolbar justify-content-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i><span class="d-none d-xl-inline ms-1">Editar</span>
+                                            </a>
+                                        </div>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="ms-1"
+                                              onsubmit="return confirm('¿Eliminar esta tecnología?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i><span class="d-none d-xl-inline ms-1">Eliminar</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="productos" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Volver al inventario
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        anime({ targets: '.animate-on-scroll', opacity: [0,1], translateY: [15,0], duration: 500, easing: 'easeOutQuad' });
+    </script>
+}

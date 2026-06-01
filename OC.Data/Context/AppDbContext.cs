@@ -56,6 +56,10 @@ namespace OC.Data.Context
 
         //Permisos
         public DbSet<Permiso> Permisos { get; set; }
+
+        //Lentes y Aros
+        public DbSet<TecnologiaLente> TecnologiaLentes { get; set; }
+        public DbSet<Aro> Aros { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -248,6 +252,28 @@ namespace OC.Data.Context
             modelBuilder.Entity<Permiso>()
                 .Property(p => p.RutaDocumentoIncapacidad)
                 .HasMaxLength(512);
+
+            //TecnologiaLente
+            modelBuilder.Entity<TecnologiaLente>(entity =>
+            {
+                entity.Property(e => e.Precio).HasPrecision(18, 2);
+            });
+
+            //Aro
+            modelBuilder.Entity<Aro>(entity =>
+            {
+                entity.HasIndex(a => a.SKU).IsUnique();
+                entity.Property(a => a.Precio).HasPrecision(18, 2);
+            });
+
+            //Venta
+            modelBuilder.Entity<Venta>(entity =>
+            {
+                entity.Property(e => e.Descuento).HasPrecision(18, 2);
+                entity.Property(e => e.Total).HasPrecision(18, 2);
+                entity.Property(e => e.ReferenciaPago).HasMaxLength(100);
+                entity.Property(e => e.RutaComprobante).HasMaxLength(512);
+            });
 
         }
 

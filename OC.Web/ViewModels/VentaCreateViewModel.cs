@@ -13,6 +13,10 @@ namespace OC.Web.ViewModels
         [Required(ErrorMessage = "Seleccione un método de pago")]
         public MetodoPago MetodoPago { get; set; }
 
+        public decimal Descuento { get; set; }
+
+        public string? ReferenciaPago { get; set; }
+
         public string? Notas { get; set; }
 
         // El carrito viaja como JSON serializado desde el cliente

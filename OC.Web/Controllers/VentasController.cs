@@ -19,6 +19,8 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<ValorClinico> _valorClinicoRepo;
         private readonly IGenericRepository<Usuario> _usuarioRepo;
+        private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
+        private readonly IGenericRepository<Aro> _aroRepo;
 
 
         public VentasController(
@@ -27,7 +29,9 @@ namespace OC.Web.Controllers
             IGenericRepository<Paciente> pacienteRepo,
             IGenericRepository<Producto> productoRepo,
             IGenericRepository<ValorClinico> valorClinicoRepo,
-            IGenericRepository<Usuario> usuarioRepo)
+            IGenericRepository<Usuario> usuarioRepo,
+            IGenericRepository<TecnologiaLente> tecnologiaRepo,
+            IGenericRepository<Aro> aroRepo)
         {
             _ventaRepo = ventaRepo;
             _detalleRepo = detalleRepo;
@@ -35,6 +39,8 @@ namespace OC.Web.Controllers
             _productoRepo = productoRepo;
             _valorClinicoRepo = valorClinicoRepo;
             _usuarioRepo = usuarioRepo;
+            _tecnologiaRepo = tecnologiaRepo;
+            _aroRepo = aroRepo;
         }
 
         // GET: /Ventas
@@ -79,10 +85,14 @@ namespace OC.Web.Controllers
             {
                 var pacientes = await _pacienteRepo.GetPagedAsync(1, 500);
                 var productos = await _productoRepo.GetPagedAsync(1, 1000, p => p.Activo && p.Stock > 0);
+                var tecnologias = await _tecnologiaRepo.GetPagedAsync(1, 100);
+                var aros = await _aroRepo.GetPagedAsync(1, 500, a => a.Activo);
 
                 ViewBag.Pacientes = pacientes.Items.OrderBy(p => p.Apellidos).ToList();
                 ViewBag.Productos = productos.Items.OrderBy(p => p.Nombre).ToList();
                 ViewBag.MetodosPago = Enum.GetValues<MetodoPago>();
+                ViewBag.Tecnologias = tecnologias.Items.OrderBy(t => t.Nombre).ToList();
+                ViewBag.Aros = aros.Items.OrderBy(a => a.Nombre).ToList();
                 return View(new VentaCreateViewModel());
             }
             catch (Exception ex)
@@ -96,10 +106,14 @@ namespace OC.Web.Controllers
         {
             var pacientes = await _pacienteRepo.GetPagedAsync(1, 500);
             var productos = await _productoRepo.GetPagedAsync(1, 1000, p => p.Activo && p.Stock > 0);
+            var tecnologias = await _tecnologiaRepo.GetPagedAsync(1, 100);
+            var aros = await _aroRepo.GetPagedAsync(1, 500, a => a.Activo);
 
             ViewBag.Pacientes = pacientes.Items.OrderBy(p => p.Apellidos).ToList();
             ViewBag.Productos = productos.Items.OrderBy(p => p.Nombre).ToList();
             ViewBag.MetodosPago = Enum.GetValues<MetodoPago>();
+            ViewBag.Tecnologias = tecnologias.Items.OrderBy(t => t.Nombre).ToList();
+            ViewBag.Aros = aros.Items.OrderBy(a => a.Nombre).ToList();
         }
 
         // AJAX GET: /Ventas/BuscarPaciente?id=5
@@ -184,7 +198,7 @@ namespace OC.Web.Controllers
         // POST: /Ventas/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(VentaCreateViewModel model)
+        public async Task<IActionResult> Create(VentaCreateViewModel model, IFormFile? comprobante)
         {
             if (!ModelState.IsValid)
             {
@@ -248,7 +262,49 @@ namespace OC.Web.Controllers
                     }
                 }
 
-                // 4. Crear la Venta
+                // 4. Manejar archivo de comprobante si existe
+                string? rutaComprobante = null;
+                if (comprobante != null && comprobante.Length > 0)
+                {
+                    // Validar tamaño (10MB max)
+                    if (comprobante.Length > 10 * 1024 * 1024)
+                    {
+                        TempData["Error"] = "El archivo de comprobante no puede exceder 10MB.";
+                        await RecargarViewBag();
+                        return View(model);
+                    }
+
+                    // Validar extensión
+                    var extension = Path.GetExtension(comprobante.FileName).ToLowerInvariant();
+                    if (!new[] { ".jpg", ".jpeg", ".pdf" }.Contains(extension))
+                    {
+                        TempData["Error"] = "Solo se permiten archivos .jpg, .jpeg y .pdf.";
+                        await RecargarViewBag();
+                        return View(model);
+                    }
+
+                    // Guardar archivo
+                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "comprobantes-ventas");
+                    if (!Directory.Exists(uploadsDir))
+                        Directory.CreateDirectory(uploadsDir);
+
+                    var fileName = $"{Guid.NewGuid()}{extension}";
+                    var filePath = Path.Combine(uploadsDir, fileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await comprobante.CopyToAsync(stream);
+                    }
+                    rutaComprobante = $"/uploads/comprobantes-ventas/{fileName}";
+                }
+
+                // 5. Calcular total con descuento porcentual e IVA
+                var subtotal = detalles.Sum(d => d.Cantidad * d.PrecioUnitario);
+                var montoDescuento = subtotal * (model.Descuento / 100);
+                var dopoDescuento = subtotal - montoDescuento;
+                var iva = dopoDescuento * 0.13m;
+                var totalFinal = dopoDescuento + iva;
+
+                // 6. Crear la Venta
                 var venta = new Venta
                 {
                     PacienteId = model.PacienteId,
@@ -256,18 +312,21 @@ namespace OC.Web.Controllers
                     SucursalId = usuarioActual.SucursalId,
                     ValorClinicoId = model.ValorClinicoId,
                     MetodoPago = model.MetodoPago,
+                    Descuento = model.Descuento,
+                    ReferenciaPago = model.ReferenciaPago,
+                    RutaComprobante = rutaComprobante,
                     Notas = model.Notas,
                     FechaVenta = DateTime.Now,
-                    Total = detalles.Sum(d => d.Cantidad * d.PrecioUnitario)
+                    Total = totalFinal
                 };
 
                 await _ventaRepo.AddAsync(venta);
 
-                // 5. Asignar NumeroFactura ahora que tenemos el Id
+                // 7. Asignar NumeroFactura ahora que tenemos el Id
                 venta.NumeroFactura = $"FAC-{DateTime.Now.Year}-{venta.Id:D6}";
                 await _ventaRepo.UpdateAsync(venta);
 
-                // 6. Guardar detalles y decrementar stock
+                // 8. Guardar detalles y decrementar stock
                 foreach (var item in detalles)
                 {
                     var detalle = new DetalleVenta

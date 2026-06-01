@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Web.Models;
+using System.Linq.Expressions;
 
 namespace OC.Web.Controllers
 {
@@ -9,38 +11,102 @@ namespace OC.Web.Controllers
     public class InventoryController : Controller
     {
         private readonly IGenericRepository<Producto> _productoRepo;
+        private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
+        private readonly IGenericRepository<Aro> _aroRepo;
         private readonly IWebHostEnvironment _env;
 
         private static readonly string[] ExtensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private const long TamanoMaxImagenBytes = 5 * 1024 * 1024;
 
-        public InventoryController(IGenericRepository<Producto> productoRepo, IWebHostEnvironment env)
+        public InventoryController(
+            IGenericRepository<Producto> productoRepo,
+            IGenericRepository<TecnologiaLente> tecnologiaRepo,
+            IGenericRepository<Aro> aroRepo,
+            IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
+            _tecnologiaRepo = tecnologiaRepo;
+            _aroRepo = aroRepo;
             _env = env;
         }
 
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(
+            string seccion = "productos",
+            int page = 1, int pageSize = 12,
+            string? filtroProducto = null,
+            string? filtroTecnologia = null,
+            int tecPage = 1, int tecPageSize = 12,
+            string? filtroAro = null,
+            int aroPage = 1, int aroPageSize = 12)
         {
-            var result = await _productoRepo.GetPagedAsync(
-                page,
-                pageSize,
-                p => p.Activo,
-                q => q.OrderBy(p => p.Nombre)
-            );
+            // Productos
+            // Productos con filtro
+            Expression<Func<Producto, bool>> prodFilter = p => p.Activo;
+            if (!string.IsNullOrWhiteSpace(filtroProducto))
+            {
+                var lower = filtroProducto.ToLower();
+                prodFilter = p => p.Activo && (p.Nombre.ToLower().Contains(lower) ||
+                                                p.SKU.ToLower().Contains(lower));
+            }
+            var productos = await _productoRepo.GetPagedAsync(page, pageSize, prodFilter, q => q.OrderBy(p => p.Nombre));
+            var lowStock = await _productoRepo.GetAllAsync(p => p.Activo && p.Stock < 6);
 
-            var lowStock = await _productoRepo.GetAllAsync(
-                p => p.Activo && p.Stock < 6
-            );
+            // Tecnologias con filtro
+            Expression<Func<TecnologiaLente, bool>> tecFilter = t => true;
+            if (!string.IsNullOrWhiteSpace(filtroTecnologia))
+            {
+                var lower = filtroTecnologia.ToLower();
+                tecFilter = t => t.Nombre.ToLower().Contains(lower) ||
+                                 t.Precio.ToString().Contains(lower);
+            }
+            var tecnologias = await _tecnologiaRepo.GetPagedAsync(tecPage, tecPageSize, tecFilter, q => q.OrderBy(t => t.Nombre));
 
+            // Aros con filtro
+            Expression<Func<Aro, bool>> aroFilter = a => a.Activo;
+            if (!string.IsNullOrWhiteSpace(filtroAro))
+            {
+                var lower = filtroAro.ToLower();
+                aroFilter = a => a.Activo && (a.Nombre.ToLower().Contains(lower) ||
+                                               a.SKU.ToLower().Contains(lower) ||
+                                               a.Precio.ToString().Contains(lower) ||
+                                               a.Stock.ToString().Contains(lower));
+            }
+            var aros = await _aroRepo.GetPagedAsync(aroPage, aroPageSize, aroFilter, q => q.OrderBy(a => a.Nombre));
+
+            ViewBag.Seccion = seccion;
             ViewBag.PageSize = pageSize;
             ViewBag.LowStock = lowStock;
+            ViewBag.FiltroProducto = filtroProducto;
+            ViewBag.FiltroTecnologia = filtroTecnologia;
+            ViewBag.FiltroAro = filtroAro;
 
-            return View(result);
+            ViewBag.PaginationProductos = new PaginationInfo
+            {
+                CurrentPage = productos.PageIndex,
+                TotalPages = productos.TotalPages,
+                GetPageUrl = p => Url.Action("Index", new { seccion, page = p, pageSize, filtroProducto, filtroTecnologia, tecPage, tecPageSize, filtroAro, aroPage, aroPageSize })
+            };
+            ViewBag.PaginationTecnologias = new PaginationInfo
+            {
+                CurrentPage = tecnologias.PageIndex,
+                TotalPages = tecnologias.TotalPages,
+                GetPageUrl = p => Url.Action("Index", new { seccion, page, pageSize, filtroProducto, filtroTecnologia = filtroTecnologia, tecPage = p, tecPageSize, filtroAro, aroPage, aroPageSize })
+            };
+            ViewBag.PaginationAros = new PaginationInfo
+            {
+                CurrentPage = aros.PageIndex,
+                TotalPages = aros.TotalPages,
+                GetPageUrl = p => Url.Action("Index", new { seccion, page, pageSize, filtroProducto, filtroTecnologia, tecPage, tecPageSize, filtroAro = filtroAro, aroPage = p, aroPageSize })
+            };
+            ViewBag.Tecnologias = tecnologias.Items.ToList();
+            ViewBag.Aros = aros.Items.ToList();
+
+            return View(productos);
         }
 
-        public IActionResult Create()
+        public IActionResult Create(string seccion = "productos")
         {
+            ViewBag.Seccion = seccion;
             return View(new Producto());
         }
 
@@ -95,7 +161,7 @@ namespace OC.Web.Controllers
             await _productoRepo.AddAsync(model);
 
             TempData["Success"] = "Producto registrado correctamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { seccion = "productos" });
         }
 
         public async Task<IActionResult> Details(int id)
@@ -106,8 +172,9 @@ namespace OC.Web.Controllers
             return View(producto);
         }
 
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, string seccion = "productos")
         {
+            ViewBag.Seccion = seccion;
             var producto = await _productoRepo.GetByIdAsync(id);
             if (producto == null)
                 return NotFound();
@@ -193,7 +260,7 @@ namespace OC.Web.Controllers
             await _productoRepo.UpdateAsync(producto);
 
             TempData["Success"] = "Producto eliminado del catálogo.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { seccion = "productos" });
         }
 
         private string? ValidarImagen(IFormFile file)

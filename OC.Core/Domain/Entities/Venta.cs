@@ -28,6 +28,9 @@ namespace OC.Core.Domain.Entities
 
         public MetodoPago MetodoPago { get; set; }
         public decimal Total { get; set; }
+        public decimal Descuento { get; set; }
+        public string? ReferenciaPago { get; set; }
+        public string? RutaComprobante { get; set; }
         public string? Notas { get; set; }
         public DateTime FechaVenta { get; set; } = DateTime.Now;
 

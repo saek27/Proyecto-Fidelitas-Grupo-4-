@@ -79,6 +79,10 @@ builder.Services.AddScoped<IGenericRepository<DetallePedido>, GenericRepository<
 //Documento
 builder.Services.AddScoped<IGenericRepository<DocumentoExpediente>, GenericRepository<DocumentoExpediente>>();
 
+//TecnologiaLente y Aro
+builder.Services.AddScoped<IGenericRepository<TecnologiaLente>, GenericRepository<TecnologiaLente>>();
+builder.Services.AddScoped<IGenericRepository<Aro>, GenericRepository<Aro>>();
+
 //Peso de archivo
 builder.Services.Configure<FormOptions>(options =>
 {

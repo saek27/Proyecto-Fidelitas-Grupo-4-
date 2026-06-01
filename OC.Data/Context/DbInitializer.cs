@@ -238,6 +238,24 @@ END
                 });
                 context.SaveChanges();
             }
+
+            // 4. Seed de tecnologias de lentes si no existen
+            if (!context.TecnologiaLentes.Any())
+            {
+                var tecnologias = new[]
+                {
+                    new TecnologiaLente { Nombre = "Monofocal" },
+                    new TecnologiaLente { Nombre = "Bifocal" },
+                    new TecnologiaLente { Nombre = "Progresivo" },
+                    new TecnologiaLente { Nombre = "Fotocromático" },
+                    new TecnologiaLente { Nombre = "Anti-reflejo" },
+                    new TecnologiaLente { Nombre = "Blue Cut" },
+                    new TecnologiaLente { Nombre = "Fotocromático + Anti-reflejo" },
+                    new TecnologiaLente { Nombre = "Lentes de contacto" }
+                };
+                context.TecnologiaLentes.AddRange(tecnologias);
+                context.SaveChanges();
+            }
         }
     }
 }

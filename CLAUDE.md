@@ -61,6 +61,9 @@ The startup project for EF commands is **OC.Web**, but the migrations live in **
 - **File upload limits**: 10 MB max for multipart forms (configured in `Program.cs`)
 - **TOTP 2FA**: Patients use TOTP-based two-factor authentication during registration (see `ITotpService`)
 - **Background services**: `SLAMonitorService`, `TicketAutoCloseService`, `RecordatorioCitasBackgroundService` are registered as hosted services
+- **Price integrity in Ventas**: Prices come exclusively from the database (`Producto.Precio`, `TecnologiaLente.Precio`, `Aro.Precio`). Users cannot manually set prices in sales forms — prices are read-only via `data-precio` attributes on select options. Total = `(subtotal - descuento%) * 1.13` (IVA included)
+- **Inventory consolidation**: All inventory (Productos, TecnologiaLente, Aro) managed via `InventoryController` with section tabs on `Views/Inventory/Index`. Create/Edit redirects always return to `Inventory/Index?seccion=X`
+- **Aro soft-delete**: `Aro.Activo = false` on delete, not a hard delete
 
 ## Connection String
 

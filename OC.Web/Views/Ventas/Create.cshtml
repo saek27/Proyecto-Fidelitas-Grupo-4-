@@ -1,7 +1,9 @@
-﻿@model OC.Web.ViewModels.VentaCreateViewModel
+@model OC.Web.ViewModels.VentaCreateViewModel
 @{
     ViewData["Title"] = "Nueva Venta";
     var pacientes = ViewBag.Pacientes as IEnumerable<OC.Core.Domain.Entities.Paciente>;
+    var tecnologias = ViewBag.Tecnologias as IEnumerable<OC.Core.Domain.Entities.TecnologiaLente>;
+    var aros = ViewBag.Aros as IEnumerable<OC.Core.Domain.Entities.Aro>;
 }
 
 @* Select2 desde CDN *@
@@ -19,7 +21,7 @@
         </div>
     }
 
-    <form asp-action="Create" method="post" id="formVenta">
+    <form asp-action="Create" method="post" id="formVenta" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <div class="row g-3">
@@ -88,7 +90,6 @@
                 </div>
 
                 @* Buscador de productos del inventario *@
-                
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6 class="card-title">Agregar Producto del Inventario</h6>
@@ -98,56 +99,55 @@
                             {
                                 <option value="@p.Id"
                                         data-nombre="@p.Nombre"
-                                        data-stock="@p.Stock">
-                                    @p.Nombre — SKU: @p.SKU &nbsp;|&nbsp; Stock: @p.Stock
+                                        data-stock="@p.Stock"
+                                        data-precio="@p.PrecioPublico.ToString("F2")">
+                                    @p.Nombre — SKU: @p.SKU &nbsp;|&nbsp; Stock: @p.Stock &nbsp;|&nbsp; ₡@p.PrecioPublico.ToString("N2")
                                 </option>
                             }
                         </select>
                     </div>
                 </div>
 
-                @* Sección Lentes *@
+                @* Sección Lentes con tecnología y aros desde BD *@
                 <div class="card mb-3 border-primary">
                     <div class="card-header bg-primary text-white py-2">
                         <i class="bi bi-eyeglasses me-1"></i>
-                        <strong>Lentes (precio libre)</strong>
+                        <strong>Lentes y Aros</strong>
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
                             <div class="col-md-4">
-                                <label class="form-label form-label-sm">Tecnología</label>
+                                <label class="form-label form-label-sm">Tecnología del lente</label>
                                 <select id="selectTecnologia" class="form-select form-select-sm">
-                                    <option value="Monofocal">Monofocal</option>
-                                    <option value="Bifocal">Bifocal</option>
-                                    <option value="Progresivo">Progresivo</option>
-                                    <option value="Fotosensible">Fotosensible (se oscurecen)</option>
-                                    <option value="Anti-reflejo">Anti-reflejo</option>
-                                    <option value="Blue Cut">Blue Cut</option>
-                                    <option value="Fotosensible + Anti-reflejo">Fotosensible + Anti-reflejo</option>
-                                    <option value="Contacto">Lentes de contacto</option>
+                                    <option value="">-- Seleccione tecnología --</option>
+                                    @foreach (var t in tecnologias!)
+                                    {
+                                        <option value="@t.Nombre" data-precio="@t.Precio.ToString("F2")">@t.Nombre</option>
+                                    }
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label form-label-sm">Precio Lente ₡</label>
-                                <input type="number" id="precioLente" class="form-control form-control-sm"
-                                       min="0" step="0.01" placeholder="0.00" />
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm">Aro</label>
+                                <select id="selectAro" class="form-select form-select-sm">
+                                    <option value="">-- Seleccione aro --</option>
+                                    @foreach (var a in aros!)
+                                    {
+                                        <option value="@a.Nombre"
+                                                data-precio="@a.Precio.ToString("F2")"
+                                                data-stock="@a.Stock"
+                                                data-id="@a.Id">
+                                            @a.Nombre — Stock: @a.Stock
+                                        </option>
+                                    }
+                                </select>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label form-label-sm">Precio Aro ₡</label>
-                                <input type="number" id="precioAro" class="form-control form-control-sm"
-                                       min="0" step="0.01" placeholder="0.00" />
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
+                            <div class="col-md-4 d-flex align-items-end">
                                 <button type="button" class="btn btn-primary btn-sm w-100"
                                         onclick="agregarLentes()">
                                     <i class="bi bi-plus-circle me-1"></i>Agregar
                                 </button>
                             </div>
                         </div>
-                        <p class="text-muted small mt-2 mb-0">
-                            Agrega lente y/o aro como líneas separadas en el carrito.
-                            Dejá en 0 lo que no aplique.
-                        </p>
                     </div>
                 </div>
 
@@ -182,13 +182,8 @@
             <div class="col-md-4">
                 <div class="card sticky-top" style="top:80px;">
                     <div class="card-body">
-                        <h6 class="card-title">Resumen</h6>
 
-                        <div class="d-flex justify-content-between fs-5 fw-bold border-top pt-2 mb-3">
-                            <span>Total:</span>
-                            <span>₡ <span id="lblTotal">0.00</span></span>
-                        </div>
-
+                        @* 1. Método de pago (PRIMERO) *@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Método de pago</label>
                             @foreach (OC.Core.Domain.Enums.MetodoPago mp in ViewBag.MetodosPago)
@@ -203,12 +198,55 @@
                             }
                         </div>
 
+                        @* 2. Referencia + archivo (visible si no es Efectivo) *@
+                        <div id="seccionReferencia" class="mb-3" style="display:none;">
+                            <label class="form-label fw-semibold">Referencia de pago</label>
+                            <input type="text" id="referenciaPago" asp-for="ReferenciaPago"
+                                   class="form-control mb-2"
+                                   placeholder="Número de transacción" />
+                            <label class="form-label fw-semibold">Comprobante de pago</label>
+                            <input type="file" id="comprobante" name="comprobante"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.pdf" />
+                            <div class="form-text">Solo .jpg, .jpeg o .pdf (máx. 10MB)</div>
+                        </div>
+
+                        @* 3. Descuento porcentual *@
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Descuento %</label>
+                            <input type="number" id="inputDescuento" asp-for="Descuento"
+                                   class="form-control" min="0" max="100" step="0.01" value="0"
+                                   placeholder="0.00" />
+                        </div>
+
+                        @* 4. Resumen / Total con IVA *@
+                        <div class="border-top pt-2 mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Subtotal:</span>
+                                <span>₡ <span id="lblSubtotal">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Descuento (<span id="lblDescuentoPct">0</span>%):</span>
+                                <span>₡ <span id="lblDescuento">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>IVA (13%):</span>
+                                <span>₡ <span id="lblIva">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between fs-5 fw-bold">
+                                <span>Total:</span>
+                                <span>₡ <span id="lblTotal">0.00</span></span>
+                            </div>
+                        </div>
+
+                        @* 5. Notas (solo observaciones internas) *@
                         <div class="mb-3">
                             <label asp-for="Notas" class="form-label">Notas (opcional)</label>
                             <textarea asp-for="Notas" class="form-control" rows="2"
-                                      placeholder="Observaciones de la venta..."></textarea>
+                                      placeholder="Observaciones internas..."></textarea>
                         </div>
 
+                        @* 6. Botones *@
                         <button type="submit" class="btn btn-success w-100"
                                 id="btnConfirmar" disabled>
                             <i class="bi bi-check-circle me-1"></i>Confirmar Venta
@@ -257,19 +295,18 @@
             actualizarBoton();
         });
 
-        // ─── Select2: Productos con búsqueda AJAX ────────────────────────────────
-                // ─── Select2: Productos — filtra en cliente, sin mínimo ──────────────
-                // ─── Select2: Productos — filtra en cliente, sin mínimo ──────────────
+        // ─── Select2: Productos — incluye precioPublico en data ─────────────────
         $('#selectProducto').select2({
             theme: 'bootstrap-5',
             placeholder: '-- Seleccione un producto --',
             allowClear: true,
-            minimumInputLength: 0  // muestra todo desde el primer click
+            minimumInputLength: 0
         }).on('select2:select', function (e) {
             const opt   = e.params.data.element;
             const stock = parseInt(opt.dataset.stock);
             const id    = parseInt(e.params.data.id);
             const nombre = opt.dataset.nombre;
+            const precio = parseFloat(opt.dataset.precio) || 0;
 
             if (stock <= 0) {
                 alert('Este producto no tiene stock disponible.');
@@ -277,10 +314,34 @@
                 return;
             }
 
-            agregarAlCarrito(id, nombre, stock);
+            agregarAlCarrito(id, nombre, stock, precio);
             $(this).val(null).trigger('change');
         });
 
+        // ─── Select2: Aro ────────────────────────────────────────────────────────
+        $('#selectAro').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Seleccione aro --'
+        });
+
+        // ─── Select2: Tecnología ────────────────────────────────────────────────
+        $('#selectTecnologia').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Seleccione tecnología --'
+        });
+
+        // ─── Mostrar/ocultar sección referencia según método de pago ──────────────
+        document.querySelectorAll('input[name="MetodoPago"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                const seccion = document.getElementById('seccionReferencia');
+                seccion.style.display = this.value !== '1' ? 'block' : 'none';
+            });
+        });
+
+        // ─── Descuento porcentual: recalcular total ──────────────────────────────
+        document.getElementById('inputDescuento').addEventListener('input', function() {
+            actualizarTotal();
+        });
 
         // ─── Receta ───────────────────────────────────────────────────────────────
         function mostrarSeccionReceta(vc) {
@@ -309,19 +370,26 @@
 
         // ─── Lentes ───────────────────────────────────────────────────────────────
         function agregarLentes() {
-            const tecnologia  = document.getElementById('selectTecnologia').value;
-            const precioLente = parseFloat(document.getElementById('precioLente').value) || 0;
-            const precioAro   = parseFloat(document.getElementById('precioAro').value)   || 0;
+            const selectTec = document.getElementById('selectTecnologia');
+            const selectAro = document.getElementById('selectAro');
+
+            const tecnologiaOpt = selectTec.selectedOptions[0];
+            const aroOpt = selectAro.selectedOptions[0];
+
+            const tecnologia = selectTec.value;
+            const precioLente = tecnologiaOpt ? parseFloat(tecnologiaOpt.dataset.precio) || 0 : 0;
+            const precioAro = aroOpt ? parseFloat(aroOpt.dataset.precio) || 0 : 0;
+            const aroStock = aroOpt ? parseInt(aroOpt.dataset.stock) || null : null;
 
             if (precioLente <= 0 && precioAro <= 0) {
-                alert('Ingresá al menos un precio (lente o aro) mayor a 0.');
+                alert('Seleccioná al menos una tecnología o aro con precio definido.');
                 return;
             }
 
             if (precioLente > 0) {
                 carrito.push({
                     productoId:          null,
-                    descripcionSnapshot: `Lentes ${tecnologia}`,
+                    descripcionSnapshot: tecnologia ? `Lentes ${tecnologia}` : 'Lentes',
                     cantidad:            1,
                     precioUnitario:      precioLente,
                     stockMax:            null
@@ -329,22 +397,27 @@
             }
 
             if (precioAro > 0) {
+                if (aroStock !== null && aroStock <= 0) {
+                    alert('El aro seleccionado no tiene stock.');
+                    return;
+                }
                 carrito.push({
                     productoId:          null,
-                    descripcionSnapshot: 'Aro',
+                    descripcionSnapshot: selectAro.value || 'Aro',
                     cantidad:            1,
                     precioUnitario:      precioAro,
-                    stockMax:            null
+                    stockMax:            aroStock
                 });
             }
 
-            document.getElementById('precioLente').value = '';
-            document.getElementById('precioAro').value   = '';
+            selectTec.value = '';
+            $('#selectTecnologia').val(null).trigger('change');
+            $('#selectAro').val(null).trigger('change');
             renderCarrito();
         }
 
         // ─── Carrito ──────────────────────────────────────────────────────────────
-        function agregarAlCarrito(productoId, nombre, stock) {
+        function agregarAlCarrito(productoId, nombre, stock, precio) {
             const existente = carrito.find(x => x.productoId === productoId);
             if (existente) {
                 if (existente.cantidad >= stock) {
@@ -357,7 +430,7 @@
                     productoId,
                     descripcionSnapshot: nombre,
                     cantidad:            1,
-                    precioUnitario:      0,
+                    precioUnitario:      precio,
                     stockMax:            stock
                 });
             }
@@ -380,7 +453,7 @@
                 <tr>
                     <td>
                         ${item.productoId === null
-                            ? `<span class="badge bg-primary me-1">Lente</span>`
+                            ? `<span class="badge bg-primary me-1">L/A</span>`
                             : ''}
                         ${item.descripcionSnapshot}
                     </td>
@@ -390,11 +463,8 @@
                                ${item.stockMax !== null ? `max="${item.stockMax}"` : ''}
                                onchange="actualizarCantidad(${i}, this.value)">
                     </td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm"
-                               value="${item.precioUnitario}" min="0" step="0.01"
-                               placeholder="₡ 0.00"
-                               onchange="actualizarPrecio(${i}, this.value)">
+                    <td class="text-end">
+                        ₡ ${item.precioUnitario.toFixed(2)}
                     </td>
                     <td class="text-end">
                         ₡ ${(item.cantidad * item.precioUnitario).toFixed(2)}
@@ -421,18 +491,22 @@
             renderCarrito();
         }
 
-        function actualizarPrecio(i, val) {
-            carrito[i].precioUnitario = parseFloat(val) || 0;
-            renderCarrito();
-        }
-
         function eliminarDelCarrito(i) {
             carrito.splice(i, 1);
             renderCarrito();
         }
 
         function actualizarTotal() {
-            const total = carrito.reduce((s, x) => s + x.cantidad * x.precioUnitario, 0);
+            const subtotal = carrito.reduce((s, x) => s + x.cantidad * x.precioUnitario, 0);
+            const descuentoPct = parseFloat(document.getElementById('inputDescuento').value) || 0;
+            const montoDescuento = subtotal * (descuentoPct / 100);
+            const dopoDescuento = subtotal - montoDescuento;
+            const iva = dopoDescuento * 0.13;
+            const total = dopoDescuento + iva;
+            document.getElementById('lblSubtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('lblDescuentoPct').textContent = descuentoPct.toFixed(2);
+            document.getElementById('lblDescuento').textContent = montoDescuento.toFixed(2);
+            document.getElementById('lblIva').textContent = iva.toFixed(2);
             document.getElementById('lblTotal').textContent = total.toFixed(2);
         }
 
@@ -454,9 +528,22 @@
 
         document.getElementById('formVenta').addEventListener('submit', function (e) {
             sincronizarJson();
+
             if (!carrito.length) {
                 e.preventDefault();
                 alert('El carrito está vacío.');
+                return;
+            }
+
+            // Validar que haya comprobante si no es efectivo
+            const metodoPago = document.querySelector('input[name="MetodoPago"]:checked').value;
+            if (metodoPago !== '1') {
+                const fileInput = document.getElementById('comprobante');
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    e.preventDefault();
+                    alert('Debe adjuntar un comprobante de pago para métodos distinta de Efectivo.');
+                    return;
+                }
             }
         });
     </script>
