@@ -26,6 +26,13 @@ namespace OC.Core.Domain.Entities
         /// <summary>Cuándo pasó a estado Lista (para notificación).</summary>
         public DateTime? FechaLista { get; set; }
 
+        // Datos de fabricación del lente
+        public decimal? PD { get; set; }
+        public string? TipoLente { get; set; }
+        public string? MaterialLente { get; set; }
+        public string? Tratamientos { get; set; }
+        public string? LaboratorioExterno { get; set; }
+
         public Paciente Paciente { get; set; } = null!;
         public Sucursal Sucursal { get; set; } = null!;
         public Venta? Venta { get; set; }

@@ -22,7 +22,8 @@ namespace OC.Web.ViewModels
         public decimal? CilindroOD { get; set; }
 
         [Display(Name = "Eje Ojo Derecho")]
-        public decimal? EjeOD { get; set; }
+        [Range(0, 180, ErrorMessage = "El eje debe estar entre 0 y 180.")]
+        public int? EjeOD { get; set; }
 
         [Display(Name = "Esfera Ojo Izquierdo")]
         public decimal? EsferaOI { get; set; }
@@ -31,7 +32,16 @@ namespace OC.Web.ViewModels
         public decimal? CilindroOI { get; set; }
 
         [Display(Name = "Eje Ojo Izquierdo")]
-        public decimal? EjeOI { get; set; }
+        [Range(0, 180, ErrorMessage = "El eje debe estar entre 0 y 180.")]
+        public int? EjeOI { get; set; }
+
+        [Display(Name = "Adición OD")]
+        [Range(0.75, 3.50, ErrorMessage = "La adición debe estar entre +0.75 y +3.50")]
+        public decimal? ADD_Od { get; set; }
+
+        [Display(Name = "Adición OI")]
+        [Range(0.75, 3.50, ErrorMessage = "La adición debe estar entre +0.75 y +3.50")]
+        public decimal? ADD_Oi { get; set; }
 
         // ========== AGUDEZA VISUAL ==========
         [Display(Name = "AV OD (lejos)")]

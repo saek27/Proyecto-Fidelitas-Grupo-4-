@@ -65,6 +65,25 @@ The startup project for EF commands is **OC.Web**, but the migrations live in **
 - **Inventory consolidation**: All inventory (Productos, TecnologiaLente, Aro) managed via `InventoryController` with section tabs on `Views/Inventory/Index`. Create/Edit redirects always return to `Inventory/Index?seccion=X`
 - **Aro soft-delete**: `Aro.Activo = false` on delete, not a hard delete
 
+## Database Initialization (DbInitializer)
+
+`DbInitializer` runs at startup and uses raw SQL `CREATE TABLE`/`ALTER TABLE` statements (via `Ensure*` methods) to guarantee schema readiness independently of EF migrations. This pattern handles cases where migrations haven't been applied or have inconsistent history. Key tables ensured:
+
+- `OrdenesTrabajo`
+- `EnviosNotificacion`
+- `Citas` (notification columns)
+- `Paciente` (lockout columns)
+- `Usuario` (security columns)
+- `Permiso` (ruta_documento_incapacidad column)
+- `Producto` (RutaImagen column)
+
+## Visual Architecture
+
+See [architecture-diagram.md](architecture-diagram.md) for Mermaid diagrams showing:
+- System overview and layer dependencies
+- Entity relationships and key database schema
+- Request flow for the inventory feature
+
 ## Connection String
 
 - Production: Azure SQL Server (`server-opticacomunal.database.windows.net`)

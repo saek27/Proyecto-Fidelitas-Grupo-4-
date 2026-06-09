@@ -208,6 +208,47 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        public static void EnsureValorClinicoAddColumns(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('ValoresClinicos','U') IS NOT NULL
+BEGIN
+    -- ADD columns (may already exist from prior run)
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ValoresClinicos') AND name = 'ADD_Od')
+        ALTER TABLE ValoresClinicos ADD ADD_Od decimal(5,2) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ValoresClinicos') AND name = 'ADD_Oi')
+        ALTER TABLE ValoresClinicos ADD ADD_Oi decimal(5,2) NULL;
+
+    -- EjeOD / EjeOI: change from decimal(4,2) to int (clinically integers 0-180)
+    IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ValoresClinicos') AND name = 'EjeOD' AND type_name(user_type_id) = 'decimal')
+        ALTER TABLE ValoresClinicos ALTER COLUMN EjeOD int NULL;
+    IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ValoresClinicos') AND name = 'EjeOI' AND type_name(user_type_id) = 'decimal')
+        ALTER TABLE ValoresClinicos ALTER COLUMN EjeOI int NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
+        public static void EnsureOrdenTrabajoNewColumns(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('OrdenesTrabajo','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('OrdenesTrabajo') AND name = 'PD')
+        ALTER TABLE OrdenesTrabajo ADD PD decimal(4,1) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('OrdenesTrabajo') AND name = 'TipoLente')
+        ALTER TABLE OrdenesTrabajo ADD TipoLente nvarchar(100) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('OrdenesTrabajo') AND name = 'MaterialLente')
+        ALTER TABLE OrdenesTrabajo ADD MaterialLente nvarchar(100) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('OrdenesTrabajo') AND name = 'Tratamientos')
+        ALTER TABLE OrdenesTrabajo ADD Tratamientos nvarchar(500) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('OrdenesTrabajo') AND name = 'LaboratorioExterno')
+        ALTER TABLE OrdenesTrabajo ADD LaboratorioExterno nvarchar(200) NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna
@@ -245,6 +286,11 @@ END
                 if (!context.Roles.Any(r => r.Nombre == "Tecnico"))
                 {
                     context.Roles.Add(new Rol { Nombre = "Tecnico", Descripcion = "Técnico de soporte" });
+                    context.SaveChanges();
+                }
+                if (!context.Roles.Any(r => r.Nombre == "TecnicoOcular"))
+                {
+                    context.Roles.Add(new Rol { Nombre = "TecnicoOcular", Descripcion = "Técnico de lentes" });
                     context.SaveChanges();
                 }
             }

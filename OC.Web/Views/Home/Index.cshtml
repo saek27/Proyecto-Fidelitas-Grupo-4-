@@ -7,6 +7,10 @@
     var hora = DateTime.Now.Hour;
     var saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
     var grupos = ViewBag.ModulosGroups as List<ModuloGroup> ?? new List<ModuloGroup>();
+    var esTecnicoOcular = User.IsInRole("TecnicoOcular");
+    var ordenesPendientes = ViewBag.OrdenesPendientes as int? ?? 0;
+    var ordenesEnProceso = ViewBag.OrdenesEnProceso as int? ?? 0;
+    var ordenesListas = ViewBag.OrdenesListas as int? ?? 0;
 }
 
 <style>
@@ -249,6 +253,71 @@
         }
     }
 
+    /* ========== KPI / Work-queue cards ========== */
+    .kpi-row {
+        position: relative;
+        z-index: 2;
+        max-width: 1100px;
+        margin: 0 auto 32px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 20px;
+        color: #fff;
+        text-decoration: none;
+        transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(59,130,246,0.5);
+        box-shadow: 0 16px 28px -12px rgba(0,0,0,0.4);
+        color: #fff;
+    }
+
+    .kpi-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        flex-shrink: 0;
+    }
+
+    .kpi-text { line-height: 1.2; }
+    .kpi-text .kpi-value { font-size: 1.6rem; font-weight: 700; }
+    .kpi-text .kpi-label { font-size: 0.85rem; color: rgba(255,255,255,0.75); }
+
+    /* Banner de bienvenida contextual para el rol */
+    .role-banner {
+        position: relative;
+        z-index: 2;
+        max-width: 1100px;
+        margin: 0 auto 24px;
+        padding: 14px 20px;
+        background: rgba(59, 130, 246, 0.18);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        border-radius: 16px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .role-banner i { font-size: 1.4rem; }
+    .role-banner strong { font-weight: 600; }
+
     </style>
 
 <div id="home-canvas"></div>
@@ -267,28 +336,110 @@
         </p>
     </div>
 
-    @foreach (var grupo in grupos)
+    @* ── Banner contextual según el rol ── *@
+    @if (esTecnicoOcular)
     {
-        <div class="group-card" data-group="@grupo.Title">
-            <div class="group-header">
-                <i class="bi @grupo.Icon"></i>
-                <h2>@grupo.Title</h2>
-            </div>
-            <div class="modules-grid">
-                @foreach (var (m, i) in grupo.Items.Select((m, i) => (m, i)))
-                {
-                    <a href="@m.Url" class="module-card" data-delay="@(i * 50)">
-                        <div class="mc-icon" style="background: @m.Bg; color: @m.Color;">
-                            <i class="bi @m.Icon"></i>
-                        </div>
-                        <div>
-                            <div class="mc-label">@m.Label</div>
-                            <div class="mc-sub">@m.Sub</div>
-                        </div>
-                    </a>
-                }
+        <div class="role-banner">
+            <i class="bi bi-info-circle"></i>
+            <div>
+                <strong>Bienvenido, Técnico Ocular.</strong>
+                Desde aquí puede consultar las órdenes de lentes asignadas y cambiar su estado a
+                <em>En proceso</em> o <em>Lista</em>. Los datos de fabricación (PD, tipo de lente, etc.)
+                son definidos por Optometría / Ventas y no se pueden modificar.
             </div>
         </div>
+    }
+    else if (User.IsInRole("Optometrista"))
+    {
+        <div class="role-banner">
+            <i class="bi bi-info-circle"></i>
+            <div>
+                <strong>Bienvenido, Optometrista.</strong>
+                Gestione citas, expedientes clínicos y registre los valores clínicos de los pacientes.
+            </div>
+        </div>
+    }
+    else if (User.IsInRole("Recepcion"))
+    {
+        <div class="role-banner">
+            <i class="bi bi-info-circle"></i>
+            <div>
+                <strong>Bienvenido, Recepción.</strong>
+                Agende citas, registre pacientes y gestione la entrega de órdenes listas.
+            </div>
+        </div>
+    }
+
+    @* ── Cola de trabajo (KPIs) ── *@
+    @if (User.IsInRole("TecnicoOcular") || User.IsInRole("Admin") || User.IsInRole("Recepcion"))
+    {
+        <div class="kpi-row">
+            <a href="/OrdenesTrabajo?sort=" class="kpi-card">
+                <div class="kpi-icon" style="background: rgba(245,158,11,.25); color: #fcd34d;">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+                <div class="kpi-text">
+                    <div class="kpi-value">@ordenesPendientes</div>
+                    <div class="kpi-label">Pendientes</div>
+                </div>
+            </a>
+            <a href="/OrdenesTrabajo?sort=" class="kpi-card">
+                <div class="kpi-icon" style="background: rgba(6,182,212,.25); color: #67e8f9;">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <div class="kpi-text">
+                    <div class="kpi-value">@ordenesEnProceso</div>
+                    <div class="kpi-label">En proceso</div>
+                </div>
+            </a>
+            <a href="/OrdenesTrabajo?sort=" class="kpi-card">
+                <div class="kpi-icon" style="background: rgba(16,185,129,.25); color: #6ee7b7;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div class="kpi-text">
+                    <div class="kpi-value">@ordenesListas</div>
+                    <div class="kpi-label">Listas para entrega</div>
+                </div>
+            </a>
+        </div>
+    }
+
+    @* ── Grupos de módulos (fallback si el rol no tiene nada configurado) ── *@
+    @if (!grupos.Any())
+    {
+        <div class="role-banner" style="background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.4);">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>
+                Su rol <strong>@userRole</strong> aún no tiene módulos asignados.
+                Contacte al administrador del sistema para configurar el acceso.
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var grupo in grupos)
+        {
+            <div class="group-card" data-group="@grupo.Title">
+                <div class="group-header">
+                    <i class="bi @grupo.Icon"></i>
+                    <h2>@grupo.Title</h2>
+                </div>
+                <div class="modules-grid">
+                    @foreach (var (m, i) in grupo.Items.Select((m, i) => (m, i)))
+                    {
+                        <a href="@m.Url" class="module-card" data-delay="@(i * 50)">
+                            <div class="mc-icon" style="background: @m.Bg; color: @m.Color;">
+                                <i class="bi @m.Icon"></i>
+                            </div>
+                            <div>
+                                <div class="mc-label">@m.Label</div>
+                                <div class="mc-sub">@m.Sub</div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
     }
 
 </div>

@@ -1,4 +1,5 @@
 @using OC.Core.Domain.Entities
+@using OC.Web.Models
 @model OC.Core.Common.PagedResult<Cita>
 @{
     ViewData["Title"] = "Gestión de Citas";
@@ -8,9 +9,11 @@
         TotalPages = Model.TotalPages,
         GetPageUrl = (page) => Url.Action("CitasPaciente", new {
             page,
+            search = ViewBag.Search,
             estado = ViewBag.Estado,
             fechaDesde = ViewBag.FechaDesde,
-            fechaHasta = ViewBag.FechaHasta
+            fechaHasta = ViewBag.FechaHasta,
+            sort = ViewBag.Sort
         }) ?? string.Empty
     };
 }
@@ -20,43 +23,80 @@
         <h4><i class="bi bi-calendar-check me-2"></i>Gestión de Citas</h4>
     </div>
 
-    @* ── FILTROS (estilo Ventas/Index) ── *@
+    @* ── FILTROS + BÚSQUEDA + ORDEN (estilo OrdenesTrabajo) ── *@
     <div class="card mb-3 border-0 bg-light">
         <div class="card-body py-2">
             <form method="get" asp-action="CitasPaciente">
                 <div class="row g-2 align-items-end">
 
                     <div class="col-md-3">
-                        <label class="form-label form-label-sm mb-1">Fecha desde</label>
-                        <input type="date" name="fechaDesde" value="@ViewBag.FechaDesde" class="form-control form-control-sm" />
+                        <label class="form-label form-label-sm mb-1">Búsqueda</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="search" value="@ViewBag.Search" class="form-control"
+                                   placeholder="Paciente, cédula o # cita..."
+                                   onchange="this.form.submit()" />
+                            <button type="submit" class="btn btn-brand" title="Buscar">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label form-label-sm mb-1">Fecha desde</label>
+                        <input type="date" name="fechaDesde" value="@ViewBag.FechaDesde" class="form-control form-control-sm"
+                               onchange="this.form.submit()" />
+                    </div>
+
+                    <div class="col-md-2">
                         <label class="form-label form-label-sm mb-1">Fecha hasta</label>
-                        <input type="date" name="fechaHasta" value="@ViewBag.FechaHasta" class="form-control form-control-sm" />
+                        <input type="date" name="fechaHasta" value="@ViewBag.FechaHasta" class="form-control form-control-sm"
+                               onchange="this.form.submit()" />
                     </div>
 
                     <div class="col-md-2">
                         <label class="form-label form-label-sm mb-1">Estado</label>
-                        <select name="estado" class="form-select form-select-sm">
+                        <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">Todas</option>
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Programada">Programada</option>
-                            <option value="Atendida">Atendida</option>
-                            <option value="Cancelada">Cancelada</option>
+                            <option value="Pendiente" selected="@(ViewBag.Estado == "Pendiente")">Pendiente</option>
+                            <option value="Programada" selected="@(ViewBag.Estado == "Programada")">Programada</option>
+                            <option value="Atendida" selected="@(ViewBag.Estado == "Atendida")">Atendida</option>
+                            <option value="Cancelada" selected="@(ViewBag.Estado == "Cancelada")">Cancelada</option>
+                            <option value="Confirmada" selected="@(ViewBag.Estado == "Confirmada")">Confirmada</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label form-label-sm mb-1">Ordenar por</label>
+                        <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Fecha (nuevas)</option>
+                            <option value="asc" selected="@(ViewBag.Sort == "asc")">Fecha (viejas)</option>
+                            <option value="patient" selected="@(ViewBag.Sort == "patient")">Paciente A-Z</option>
+                            <option value="patient_desc" selected="@(ViewBag.Sort == "patient_desc")">Paciente Z-A</option>
                         </select>
                     </div>
 
                     <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-brand btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
-                            <i class="bi bi-filter"></i>Filtrar
+                        <button type="submit" class="btn btn-brand btn-sm w-100 d-flex align-items-center justify-content-center gap-1" title="Filtrar">
+                            <i class="bi bi-funnel"></i>
                         </button>
                     </div>
 
-                    <div class="col-md-1 d-flex align-items-end">
-                        <a asp-action="CitasPaciente" class="btn btn-brand btn-sm w-100 d-flex align-items-center justify-content-center gap-1" title="Limpiar">
-                            <i class="bi bi-x-lg"></i>Limpiar
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <a asp-action="CitasPaciente" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> Limpiar filtros
                         </a>
+                        @if (Model.TotalCount > 0)
+                        {
+                            <span class="text-muted small ms-2">
+                                Mostrando @Model.Items.Count de @Model.TotalCount cita(s)
+                                @if (!string.IsNullOrWhiteSpace(ViewBag.Search))
+                                {
+                                    <span> para "<strong>@ViewBag.Search</strong>"</span>
+                                }
+                            </span>
+                        }
                     </div>
                 </div>
             </form>
@@ -101,6 +141,9 @@
                                     case "Programada":
                                         <span class="badge bg-primary">Programada</span>
                                         break;
+                                    case "Confirmada":
+                                        <span class="badge bg-info">Confirmada</span>
+                                        break;
                                     case "Atendida":
                                         <span class="badge bg-success">Atendida</span>
                                         break;
@@ -133,6 +176,90 @@
             </table>
         </div>
 
-        @await Html.PartialAsync("_Pagination", pagination)
+        @* ── Paginación (patrón OrdenesTrabajo) ── *@
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="Paginación" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link"
+                           asp-action="CitasPaciente"
+                           asp-route-page="@(Model.PageIndex - 1)"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-fechaDesde="@ViewBag.FechaDesde"
+                           asp-route-fechaHasta="@ViewBag.FechaHasta"
+                           asp-route-sort="@ViewBag.Sort">
+                            &laquo; Anterior
+                        </a>
+                    </li>
+
+                    @{
+                        var start = Math.Max(1, Model.PageIndex - 2);
+                        var end = Math.Min(Model.TotalPages, Model.PageIndex + 2);
+                    }
+                    @if (start > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-action="CitasPaciente"
+                               asp-route-page="1"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-sort="@ViewBag.Sort">1</a>
+                        </li>
+                        @if (start > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        }
+                    }
+                    @for (var i = start; i <= end; i++)
+                    {
+                        <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="CitasPaciente"
+                               asp-route-page="@i"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-sort="@ViewBag.Sort">@i</a>
+                        </li>
+                    }
+                    @if (end < Model.TotalPages)
+                    {
+                        @if (end < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-action="CitasPaciente"
+                               asp-route-page="@Model.TotalPages"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-sort="@ViewBag.Sort">@Model.TotalPages</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link"
+                           asp-action="CitasPaciente"
+                           asp-route-page="@(Model.PageIndex + 1)"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-fechaDesde="@ViewBag.FechaDesde"
+                           asp-route-fechaHasta="@ViewBag.FechaHasta"
+                           asp-route-sort="@ViewBag.Sort">
+                            Siguiente &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
     }
 </div>

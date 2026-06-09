@@ -70,10 +70,13 @@ namespace OC.Data.Context
                 // Campos de refracción
                 entity.Property(e => e.EsferaOD).HasPrecision(4, 2);
                 entity.Property(e => e.CilindroOD).HasPrecision(4, 2);
-                entity.Property(e => e.EjeOD).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOD).HasColumnType("int");
                 entity.Property(e => e.EsferaOI).HasPrecision(4, 2);
                 entity.Property(e => e.CilindroOI).HasPrecision(4, 2);
-                entity.Property(e => e.EjeOI).HasPrecision(4, 2);
+                entity.Property(e => e.EjeOI).HasColumnType("int");
+                // Addition (ADD)
+                entity.Property(e => e.ADD_Od).HasPrecision(5, 2);
+                entity.Property(e => e.ADD_Oi).HasPrecision(5, 2);
                 // Presión intraocular
                 entity.Property(e => e.PioOd).HasPrecision(4, 1);
                 entity.Property(e => e.PioOi).HasPrecision(4, 1);
@@ -89,16 +92,6 @@ namespace OC.Data.Context
             {
                 entity.Property(s => s.Latitud).HasPrecision(10, 6);
                 entity.Property(s => s.Longitud).HasPrecision(10, 6);
-            });
-
-            modelBuilder.Entity<ValorClinico>(entity =>
-            {
-                entity.Property(e => e.EsferaOD).HasPrecision(4, 2);
-                entity.Property(e => e.CilindroOD).HasPrecision(4, 2);
-                entity.Property(e => e.EjeOD).HasPrecision(4, 2);
-                entity.Property(e => e.EsferaOI).HasPrecision(4, 2);
-                entity.Property(e => e.CilindroOI).HasPrecision(4, 2);
-                entity.Property(e => e.EjeOI).HasPrecision(4, 2);
             });
 
             modelBuilder.Entity<Expediente>()
@@ -186,6 +179,10 @@ namespace OC.Data.Context
                       .HasForeignKey(v => v.SucursalId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+                entity.Property(e => e.Descuento).HasPrecision(18, 2);
+                entity.Property(e => e.ReferenciaPago).HasMaxLength(100);
+                entity.Property(e => e.RutaComprobante).HasMaxLength(512);
+
             });
 
             modelBuilder.Entity<DetalleVenta>(entity =>
@@ -264,15 +261,6 @@ namespace OC.Data.Context
             {
                 entity.HasIndex(a => a.SKU).IsUnique();
                 entity.Property(a => a.Precio).HasPrecision(18, 2);
-            });
-
-            //Venta
-            modelBuilder.Entity<Venta>(entity =>
-            {
-                entity.Property(e => e.Descuento).HasPrecision(18, 2);
-                entity.Property(e => e.Total).HasPrecision(18, 2);
-                entity.Property(e => e.ReferenciaPago).HasMaxLength(100);
-                entity.Property(e => e.RutaComprobante).HasMaxLength(512);
             });
 
         }

@@ -14,6 +14,11 @@ namespace OC.Data.Configurations
 
             builder.Property(x => x.Estado).IsRequired().HasMaxLength(20);
             builder.Property(x => x.Referencia).HasMaxLength(200);
+            builder.Property(x => x.PD).HasPrecision(4, 1);
+            builder.Property(x => x.TipoLente).HasMaxLength(100);
+            builder.Property(x => x.MaterialLente).HasMaxLength(100);
+            builder.Property(x => x.Tratamientos).HasMaxLength(500);
+            builder.Property(x => x.LaboratorioExterno).HasMaxLength(200);
 
             builder.HasOne(x => x.Paciente)
                 .WithMany()
