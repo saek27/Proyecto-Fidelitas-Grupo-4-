@@ -13,19 +13,22 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Cita> _citaRepo;
         private readonly IGenericRepository<ValorClinico> _valorClinicoRepo;
         private readonly IGenericRepository<DocumentoExpediente> _documentoRepo;
+        private readonly IValorClinicoRepository _valorClinicoReadRepo;
         private readonly ILogger<ExpedientessController> _logger;
 
         public ExpedientessController(
             IGenericRepository<Expediente> expedienteRepo,
             IGenericRepository<Cita> citaRepo,
             IGenericRepository<ValorClinico> valorClinicoRepo,
-            IGenericRepository<DocumentoExpediente> documentoRepo, 
+            IGenericRepository<DocumentoExpediente> documentoRepo,
+            IValorClinicoRepository valorClinicoReadRepo,
             ILogger<ExpedientessController> logger)
         {
             _expedienteRepo = expedienteRepo;
             _citaRepo = citaRepo;
             _valorClinicoRepo = valorClinicoRepo;
-            _documentoRepo = documentoRepo;  
+            _documentoRepo = documentoRepo;
+            _valorClinicoReadRepo = valorClinicoReadRepo;
             _logger = logger;
         }
 
@@ -135,11 +138,9 @@ namespace OC.Web.Controllers
         // GET: Expedientess/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            var expediente = (await _expedienteRepo.GetPagedAsync(
-                1, 1,
-                filter: e => e.Id == id,
-                includeProperties: "Cita.Paciente,ValoresClinicos,Documentos"
-            )).Items.FirstOrDefault();
+            // El repositorio específico ordena las colecciones hijas en SQL
+            // (ValoresClinicos y Documentos), evitando el OrderByDescending en la vista.
+            var expediente = await _valorClinicoReadRepo.GetExpedienteConValoresOrdenadosAsync(id);
 
             if (expediente == null)
                 return NotFound();
@@ -245,6 +246,15 @@ namespace OC.Web.Controllers
                 return View("~/Views/Expedientess/AddValorClinico.cshtml", model);
             }
 
+            // Validar que el Expediente exista antes de agregar un valor clínico.
+            // Esto evita inserciones huérfanas si se manipula el id por URL.
+            var expedienteValido = await _expedienteRepo.GetByIdAsync(model.ExpedienteId);
+            if (expedienteValido == null)
+            {
+                TempData["Error"] = "El expediente indicado no existe. No se puede agregar el valor clínico.";
+                return RedirectToAction(nameof(Index), "CitasPublicas");
+            }
+
             var valorClinico = new ValorClinico
             {
                 ExpedienteId = model.ExpedienteId,
@@ -256,6 +266,8 @@ namespace OC.Web.Controllers
                 EsferaOI = model.EsferaOI,
                 CilindroOI = model.CilindroOI,
                 EjeOI = model.EjeOI,
+                ADD_Od = model.ADD_Od,
+                ADD_Oi = model.ADD_Oi,
                 // Agudeza visual
                 AvOdLejos = model.AvOdLejos,
                 AvOiLejos = model.AvOiLejos,
@@ -275,7 +287,7 @@ namespace OC.Web.Controllers
 
             await _valorClinicoRepo.AddAsync(valorClinico);
 
-            TempData["Success"] = "Valor clínico agregado correctamente.";
+            TempData["Success"] = "Valor clínico agregado correctamente al historial.";
             return RedirectToAction(nameof(Details), new { id = model.ExpedienteId });
         }
 

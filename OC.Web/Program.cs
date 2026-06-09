@@ -73,6 +73,7 @@ builder.Services.AddHostedService<TicketAutoCloseService>();
 
 //Valor Clinico
 builder.Services.AddScoped<IGenericRepository<ValorClinico>, GenericRepository<ValorClinico>>();
+builder.Services.AddScoped<IValorClinicoRepository, ValorClinicoRepository>();
 
 //Detalle Pedido
 builder.Services.AddScoped<IGenericRepository<DetallePedido>, GenericRepository<DetallePedido>>();
@@ -125,6 +126,8 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsureUsuarioSeguridadColumns(context);
         OC.Data.Context.DbInitializer.EnsurePermisoRutaDocumentoIncapacidadColumn(context);
         OC.Data.Context.DbInitializer.EnsureProductoRutaImagenColumn(context);
+        OC.Data.Context.DbInitializer.EnsureValorClinicoAddColumns(context);
+        OC.Data.Context.DbInitializer.EnsureOrdenTrabajoNewColumns(context);
         OC.Data.Context.DbInitializer.Initialize(context);
     }
     catch (Exception ex)

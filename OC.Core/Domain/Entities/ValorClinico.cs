@@ -17,12 +17,21 @@ namespace OC.Core.Domain.Entities
         // Ojo Derecho (OD)
         public decimal? EsferaOD { get; set; }
         public decimal? CilindroOD { get; set; }
-        public decimal? EjeOD { get; set; }
+        [Range(0, 180, ErrorMessage = "El eje debe estar entre 0 y 180.")]
+        public int? EjeOD { get; set; }
 
         // Ojo Izquierdo (OI)
         public decimal? EsferaOI { get; set; }
         public decimal? CilindroOI { get; set; }
-        public decimal? EjeOI { get; set; }
+        [Range(0, 180, ErrorMessage = "El eje debe estar entre 0 y 180.")]
+        public int? EjeOI { get; set; }
+
+        // Addition (ADD) — solo para progresivos/bifocales
+        [Range(0.75, 3.50, ErrorMessage = "La adición debe estar entre +0.75 y +3.50")]
+        public decimal? ADD_Od { get; set; }
+
+        [Range(0.75, 3.50, ErrorMessage = "La adición debe estar entre +0.75 y +3.50")]
+        public decimal? ADD_Oi { get; set; }
 
         // ========== AGUDEZA VISUAL (AV) ==========
         [MaxLength(20)]

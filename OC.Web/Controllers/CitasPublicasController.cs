@@ -6,6 +6,7 @@ using OC.Web.Helpers;
 using OC.Web.ViewModels;
 using OC.Web.Services;
 using System.Security.Claims;
+using System.Linq.Expressions;
 
 namespace OC.Web.Controllers
 {
@@ -114,34 +115,71 @@ namespace OC.Web.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> CitasPaciente(string estado, string fechaDesde, string fechaHasta, int page = 1, int pageSize = 15)
+        public async Task<IActionResult> CitasPaciente(
+            string? search = null,
+            string? estado = null,
+            string? fechaDesde = null,
+            string? fechaHasta = null,
+            string? sort = null,
+            int page = 1,
+            int pageSize = 15)
         {
+            ViewBag.Search = search;
             ViewBag.Estado = estado;
             ViewBag.FechaDesde = fechaDesde;
             ViewBag.FechaHasta = fechaHasta;
+            ViewBag.Sort = sort;
 
-            var todasLasCitas = await _citasRepo.GetPagedAsync(
-                pageIndex: 1,
-                pageSize: int.MaxValue,
-                orderBy: q => q.OrderByDescending(c => c.FechaHora),
+            // Parsear fechas fuera del Expression Tree (out var no se admite en expression trees).
+            DateTime? fDesde = null;
+            DateTime? fHasta = null;
+            if (!string.IsNullOrEmpty(fechaDesde) && DateTime.TryParse(fechaDesde, out var d1)) fDesde = d1.Date;
+            if (!string.IsNullOrEmpty(fechaHasta) && DateTime.TryParse(fechaHasta, out var d2)) fHasta = d2.Date;
+
+            // Default: descending (newest first)
+            Func<IQueryable<Cita>, IOrderedQueryable<Cita>> orderBy = q => q.OrderByDescending(c => c.FechaHora);
+
+            if (sort == "asc")
+                orderBy = q => q.OrderBy(c => c.FechaHora);
+            else if (sort == "patient")
+                orderBy = q => q.OrderBy(c => c.Paciente != null ? c.Paciente.Nombres : "");
+            else if (sort == "patient_desc")
+                orderBy = q => q.OrderByDescending(c => c.Paciente != null ? c.Paciente.Nombres : "");
+
+            Expression<Func<Cita, bool>>? filter = null;
+
+            // Combine all WHERE clauses into a single expression so the repository
+            // can push everything down to SQL (no in-memory filtering).
+            if (!string.IsNullOrEmpty(estado) ||
+                fDesde.HasValue ||
+                fHasta.HasValue ||
+                !string.IsNullOrWhiteSpace(search))
+            {
+                var term = (search ?? string.Empty).Trim().ToLower();
+                var estadoFiltro = estado ?? string.Empty;
+                int? idBusqueda = null;
+                if (int.TryParse(term, out var idNum))
+                    idBusqueda = idNum;
+
+                filter = c =>
+                    (estadoFiltro == string.Empty || c.Estado == estadoFiltro) &&
+                    (!fDesde.HasValue || c.FechaHora.Date >= fDesde.Value) &&
+                    (!fHasta.HasValue || c.FechaHora.Date <= fHasta.Value) &&
+                    (string.IsNullOrWhiteSpace(search) ||
+                        (c.Paciente != null &&
+                            (c.Paciente.Nombres.ToLower().Contains(term) ||
+                             c.Paciente.Apellidos.ToLower().Contains(term))) ||
+                        (c.Paciente != null && c.Paciente.Cedula != null && c.Paciente.Cedula.ToLower().Contains(term)) ||
+                        (idBusqueda.HasValue && c.Id == idBusqueda.Value));
+            }
+
+            var resultado = await _citasRepo.GetPagedAsync(
+                pageIndex: page,
+                pageSize: pageSize,
+                filter: filter,
+                orderBy: orderBy,
                 includeProperties: "Paciente"
             );
-
-            var query = todasLasCitas.Items.AsQueryable();
-
-            if (!string.IsNullOrEmpty(estado))
-                query = query.Where(c => c.Estado == estado);
-
-            if (!string.IsNullOrEmpty(fechaDesde) && DateTime.TryParse(fechaDesde, out var fDesde))
-                query = query.Where(c => c.FechaHora.Date >= fDesde.Date);
-
-            if (!string.IsNullOrEmpty(fechaHasta) && DateTime.TryParse(fechaHasta, out var fHasta))
-                query = query.Where(c => c.FechaHora.Date <= fHasta.Date);
-
-            var filtradas = query.ToList();
-            var items = filtradas.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var resultado = new OC.Core.Common.PagedResult<Cita>(items, filtradas.Count, page, pageSize);
 
             return View(resultado);
         }
@@ -152,7 +190,7 @@ namespace OC.Web.Controllers
             var cita = (await _citasRepo.GetPagedAsync(
                 1, 1,
                 filter: c => c.Id == id,
-                includeProperties: "Paciente"
+                includeProperties: "Paciente,Expediente"
             )).Items.FirstOrDefault();
 
             if (cita == null) return NotFound();

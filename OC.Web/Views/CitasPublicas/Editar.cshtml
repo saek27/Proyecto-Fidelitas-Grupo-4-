@@ -7,6 +7,19 @@
     <p><b>Paciente:</b> @Model.Paciente.NombreCompleto</p>
     <p><b>Fecha:</b> @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</p>
 
+    @if (Model.Expediente != null)
+    {
+        <a asp-action="Details" asp-controller="Expedientess" asp-route-id="@Model.Expediente.Id" class="btn btn-outline-info mb-3">
+            <i class="bi bi-folder2-open"></i> Ver expediente
+        </a>
+    }
+    else if (Model.Estado == "Atendida")
+    {
+        <a asp-action="Create" asp-controller="Expedientess" asp-route-citaId="@Model.Id" class="btn btn-outline-success mb-3">
+            <i class="bi bi-plus-circle"></i> Crear expediente
+        </a>
+    }
+
     <form method="post">
         <input type="hidden" name="Id" value="@Model.Id" />
 

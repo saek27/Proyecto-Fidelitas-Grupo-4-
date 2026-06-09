@@ -82,7 +82,8 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var v in Model.Expediente.ValoresClinicos.OrderByDescending(x => x.FechaRegistro))
+                @* ValoresClinicos ya viene ordenado por FechaRegistro DESC desde SQL *@
+                @foreach (var v in Model.Expediente.ValoresClinicos)
                 {
                     <tr>
                         <td>@v.Diagnostico</td>
@@ -104,7 +105,8 @@
         <hr class="my-4" />
         <h5>Documentos</h5>
         <ul class="mb-0">
-            @foreach (var doc in Model.Expediente.Documentos.OrderByDescending(d => d.FechaSubida))
+            @* Documentos ya viene ordenado por FechaSubida DESC desde SQL *@
+            @foreach (var doc in Model.Expediente.Documentos)
             {
                 <li>
                     <a href="@doc.RutaArchivo" target="_blank">@doc.NombreArchivo</a>

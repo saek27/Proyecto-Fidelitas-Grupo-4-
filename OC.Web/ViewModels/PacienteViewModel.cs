@@ -34,10 +34,9 @@ namespace OC.Web.ViewModels
         [DataType(DataType.Date)]
         public DateTime FechaNacimiento { get; set; } = DateTime.Now.AddYears(-30);
 
-        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
         [Display(Name = "Contraseña")]
         [DataType(DataType.Password)]
-        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
         public string? Contrasena { get; set; }
 
         [Display(Name = "Confirmar Contraseña")]

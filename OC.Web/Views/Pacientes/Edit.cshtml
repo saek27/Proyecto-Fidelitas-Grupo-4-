@@ -3,6 +3,8 @@
 <div class="card-dashboard">
     <h4>Editar Paciente</h4>
 
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
     @if (User.IsInRole("Admin"))
     {
         <div class="d-flex align-items-center gap-3 mb-3">
@@ -78,4 +80,14 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        // Solo formatear si el campo no tiene el formato correcto (evitar doble formato)
+        var cedulaInput = document.querySelector('.cedula-format');
+        if (cedulaInput && !/^\d-\d{4}-\d{4}$/.test(cedulaInput.value)) {
+            var digits = cedulaInput.value.replace(/\D/g, '');
+            if (digits.length === 9) {
+                cedulaInput.value = digits[0] + '-' + digits.substring(1, 5) + '-' + digits.substring(5, 9);
+            }
+        }
+    </script>
 }

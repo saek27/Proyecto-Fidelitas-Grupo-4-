@@ -129,15 +129,15 @@ namespace OC.Web.Controllers
                 if (paciente == null)
                     return NotFound();
 
-                // Buscar su ValorClinico más reciente navegando por Expediente → Cita
+                // Buscar su ValorClinico más reciente: el orden se hace en SQL, no en memoria.
                 var vcResultado = await _valorClinicoRepo.GetPagedAsync(
-                    1, 1,
-                    vc => vc.Expediente.Cita.PacienteId == id,
-                    includeProperties: "Expediente.Cita");
-
-                var vc = vcResultado.Items
-                    .OrderByDescending(v => v.FechaRegistro)
-                    .FirstOrDefault();
+                    pageIndex: 1,
+                    pageSize: 1,
+                    filter: vc => vc.Expediente.Cita.PacienteId == id,
+                    orderBy: q => q.OrderByDescending(v => v.FechaRegistro),
+                    includeProperties: "Expediente.Cita"
+                );
+                var vc = vcResultado.Items.FirstOrDefault();
 
                 return Json(new
                 {
