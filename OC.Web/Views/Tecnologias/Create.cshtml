@@ -1,6 +1,6 @@
 @model OC.Core.Domain.Entities.TecnologiaLente
 @{
-    ViewData["Title"] = "Nueva Tecnología";
+    ViewData["Title"] ="Nueva Tecnología";
 }
 
 <div class="container mt-4">
@@ -26,10 +26,10 @@
 
                     <div class="form-footer-actions">
                         <div class="btn-group" role="group">
-                            <button type="submit" class="btn btn-brand btn-ripple">
+                            <button type="submit" class="btn btn-brand">
                                 <i class="bi bi-check-lg me-2"></i> Guardar
                             </button>
-                            <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="tecnologias" class="btn btn-outline-secondary btn-ripple">
+                            <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="tecnologias" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-2"></i> Cancelar
                             </a>
                         </div>

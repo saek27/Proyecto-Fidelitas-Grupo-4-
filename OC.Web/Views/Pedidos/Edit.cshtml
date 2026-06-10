@@ -1,7 +1,12 @@
 @model OC.Web.ViewModels.PedidoEditViewModel
 @using OC.Core.Domain.Entities
 @{
-    ViewData["Title"] = "Editar Pedido";
+    ViewData["Title"] ="Editar Pedido";
+}
+
+@section Styles {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 }
 
 <div class="container mt-4">
@@ -17,7 +22,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label asp-for="ProveedorId" class="form-label fw-semibold">Proveedor *</label>
-                            <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select">
+                            <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select prod-select">
                                 <option value="">Seleccione un proveedor</option>
                             </select>
                             <span asp-validation-for="ProveedorId" class="text-danger"></span>
@@ -67,10 +72,10 @@
                                     <span class="text-muted small prod-thumb-ph">—</span>
                                 </div>
                                 <div class="col-md-2">
-                                    <input type="number" name="Detalles[@i].Cantidad" class="form-control" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" />
+                                    <input type="number" name="Detalles[@i].Cantidad" class="form-control cantidad-input" placeholder="Cantidad" value="@Model.Detalles[i].Cantidad" min="1" step="1" />
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100 btn-ripple" title="Quitar línea">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100" title="Quitar línea">
                                         <i class="bi bi-x-lg me-1"></i> Quitar
                                     </button>
                                 </div>
@@ -80,7 +85,7 @@
 
                     <div class="btn-toolbar mb-2 align-items-center flex-wrap gap-2" role="toolbar" aria-label="Líneas del pedido">
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" id="add-product" class="btn btn-outline-primary btn-ripple">
+                            <button type="button" id="add-product" class="btn btn-outline-primary">
                                 <i class="bi bi-plus-lg me-1"></i> Agregar producto
                             </button>
                         </div>
@@ -90,10 +95,10 @@
                     <div class="form-footer-actions">
                         <div class="btn-toolbar mb-0" role="toolbar" aria-label="Guardar pedido">
                             <div class="btn-group" role="group">
-                                <button type="submit" class="btn btn-brand btn-ripple">
+                                <button type="submit" class="btn btn-brand">
                                     <i class="bi bi-check-lg me-2"></i> Guardar cambios
                                 </button>
-                                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-ripple">
+                                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-lg me-2"></i> Cancelar
                                 </a>
                             </div>
@@ -107,9 +112,27 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
     <script>
-        window.productoImagenes = @Html.Raw(ViewBag.ProductoImagenesJson ?? "{}");
+        window.productoImagenes = @Html.Raw(ViewBag.ProductoImagenesJson ??"{}");
         var productIndex = @Model.Detalles.Count;
+
+        // ── Select2: init on a given select element ──
+        function initSelect2(el) {
+            var $el = $(el);
+            var placeholder = 'Seleccione un producto';
+            var name = (el.name || el.id || '').toLowerCase();
+            if (name.indexOf('proveedorid') !== -1) {
+                placeholder = 'Seleccione un proveedor';
+            }
+            $el.select2({
+                placeholder: placeholder,
+                allowClear: true,
+                width: '100%',
+                theme: 'bootstrap-5',
+                language: { noResults: function () { return "No se encontraron resultados"; } }
+            });
+        }
 
         function refrescarMiniatura($row) {
             var id = $row.find('.prod-select').val();
@@ -125,14 +148,22 @@
             }
         }
 
-        $(function () {
-            $('.producto-item').each(function () { refrescarMiniatura($(this)); });
-        });
+        // ── Strict integer input for Cantidad ──
+        function blockNonDigits(e) {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.')
+                return false;
+        }
 
-        $(document).on('change', '.producto-item .prod-select', function () {
-            refrescarMiniatura($(this).closest('.producto-item'));
-        });
+        // ── Init Select2 on all existing product selects ──
+        $('.prod-select').each(function () { initSelect2(this); });
 
+        // ── Integer guard on existing cantidad inputs ──
+        $('.cantidad-input').on('keydown', blockNonDigits);
+
+        // ── Thumbnails for existing rows ──
+        $('.producto-item').each(function () { refrescarMiniatura($(this)); });
+
+        // ── Dynamic row: add product ──
         $('#add-product').click(function () {
             var newRow = `
                 <div class="row mb-2 producto-item align-items-center g-2">
@@ -150,16 +181,23 @@
                         <span class="text-muted small prod-thumb-ph">—</span>
                     </div>
                     <div class="col-md-2">
-                        <input type="number" name="Detalles[${productIndex}].Cantidad" class="form-control" placeholder="Cantidad" min="1" />
+                        <input type="number" name="Detalles[${productIndex}].Cantidad" class="form-control cantidad-input"
+                               placeholder="Cantidad" min="1" step="1" />
                     </div>
                     <div class="col-md-3">
-                        <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100 btn-ripple" title="Quitar línea">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-product w-100" title="Quitar línea">
                             <i class="bi bi-x-lg me-1"></i> Quitar
                         </button>
                     </div>
                 </div>`;
             $('#productos-container').append(newRow);
+            initSelect2($('#productos-container .producto-item:last-child .prod-select')[0]);
+            $('#productos-container .producto-item:last-child .cantidad-input').on('keydown', blockNonDigits);
             productIndex++;
+        });
+
+        $(document).on('change', '.producto-item .prod-select', function () {
+            refrescarMiniatura($(this).closest('.producto-item'));
         });
 
         $(document).on('click', '.remove-product', function () {

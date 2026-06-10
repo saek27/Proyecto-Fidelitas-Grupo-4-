@@ -1,6 +1,6 @@
 @model OC.Core.Domain.Entities.Producto
 @{
-    ViewData["Title"] = "Nuevo Producto";
+    ViewData["Title"] ="Nuevo Producto";
 }
 
 <div class="container mt-4">
@@ -28,13 +28,13 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label asp-for="Categoria" class="form-label fw-semibold">Categoría</label>
-                            <select asp-for="Categoria" class="form-select">
-                                <option value="">-- Seleccione --</option>
+                            <select asp-for="Categoria" class="form-select" id="CategoriaSelect">
                                 <option value="Lentes de Sol">Lentes de Sol</option>
                                 <option value="Lentes Graduados">Lentes Graduados</option>
                                 <option value="Accesorios">Accesorios</option>
                             </select>
                             <span asp-validation-for="Categoria" class="text-danger"></span>
+                            <small class="form-text text-muted">Escriba una categoría nueva y presione Enter para agregarla.</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label asp-for="PrecioPublico" class="form-label fw-semibold">Precio público (₡)</label>
@@ -76,10 +76,10 @@
 
                     <div class="form-footer-actions">
                         <div class="btn-group" role="group">
-                            <button type="submit" class="btn btn-brand btn-ripple">
+                            <button type="submit" class="btn btn-brand">
                                 <i class="bi bi-check-lg me-2"></i> Guardar producto
                             </button>
-                            <a asp-action="Index" class="btn btn-outline-secondary btn-ripple">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-2"></i> Cancelar
                             </a>
                         </div>
@@ -90,6 +90,24 @@
     </div>
 </div>
 
+@section Styles {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+    <script>
+        $(function () {
+            $('#CategoriaSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: '-- Seleccione o escriba una categoría nueva --',
+                allowClear: true,
+                width: '100%',
+                tags: true,
+                language: { noResults: function () { return "Escriba y presione Enter para crear"; } }
+            });
+        });
+    </script>
 }

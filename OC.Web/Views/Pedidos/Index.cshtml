@@ -1,32 +1,54 @@
 @using OC.Core.Domain.Entities
 @model OC.Core.Common.PagedResult<Pedido>
 @{
-    ViewData["Title"] = "Gestión de Pedidos";
+    ViewData["Title"] = "Pedidos";
     var pagination = new PaginationInfo
     {
         CurrentPage = Model.PageIndex,
         TotalPages = Model.TotalPages,
-        GetPageUrl = (page) => Url.Action("Index", new { page })
+        GetPageUrl = (page) => Url.Action("Index", new
+        {
+            page,
+            fechaDesde = ViewBag.FechaDesde,
+            fechaHasta = ViewBag.FechaHasta,
+            cantidadMinima = ViewBag.CantidadMinima,
+            pageSize = ViewBag.PageSize
+        })
     };
+    var fechaDesde = ViewBag.FechaDesde as string;
+    var fechaHasta = ViewBag.FechaHasta as string;
+    var cantidadMinima = ViewBag.CantidadMinima as int?;
+    var pageSize = ViewBag.PageSize as int? ?? 10;
+    bool filtroActivo = !string.IsNullOrEmpty(fechaDesde)
+                     || !string.IsNullOrEmpty(fechaHasta)
+                     || cantidadMinima.HasValue;
 }
 
 <div class="container-fluid px-4">
-    <div class="d-flex flex-column flex-md-row gap-3 justify-content-md-between align-items-md-center mb-4">
-        <h2 class="text-dark mb-0">
-            <i class="bi bi-truck me-2"></i> Gestión de pedidos
-        </h2>
-        <div class="btn-toolbar page-header-toolbar mb-0 justify-content-md-end" role="toolbar" aria-label="Acciones de pedidos">
-            <div class="btn-group" role="group">
-                <a asp-action="Historial" class="btn btn-outline-secondary btn-ripple">
-                    <i class="bi bi-clock-history me-2"></i> Historial
-                </a>
-                <a asp-action="Create" class="btn btn-brand btn-ripple">
-                    <i class="bi bi-plus-circle me-2"></i> Nuevo pedido
-                </a>
+    @* ── HEADER ── *@
+    <div class="page-header animate-fade-up">
+        <div class="page-header-text">
+            <div class="page-header-icon">
+                <i class="bi bi-truck"></i>
             </div>
+            <div>
+                <h1 class="page-title">Pedidos</h1>
+                <p class="page-subtitle">
+                    <i class="bi bi-info-circle me-1"></i>
+                    @(Model.TotalCount == 0
+                        ? "Sin pedidos registrados."
+                        : $"{Model.TotalCount} pedido(s) activo(s).")
+                </p>
+            </div>
+        </div>
+        <div class="page-actions">
+            <a asp-action="Create" class="btn btn-brand">
+                <i class="bi bi-plus-circle me-2"></i> Nuevo pedido
+            </a>
         </div>
     </div>
 
+    @* ── ALERTAS ── *@
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show animate-fade-up mb-3" role="alert">
@@ -34,82 +56,202 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show animate-fade-up mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-    <div class="card-dashboard animate-on-scroll" data-delay="0">
+    @* ── FILTROS ── *@
+    <div class="card-dashboard animate-fade-up delay-1 mb-3">
+        <div class="card-body filter-bar">
+            <form asp-action="Index" method="get" id="filtrosForm" class="row g-2 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Fecha desde</label>
+                    <input type="date" name="fechaDesde" value="@fechaDesde" class="form-control" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Fecha hasta</label>
+                    <input type="date" name="fechaHasta" value="@fechaHasta" class="form-control" />
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Unidades mín.</label>
+                    <input type="number" name="cantidadMinima" value="@cantidadMinima"
+                           class="form-control" min="1" step="1" placeholder="ej. 10" />
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Por página</label>
+                    <select name="pageSize" class="form-select">
+                        @foreach (var n in new[] { 10, 25, 50, 100 })
+                        {
+                            <option value="@n" selected="@(pageSize == n)">@n</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i> Filtrar
+                    </button>
+                    @if (filtroActivo)
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary" title="Limpiar filtros">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    }
+                </div>
+            </form>
+            @if (filtroActivo)
+            {
+                <div class="mt-3 small text-muted">
+                    <i class="bi bi-funnel-fill me-1"></i>
+                    Filtros activos:
+                    @if (!string.IsNullOrEmpty(fechaDesde)) { <span class="badge bg-secondary me-1">desde @fechaDesde</span> }
+                    @if (!string.IsNullOrEmpty(fechaHasta)) { <span class="badge bg-secondary me-1">hasta @fechaHasta</span> }
+                    @if (cantidadMinima.HasValue) { <span class="badge bg-secondary me-1">≥ @cantidadMinima unidades</span> }
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── TABLA ── *@
+    <div class="card-dashboard animate-fade-up delay-2">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
+                            <th style="width:60px">#</th>
                             <th>Proveedor</th>
                             <th>Fecha Pedido</th>
                             <th>Entrega Estimada</th>
                             <th>Entrega Real</th>
-                            <th>Estado</th>
-                            <th>Indicador</th>
-                            <th class="text-center">Acciones</th>
+                            <th class="text-center" style="width:90px">Items</th>
+                            <th class="text-center" style="width:100px">Unidades</th>
+                            <th class="text-end" style="width:130px">Costo total</th>
+                            <th class="text-center" style="width:120px">Estado</th>
+                            <th class="text-center" style="width:120px">Indicador</th>
+                            <th class="text-center" style="width:170px">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var pedido in Model.Items)
                         {
-                            <tr class="animate-on-scroll" data-delay="@(Model.Items.ToList().IndexOf(pedido) * 30)">
-                                <td>@pedido.Id</td>
-                                <td><strong>@pedido.Proveedor?.Nombre</strong></td>
+                            var numItems = pedido.Detalles?.Count ?? 0;
+                            var numUnidades = pedido.Detalles?.Sum(d => d.Cantidad) ?? 0;
+                            var costoTotal = pedido.Detalles?.Sum(d => d.Cantidad * d.CostoUnitario) ?? 0;
+
+                            <tr>
+                                <td class="text-muted">@pedido.Id</td>
+                                <td>
+                                    <div class="entity-cell">
+                                        <div class="entity-avatar bg-info-subtle text-info-emphasis">
+                                            <i class="bi bi-truck"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">@pedido.Proveedor?.Nombre</div>
+                                            <div class="text-muted small">Pedido #@pedido.Id</div>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>@pedido.FechaPedido.ToString("dd/MM/yyyy")</td>
                                 <td>@pedido.FechaEntregaEstimada.ToString("dd/MM/yyyy")</td>
-                                <td>@(pedido.FechaEntregaReal?.ToString("dd/MM/yyyy") ?? "-")</td>
-                                <td>
-                                    <span class="badge @(pedido.Estado == EstadoPedido.Pendiente ? "bg-warning text-dark" :
-                                                                                                 pedido.Estado == EstadoPedido.Enviado ? "bg-info" :
-                                                                                                 pedido.Estado == EstadoPedido.Recibido ? "bg-success" : "bg-secondary")">
-                                        @pedido.Estado
+                                <td>@(pedido.FechaEntregaReal?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                <td class="text-center">
+                                    <span class="metric-tile @(numItems > 0 ? "metric-tile-active" : "")">
+                                        <i class="bi bi-box"></i>
+                                        <span class="metric-tile-value">@numItems</span>
                                     </span>
                                 </td>
-                                <td>
-                                    @if (pedido.Indicador == IndicadorEntrega.A_Tiempo)
+                                <td class="text-center">
+                                    <span class="metric-tile @(numUnidades > 0 ? "metric-tile-active" : "")">
+                                        <i class="bi bi-stack"></i>
+                                        <span class="metric-tile-value">@numUnidades</span>
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold">@($"₡{costoTotal:N0}")</td>
+                                <td class="text-center">
+                                    @switch (pedido.Estado)
                                     {
-                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> A Tiempo</span>
+                                        case EstadoPedido.Pendiente:
+                                            <span class="status-badge" style="background:rgba(245,158,11,.12);color:#92400e;">
+                                                <i class="bi bi-clock"></i> Pendiente
+                                            </span>
+                                            break;
+                                        case EstadoPedido.Aprobado:
+                                            <span class="status-badge" style="background:rgba(6,182,212,.12);color:#155e75;">
+                                                <i class="bi bi-check2-circle"></i> Aprobado
+                                            </span>
+                                            break;
+                                        case EstadoPedido.Enviado:
+                                            <span class="status-badge" style="background:rgba(59,130,246,.12);color:#1d4ed8;">
+                                                <i class="bi bi-truck"></i> Enviado
+                                            </span>
+                                            break;
+                                        case EstadoPedido.Recibido:
+                                            <span class="status-badge status-badge-active">
+                                                <i class="bi bi-check-circle-fill"></i> Recibido
+                                            </span>
+                                            break;
+                                        case EstadoPedido.Cancelado:
+                                            <span class="status-badge status-badge-inactive">
+                                                <i class="bi bi-x-circle"></i> Cancelado
+                                            </span>
+                                            break;
                                     }
-                                    else if (pedido.Indicador == IndicadorEntrega.Retrasado)
+                                </td>
+                                <td class="text-center">
+                                    @switch (pedido.Indicador)
                                     {
-                                        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Retrasado</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary"><i class="bi bi-question-circle"></i> Pendiente</span>
+                                        case IndicadorEntrega.A_Tiempo:
+                                            <span class="status-badge status-badge-active">
+                                                <i class="bi bi-check-circle"></i> A tiempo
+                                            </span>
+                                            break;
+                                        case IndicadorEntrega.Retrasado:
+                                            <span class="status-badge" style="background:rgba(239,68,68,.12);color:#991b1b;">
+                                                <i class="bi bi-exclamation-triangle"></i> Retrasado
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="status-badge status-badge-inactive">
+                                                <i class="bi bi-dash-circle"></i> Pendiente
+                                            </span>
+                                            break;
                                     }
                                 </td>
                                 <td class="text-center">
                                     @if (pedido.Activo)
                                     {
-                                        <div class="btn-toolbar table-row-toolbar justify-content-center flex-wrap mb-0" role="toolbar" aria-label="Acciones del pedido">
-                                            <div class="btn-group btn-group-sm" role="group" aria-label="Consulta y edición">
-                                                <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-outline-info" title="Ver detalle">
-                                                    <i class="bi bi-eye"></i><span class="d-none d-xl-inline ms-1">Ver</span>
-                                                </a>
-                                                <a asp-action="Edit" asp-route-id="@pedido.Id" class="btn btn-outline-secondary" title="Editar">
-                                                    <i class="bi bi-pencil"></i><span class="d-none d-xl-inline ms-1">Editar</span>
-                                                </a>
-                                            </div>
-                                            <form asp-action="Desactivar" asp-route-id="@pedido.Id" method="post" class="ms-1" onsubmit="return confirm('¿Desactivar este pedido?');">
+                                        <div class="action-buttons">
+                                            <a asp-action="Details" asp-route-id="@pedido.Id"
+                                               class="btn-action btn-action-info" title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@pedido.Id"
+                                               class="btn-action btn-action-primary" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-action="Desactivar" asp-route-id="@pedido.Id" method="post"
+                                                  class="d-inline" onsubmit="return confirm('¿Desactivar este pedido?');">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar pedido">
-                                                    <i class="bi bi-archive"></i><span class="d-none d-xl-inline ms-1">Desactivar</span>
+                                                <button type="submit" class="btn-action btn-action-danger" title="Desactivar">
+                                                    <i class="bi bi-archive"></i>
                                                 </button>
                                             </form>
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="btn-toolbar flex-column align-items-center gap-2 mb-0" role="toolbar" aria-label="Pedido inactivo">
-                                            <span class="badge bg-secondary">Inactivo</span>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-outline-info" title="Ver detalle">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            </div>
+                                        <div class="d-flex flex-column align-items-center gap-1">
+                                            <span class="status-badge status-badge-inactive">
+                                                <i class="bi bi-pause-circle"></i> Inactivo
+                                            </span>
+                                            <a asp-action="Details" asp-route-id="@pedido.Id"
+                                               class="btn-action btn-action-info" title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
                                         </div>
                                     }
                                 </td>
@@ -121,9 +263,31 @@
 
             @if (!Model.Items.Any())
             {
-                <div class="alert alert-info text-center m-3">
-                    <i class="bi bi-info-circle"></i> No hay pedidos registrados.
-                    <a asp-action="Create" class="alert-link">Crear el primero</a>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h5 class="empty-state-title">
+                        @(filtroActivo
+                            ? "Sin resultados para los filtros aplicados"
+                            : "No hay pedidos registrados")
+                    </h5>
+                    <p class="empty-state-text">
+                        @if (filtroActivo)
+                        {
+                            <span>Intenta ajustar los filtros o limpiar para ver todos los pedidos.</span>
+                        }
+                        else
+                        {
+                            <span>Empieza generando un pedido a un proveedor registrado.</span>
+                        }
+                    </p>
+                    @if (!filtroActivo)
+                    {
+                        <a asp-action="Create" class="btn btn-brand">
+                            <i class="bi bi-plus-circle me-1"></i> Crear el primero
+                        </a>
+                    }
                 </div>
             }
         </div>
@@ -131,16 +295,3 @@
 
     @await Html.PartialAsync("_Pagination", pagination)
 </div>
-
-@section Scripts {
-    <script>
-        anime({
-            targets: '.animate-on-scroll',
-            opacity: [0, 1],
-            translateY: [15, 0],
-            delay: function(el, i) { return parseInt(el.getAttribute('data-delay') || i * 30); },
-            duration: 500,
-            easing: 'easeOutQuad'
-        });
-    </script>
-}

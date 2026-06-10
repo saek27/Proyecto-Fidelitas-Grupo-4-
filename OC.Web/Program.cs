@@ -84,6 +84,9 @@ builder.Services.AddScoped<IGenericRepository<DocumentoExpediente>, GenericRepos
 builder.Services.AddScoped<IGenericRepository<TecnologiaLente>, GenericRepository<TecnologiaLente>>();
 builder.Services.AddScoped<IGenericRepository<Aro>, GenericRepository<Aro>>();
 
+//Proveedor — repositorio dedicado
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
+
 //Peso de archivo
 builder.Services.Configure<FormOptions>(options =>
 {
@@ -128,6 +131,7 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsureProductoRutaImagenColumn(context);
         OC.Data.Context.DbInitializer.EnsureValorClinicoAddColumns(context);
         OC.Data.Context.DbInitializer.EnsureOrdenTrabajoNewColumns(context);
+        OC.Data.Context.DbInitializer.EnsureProveedorSchema(context);
         OC.Data.Context.DbInitializer.Initialize(context);
     }
     catch (Exception ex)

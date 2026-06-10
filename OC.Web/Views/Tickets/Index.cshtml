@@ -1,35 +1,54 @@
-﻿@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Ticket>
+@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Ticket>
 @using OC.Core.Services
 @{
     ViewData["Title"] = "Gestión de Tickets";
 }
 
-<div class="card-dashboard animate-on-scroll" data-delay="0">
-    <h4 class="mb-4"><i class="bi bi-gear-wide-connected me-2"></i> Gestión de Tickets</h4>
+<div class="container-fluid px-4">
+    <div class="page-header animate-fade-up">
+        <div class="page-header-text">
+            <div class="page-header-icon"><i class="bi bi-gear-wide-connected"></i></div>
+            <div>
+                <h1 class="page-title">Gestión de Tickets</h1>
+                <p class="page-subtitle">
+                    <i class="bi bi-info-circle me-1"></i>
+                    @(Model.TotalCount == 0 ? "Sin tickets en el sistema." : $"{Model.TotalCount} ticket(s) registrado(s).")
+                </p>
+            </div>
+        </div>
+    </div>
 
-    <form method="get" asp-action="Index" class="row g-3 mb-4 animate-on-scroll" data-delay="100">
-        <div class="col-md-3">
-            <select name="estado" class="form-select" aria-label="Filtrar por estado">
-                <option value="">Todos los estados</option>
-                @foreach (var estado in ViewBag.EstadosList as List<SelectListItem>)
-                {
-                    <option value="@estado.Value" selected="@(ViewBag.EstadoFiltro == estado.Value)">@estado.Text</option>
-                }
-            </select>
+    <div class="card-dashboard animate-fade-up delay-1 mb-3">
+        <div class="card-body filter-bar">
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select" aria-label="Filtrar por estado">
+                        <option value="">Todos los estados</option>
+                        @foreach (var estado in ViewBag.EstadosList as List<SelectListItem>)
+                        {
+                            <option value="@estado.Value" selected="@(ViewBag.EstadoFiltro == estado.Value)">@estado.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label">Prioridad</label>
+                    <select name="prioridad" class="form-select" aria-label="Filtrar por prioridad">
+                        <option value="">Todas las prioridades</option>
+                        @foreach (var prioridad in ViewBag.PrioridadesList as List<SelectListItem>)
+                        {
+                            <option value="@prioridad.Value" selected="@(ViewBag.PrioridadFiltro == prioridad.Value)">@prioridad.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel me-1"></i> Filtrar
+                    </button>
+                </div>
+            </form>
         </div>
-        <div class="col-md-3">
-            <select name="prioridad" class="form-select" aria-label="Filtrar por prioridad">
-                <option value="">Todas las prioridades</option>
-                @foreach (var prioridad in ViewBag.PrioridadesList as List<SelectListItem>)
-                {
-                    <option value="@prioridad.Value" selected="@(ViewBag.PrioridadFiltro == prioridad.Value)">@prioridad.Text</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-brand w-100">Filtrar</button>
-        </div>
-    </form>
+    </div>
 
     @if (TempData["Success"] != null)
     {
@@ -39,120 +58,133 @@
         </div>
     }
 
-    @if (!Model.Items.Any())
-    {
-        <div class="text-center py-5">
-            <i class="bi bi-inbox display-1 text-muted"></i>
-            <p class="mt-3">No hay tickets que coincidan con los criterios.</p>
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Número</th>
-                        <th>Título</th>
-                        <th>Solicitante</th>
-                        <th>Fecha</th>
-                        <th>Equipo</th>
-                        <th>Estado</th>
-                        <th>Prioridad</th>
-                        <th>SLA</th>
-                        <th>Tipo</th>
-                        <th>Técnico</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var t in Model.Items)
-                    {
-                        var slaStatus = SLAService.ObtenerEstadoSLA(t);
-                        var slaClass = SLAService.ObtenerClaseCSS(slaStatus);
-                        var slaText = SLAService.ObtenerTextoEstado(slaStatus);
-                        <tr class="animate-on-scroll" data-delay="@(Model.Items.ToList().IndexOf(t) * 30)">
-                            <td><strong>@t.NumeroSeguimiento</strong></td>
-                            <td>@t.Titulo</td>
-                            <td>@t.CreadoPor?.Nombre</td>
-                            <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>@(t.Equipo != null ? t.Equipo.Nombre : "-")</td>
-                            <td>@t.Estado</td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(t.Prioridad))
-                                {
-                                    var priorityClass = t.Prioridad switch
-                                    {
-                                        "Urgente" => "danger",
-                                        "Alta" => "warning text-dark",
-                                        "Media" => "info text-dark",
-                                        _ => "secondary"
-                                    };
-                                    <span class="badge bg-@priorityClass">@t.Prioridad</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td>
-                                @if (t.Prioridad != null)
-                                {
-                                    <span class="@slaClass">@slaText</span>
-                                    @if (slaStatus == SLATicketStatus.RespuestaPorVencer && t.FechaRespuestaEsperada.HasValue)
-                                    {
-                                        <div class="sla-countdown" data-target="@t.FechaRespuestaEsperada.Value.ToString("o")"></div>
-                                    }
-                                    @if (slaStatus == SLATicketStatus.ResolucionPorVencer && t.FechaResolucionEsperada.HasValue)
-                                    {
-                                        <div class="sla-countdown" data-target="@t.FechaResolucionEsperada.Value.ToString("o")"></div>
-                                    }
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td>@(t.Tipo ?? "-")</td>
-                            <td>@(t.TecnicoAsignado?.Nombre ?? "Sin asignar")</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a asp-action="Details" asp-route-id="@t.Id" class="btn btn-sm btn-outline-info" title="Ver">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    @if (t.TecnicoAsignadoId == null || t.Estado == "Pendiente")
-                                    {
-                                        <a asp-action="Asignar" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary" title="Asignar">
-                                            <i class="bi bi-person-plus"></i>
-                                        </a>
-                                    }
-                                    @if (User.IsInRole("Admin"))
-                                    {
-                                        <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    }
-                                </div>
-                            </td>
+    <div class="card-dashboard animate-fade-up delay-2">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número</th>
+                            <th>Título</th>
+                            <th>Solicitante</th>
+                            <th>Fecha</th>
+                            <th>Equipo</th>
+                            <th>Estado</th>
+                            <th>Prioridad</th>
+                            <th>SLA</th>
+                            <th>Tipo</th>
+                            <th>Técnico</th>
+                            <th class="text-center" style="width:120px">Acciones</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model.Items)
+                        {
+                            var slaStatus = SLAService.ObtenerEstadoSLA(t);
+                            var slaClass = SLAService.ObtenerClaseCSS(slaStatus);
+                            var slaText = SLAService.ObtenerTextoEstado(slaStatus);
+                            <tr class="animate-on-scroll" data-delay="@(Model.Items.ToList().IndexOf(t) * 30)">
+                                <td>
+                                    <div class="entity-cell">
+                                        <div class="entity-avatar bg-info-subtle text-info-emphasis">
+                                            <i class="bi bi-ticket-detailed"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">@t.NumeroSeguimiento</div>
+                                            <div class="text-muted small">Ticket #@t.Id</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@t.Titulo</td>
+                                <td>@t.CreadoPor?.Nombre</td>
+                                <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(t.Equipo != null ? t.Equipo.Nombre : "—")</td>
+                                <td>@t.Estado</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(t.Prioridad))
+                                    {
+                                        var priorityClass = t.Prioridad switch
+                                        {
+                                            "Urgente" => "danger",
+                                            "Alta" => "warning text-dark",
+                                            "Media" => "info text-dark",
+                                            _ => "secondary"
+                                        };
+                                        <span class="badge bg-@priorityClass">@t.Prioridad</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (t.Prioridad != null)
+                                    {
+                                        <span class="@slaClass">@slaText</span>
+                                        @if (slaStatus == SLATicketStatus.RespuestaPorVencer && t.FechaRespuestaEsperada.HasValue)
+                                        {
+                                            <div class="sla-countdown" data-target="@t.FechaRespuestaEsperada.Value.ToString("o")"></div>
+                                        }
+                                        @if (slaStatus == SLATicketStatus.ResolucionPorVencer && t.FechaResolucionEsperada.HasValue)
+                                        {
+                                            <div class="sla-countdown" data-target="@t.FechaResolucionEsperada.Value.ToString("o")"></div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>@(t.Tipo ?? "—")</td>
+                                <td>@(t.TecnicoAsignado?.Nombre ?? "Sin asignar")</td>
+                                <td class="text-center">
+                                    <div class="action-buttons">
+                                        <a asp-action="Details" asp-route-id="@t.Id" class="btn-action btn-action-info" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (t.TecnicoAsignadoId == null || t.Estado == "Pendiente")
+                                        {
+                                            <a asp-action="Asignar" asp-route-id="@t.Id" class="btn-action btn-action-primary" title="Asignar">
+                                                <i class="bi bi-person-plus"></i>
+                                            </a>
+                                        }
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@t.Id" class="btn-action btn-action-secondary" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-        @if (Model.TotalPages > 1)
-        {
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mt-4">
-                    @for (int i = 1; i <= Model.TotalPages; i++)
-                    {
-                        <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-estado="@ViewBag.EstadoFiltro" asp-route-prioridad="@ViewBag.PrioridadFiltro">@i</a>
-                        </li>
-                    }
-                </ul>
-            </nav>
-        }
+            @if (!Model.Items.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+                    <h5 class="empty-state-title">No hay tickets que coincidan con los filtros</h5>
+                    <p class="empty-state-text">Ajusta los filtros o limpia para ver todos los tickets.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-estado="@ViewBag.EstadoFiltro" asp-route-prioridad="@ViewBag.PrioridadFiltro">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
 </div>
 
@@ -176,8 +208,8 @@
                     el.innerHTML = '<span class="text-danger">Vencido</span>';
                 } else {
                     const hours = Math.floor(diff / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    el.innerHTML = `<i class="bi bi-hourglass-split"></i> ${hours}h ${minutes}m`;
+                    const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    el.innerHTML = `<i class="bi bi-hourglass-split"></i> ${hours}h ${minutos}m`;
                 }
             });
         }

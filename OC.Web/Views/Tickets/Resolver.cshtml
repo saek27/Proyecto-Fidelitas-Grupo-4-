@@ -1,6 +1,6 @@
 ﻿@model OC.Web.ViewModels.TicketResolverViewModel
 @{
-    ViewData["Title"] = "Resolver Ticket";
+    ViewData["Title"] ="Resolver Ticket";
 }
 
 <div class="container mt-4">
@@ -31,10 +31,10 @@
                     </div>
 
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-primary btn-ripple">
+                        <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-2"></i> Marcar como Resuelto
                         </button>
-                        <a asp-action="PanelTecnico" class="btn btn-outline-secondary btn-ripple">
+                        <a asp-action="PanelTecnico" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i> Cancelar
                         </a>
                     </div>
@@ -66,7 +66,7 @@
         document.getElementById('tiempoCalculado').innerText = `${horas}h ${minutos}m`;
 
         // Efecto ripple
-        document.querySelectorAll('.btn-ripple').forEach(btn => {
+        document.querySelectorAll('. ').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const ripple = document.createElement('span');
                 const rect = this.getBoundingClientRect();

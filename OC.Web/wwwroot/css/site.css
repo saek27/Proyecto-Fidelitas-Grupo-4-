@@ -572,10 +572,6 @@ body {
         min-height: 31px;
     }
 
-.page-header-toolbar .btn-group {
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-}
-
 /* Pie de formularios: separación visual y orden en móvil */
 .form-footer-actions {
     display: flex;
@@ -1125,4 +1121,435 @@ body {
     .sla-countdown.urgent {
         color: #ef4444;
         font-weight: bold;
+    }
+
+/* ============================================
+   Design System — componentes reutilizables
+   Usar estas clases en todas las vistas CRUD
+   para mantener consistencia visual.
+   ============================================ */
+
+/* ── Page header (estándar para todas las Index) ── */
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-header-text {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.page-header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 14px var(--color-brand-glow);
+    flex-shrink: 0;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px 0;
+    letter-spacing: -.4px;
+    line-height: 1.2;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.page-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+    .page-header-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        border-radius: 12px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+}
+
+/* ── Cell avatar (icono circular en celdas de tabla) ── */
+.entity-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.entity-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* ── Contact lines (tel + email en celdas) ── */
+.contact-line {
+    font-size: 12.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.6;
+}
+
+    .contact-line i {
+        font-size: 12px;
+        width: 14px;
+    }
+
+/* ── Metric tile (conteos como el de pedidos) ── */
+.metric-tile {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #f1f5f9;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+    .metric-tile:hover {
+        background: var(--color-brand);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px var(--color-brand-glow);
+    }
+
+    .metric-tile i {
+        font-size: 13px;
+    }
+
+.metric-tile-value {
+    font-weight: 700;
+}
+
+.metric-tile-active {
+    background: rgba(59, 130, 246, .12);
+    color: var(--color-brand);
+    border-color: rgba(59, 130, 246, .25);
+}
+
+    .metric-tile-active:hover {
+        background: var(--color-brand);
+        color: #fff;
+    }
+
+/* ── Status badges (estado activo/inactivo) ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge-active {
+    background: rgba(16, 185, 129, .12);
+    color: #047857;
+}
+
+.status-badge-inactive {
+    background: rgba(100, 116, 139, .12);
+    color: #475569;
+}
+
+/* ── Action buttons (icon-only cuadrado, consistente) ── */
+.action-buttons {
+    display: inline-flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 0;
+    text-decoration: none;
+}
+
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, .08);
+        color: #fff;
+    }
+
+.btn-action-info:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.btn-action-primary:hover {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+}
+
+.btn-action-success:hover {
+    background: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.btn-action-danger:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.btn-action-secondary:hover {
+    background: var(--color-primary-mid);
+    border-color: var(--color-primary-mid);
+}
+
+/* ── Empty state (para tablas sin datos) ── */
+.empty-state {
+    text-align: center;
+    padding: 56px 24px;
+    color: var(--color-text-muted);
+}
+
+.empty-state-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: var(--color-text-muted);
+    opacity: .55;
+}
+
+.empty-state-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+}
+
+.empty-state-text {
+    font-size: 13.5px;
+    margin-bottom: 18px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ── Form header (estándar para Create/Edit/Details) ── */
+.form-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.form-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 12px var(--color-brand-glow);
+    flex-shrink: 0;
+}
+
+.form-header-text h4 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px 0;
+    letter-spacing: -.3px;
+}
+
+.form-header-text p {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* ── Details header (encabezado grande para vistas de detalle) ── */
+.details-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.details-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 240px;
+}
+
+.details-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 4px 14px var(--color-brand-glow);
+    flex-shrink: 0;
+}
+
+.details-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px 0;
+    letter-spacing: -.3px;
+}
+
+.details-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+}
+
+.details-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ── Info card (cajas de datos en Details) ── */
+.info-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    background: var(--color-surface);
+    height: 100%;
+    transition: var(--transition);
+}
+
+    .info-card:hover {
+        border-color: var(--color-brand);
+        box-shadow: 0 2px 8px var(--color-brand-glow);
+    }
+
+.info-card-label {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .info-card-label i {
+        font-size: 13px;
+        color: var(--color-brand);
+    }
+
+.info-card-value {
+    font-size: 15px;
+    color: var(--color-text);
+    font-weight: 600;
+    word-break: break-word;
+}
+
+    .info-card-value a {
+        color: var(--color-text);
+        text-decoration: none;
+    }
+
+        .info-card-value a:hover {
+            color: var(--color-brand);
+        }
+
+/* ── Section header (sub-títulos dentro de cards, p. ej. "Contacto adicional") ── */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 24px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+    .section-header small {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+/* ── Filter bar consistente (la card de búsqueda que aparece arriba de las tablas) ── */
+.filter-bar {
+    padding: 14px 20px;
+}
+
+    .filter-bar .form-label {
+        font-size: 11.5px;
+        margin-bottom: 4px;
+        color: var(--color-text-muted);
     }
