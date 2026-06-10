@@ -13,6 +13,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
         private readonly IGenericRepository<Aro> _aroRepo;
+
         private readonly IWebHostEnvironment _env;
 
         private static readonly string[] ExtensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -22,11 +23,13 @@ namespace OC.Web.Controllers
             IGenericRepository<Producto> productoRepo,
             IGenericRepository<TecnologiaLente> tecnologiaRepo,
             IGenericRepository<Aro> aroRepo,
+
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
             _tecnologiaRepo = tecnologiaRepo;
             _aroRepo = aroRepo;
+
             _env = env;
         }
 
@@ -107,6 +110,8 @@ namespace OC.Web.Controllers
         public IActionResult Create(string seccion = "productos")
         {
             ViewBag.Seccion = seccion;
+// categoria eliminada
+
             return View(new Producto());
         }
 

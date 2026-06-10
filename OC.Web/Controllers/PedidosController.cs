@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,14 +18,14 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Proveedor> _proveedorRepo;
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<DetallePedido> _detalleRepo;
-        private readonly AppDbContext _context; // Inyectamos el contexto para transacciones
+        private readonly AppDbContext _context;
 
         public PedidosController(
             IGenericRepository<Pedido> pedidoRepo,
             IGenericRepository<Proveedor> proveedorRepo,
             IGenericRepository<Producto> productoRepo,
             IGenericRepository<DetallePedido> detalleRepo,
-            AppDbContext context) // Nuevo parámetro
+            AppDbContext context)
         {
             _pedidoRepo = pedidoRepo;
             _proveedorRepo = proveedorRepo;
@@ -33,34 +34,79 @@ namespace OC.Web.Controllers
             _context = context;
         }
 
-        // GET: Pedidos/Historial
-        public async Task<IActionResult> Historial(int page = 1)
+        // GET: Pedidos con filtros server-side
+        public async Task<IActionResult> Index(
+            int page = 1,
+            int pageSize = 10,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null,
+            int? cantidadMinima = null)
         {
-            var pedidos = await _pedidoRepo.GetPagedAsync(
+            // Validación: si el rango está invertido, no aplicamos el filtro de fechas
+            // (la SQL devolvería 0 filas, lo que confundiría al usuario).
+            // Mantenemos los valores en ViewBag para que pueda corregirlos.
+            bool fechasInvalidas = fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde > fechaHasta;
+            if (fechasInvalidas)
+            {
+                TempData["Error"] = "La fecha 'desde' no puede ser mayor que la fecha 'hasta'. Corrige el rango para ver resultados.";
+            }
+
+            if (cantidadMinima.HasValue && cantidadMinima < 1)
+            {
+                cantidadMinima = null;
+            }
+
+            // Construcción dinámica del filtro en expression tree
+            Expression<Func<Pedido, bool>> filter = p => p.Activo;
+
+            if (!fechasInvalidas)
+            {
+                if (fechaDesde.HasValue)
+                {
+                    var desde = fechaDesde.Value.Date;
+                    filter = And(filter, p => p.FechaPedido >= desde);
+                }
+
+                if (fechaHasta.HasValue)
+                {
+                    // "Día completo": desde la medianoche hasta el final del día.
+                    // Filtramos con < (fechaHasta.Date + 1 día) para incluir todo el día seleccionado.
+                    var hastaExclusivo = fechaHasta.Value.Date.AddDays(1);
+                    filter = And(filter, p => p.FechaPedido < hastaExclusivo);
+                }
+            }
+
+            if (cantidadMinima.HasValue)
+            {
+                var min = cantidadMinima.Value;
+                // EF Core 8 traduce esto a un subquery:
+                //   WHERE (SELECT ISNULL(SUM(d.Cantidad),0) FROM DetallePedidos d WHERE d.PedidoId = p.Id) >= @min
+                filter = And(filter, p => p.Detalles.Sum(d => d.Cantidad) >= min);
+            }
+
+            var result = await _pedidoRepo.GetPagedAsync(
                 page,
-                10,
-                filter: p => p.Activo,
+                pageSize,
+                filter: filter,
                 orderBy: q => q.OrderByDescending(p => p.FechaPedido),
-                includeProperties: "Proveedor"
+                includeProperties: "Proveedor,Detalles.Producto"  // Fix bug Task 2: Detalles requerido para métricas
             );
-            return View(pedidos);
+
+            // Persistir los filtros para que el form los conserve
+            ViewBag.FechaDesde = fechaDesde?.ToString("yyyy-MM-dd");
+            ViewBag.FechaHasta = fechaHasta?.ToString("yyyy-MM-dd");
+            ViewBag.CantidadMinima = cantidadMinima;
+            ViewBag.PageSize = pageSize;
+
+            return View(result);
         }
 
         // GET: Pedidos/Create
         public async Task<IActionResult> Create()
         {
-            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
-            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
-                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
-
-            var viewModel = new PedidoCreateViewModel
-            {
-                Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                    .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre }),
-                Productos = productosActivos
-                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
-            };
-            return View(viewModel);
+            var model = new PedidoCreateViewModel();
+            await CargarListas(model);
+            return View(model);
         }
 
         // POST: Pedidos/Create
@@ -70,11 +116,18 @@ namespace OC.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                await CargarListasCreate(model);
+                await CargarListas(model);
                 return View(model);
             }
 
-            // Iniciamos una transacción explícita
+            // Validación: al menos una línea de producto
+            if (model.Detalles == null || !model.Detalles.Any(d => d.ProductoId > 0 && d.Cantidad > 0))
+            {
+                ModelState.AddModelError("Detalles", "Debe agregar al menos un producto con cantidad mayor a 0.");
+                await CargarListas(model);
+                return View(model);
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -88,9 +141,9 @@ namespace OC.Web.Controllers
                     Activo = true
                 };
 
-                await _pedidoRepo.AddAsync(pedido); // Esto ya hace SaveChanges, pero está dentro de la transacción
+                await _pedidoRepo.AddAsync(pedido);
 
-                foreach (var detalleVm in model.Detalles)
+                foreach (var detalleVm in model.Detalles.Where(d => d.ProductoId > 0 && d.Cantidad > 0))
                 {
                     var producto = await _productoRepo.GetByIdAsync(detalleVm.ProductoId);
                     if (producto == null) continue;
@@ -107,14 +160,13 @@ namespace OC.Web.Controllers
 
                 await transaction.CommitAsync();
                 TempData["Success"] = "Pedido creado correctamente.";
-                return RedirectToAction(nameof(Historial));
+                return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
-                // Loguear el error
                 ModelState.AddModelError("", "Ocurrió un error al crear el pedido. Intente nuevamente.");
-                await CargarListasCreate(model);
+                await CargarListas(model);
                 return View(model);
             }
         }
@@ -122,19 +174,15 @@ namespace OC.Web.Controllers
         // GET: Pedidos/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            var pedido = await _pedidoRepo.GetPagedAsync(
+            var pedidoEntity = (await _pedidoRepo.GetPagedAsync(
                 1, 1,
                 filter: p => p.Id == id && p.Activo,
                 includeProperties: "Proveedor,Detalles.Producto"
-            );
-            var pedidoEntity = pedido.Items.FirstOrDefault();
+            )).Items.FirstOrDefault();
+
             if (pedidoEntity == null) return NotFound();
 
-            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
-            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
-                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
-
-            var viewModel = new PedidoEditViewModel
+            var model = new PedidoEditViewModel
             {
                 Id = pedidoEntity.Id,
                 ProveedorId = pedidoEntity.ProveedorId,
@@ -147,14 +195,11 @@ namespace OC.Web.Controllers
                     Cantidad = d.Cantidad,
                     NombreProducto = d.Producto?.Nombre,
                     CostoUnitario = d.CostoUnitario
-                }).ToList() ?? new List<DetallePedidoViewModel>(),
-                Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                    .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre, Selected = p.Id == pedidoEntity.ProveedorId }),
-                Productos = productosActivos
-                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" })
+                }).ToList() ?? new List<DetallePedidoViewModel>()
             };
 
-            return View(viewModel);
+            await CargarListas(model);
+            return View(model);
         }
 
         // POST: Pedidos/Edit/5
@@ -168,10 +213,16 @@ namespace OC.Web.Controllers
                 return View(model);
             }
 
+            if (model.Detalles == null || !model.Detalles.Any(d => d.ProductoId > 0 && d.Cantidad > 0))
+            {
+                ModelState.AddModelError("Detalles", "Debe mantener al menos un producto con cantidad mayor a 0.");
+                await CargarListas(model);
+                return View(model);
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Cargar el pedido con detalles desde la BD (usando el contexto directamente para asegurar tracking)
                 var pedido = await _context.Pedidos
                     .Include(p => p.Detalles)
                     .FirstOrDefaultAsync(p => p.Id == model.Id && p.Activo);
@@ -184,20 +235,17 @@ namespace OC.Web.Controllers
 
                 var estadoAnterior = pedido.Estado;
 
-                // Actualizar propiedades
                 pedido.ProveedorId = model.ProveedorId;
                 pedido.FechaEntregaEstimada = model.FechaEntregaEstimada;
                 pedido.Descripcion = model.Descripcion ?? "";
                 pedido.CambiarEstado(model.Estado);
 
-                // Eliminar detalles antiguos (usando el contexto)
                 if (pedido.Detalles != null && pedido.Detalles.Any())
                 {
                     _context.DetallePedidos.RemoveRange(pedido.Detalles);
                 }
 
-                // Agregar nuevos detalles
-                foreach (var detalleVm in model.Detalles)
+                foreach (var detalleVm in model.Detalles.Where(d => d.ProductoId > 0 && d.Cantidad > 0))
                 {
                     var producto = await _productoRepo.GetByIdAsync(detalleVm.ProductoId);
                     if (producto == null) continue;
@@ -212,10 +260,9 @@ namespace OC.Web.Controllers
                     _context.DetallePedidos.Add(detalle);
                 }
 
-                // Si el estado cambió a Recibido, actualizar stock (también con el contexto)
                 if (estadoAnterior != EstadoPedido.Recibido && pedido.Estado == EstadoPedido.Recibido)
                 {
-                    foreach (var detalleVm in model.Detalles)
+                    foreach (var detalleVm in model.Detalles.Where(d => d.ProductoId > 0 && d.Cantidad > 0))
                     {
                         var producto = await _productoRepo.GetByIdAsync(detalleVm.ProductoId);
                         if (producto != null)
@@ -226,7 +273,6 @@ namespace OC.Web.Controllers
                     }
                 }
 
-                // Guardar todos los cambios en una sola operación
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -240,10 +286,9 @@ namespace OC.Web.Controllers
                 await CargarListas(model);
                 return View(model);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
-                // Loguear excepción
                 ModelState.AddModelError("", "Ocurrió un error al actualizar el pedido. Intente nuevamente.");
                 await CargarListas(model);
                 return View(model);
@@ -253,19 +298,19 @@ namespace OC.Web.Controllers
         // GET: Pedidos/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            var pedido = await _pedidoRepo.GetPagedAsync(
+            var pedidoEntity = (await _pedidoRepo.GetPagedAsync(
                 1, 1,
                 filter: p => p.Id == id && p.Activo,
                 includeProperties: "Proveedor,Detalles.Producto"
-            );
-            var pedidoEntity = pedido.Items.FirstOrDefault();
-            if (pedidoEntity == null) return NotFound();
+            )).Items.FirstOrDefault();
 
+            if (pedidoEntity == null) return NotFound();
             return View(pedidoEntity);
         }
 
-        // POST: Pedidos/Desactivar/5 (soft delete)
+        // POST: Pedidos/Desactivar/5
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Desactivar(int id)
         {
             var pedido = await _pedidoRepo.GetByIdAsync(id);
@@ -274,45 +319,65 @@ namespace OC.Web.Controllers
             pedido.Activo = false;
             await _pedidoRepo.UpdateAsync(pedido);
 
-            return RedirectToAction(nameof(Historial));
+            TempData["Success"] = "Pedido desactivado.";
+            return RedirectToAction(nameof(Index));
         }
 
-        private async Task CargarListasCreate(PedidoCreateViewModel model)
+        /// <summary>
+        /// Carga los combos de proveedores y productos activos para los formularios.
+        /// Funciona tanto para PedidoCreateViewModel como PedidoEditViewModel.
+        /// </summary>
+        /// <summary>
+        /// Combina dos expresiones de predicado en una sola usando AndAlso.
+        /// Usa Invoke para que EF Core traduzca ambos lados a SQL.
+        /// </summary>
+        private static Expression<Func<T, bool>> And<T>(Expression<Func<T, bool>> left, Expression<Func<T, bool>> right)
         {
-            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
-            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
-                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
-
-            model.Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre });
-            model.Productos = productosActivos
-                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
-        }
-
-        private async Task CargarListas(PedidoEditViewModel model)
-        {
-            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
-            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
-                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
-
-            model.Proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
-                .Items.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Nombre });
-            model.Productos = productosActivos
-                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Nombre} (SKU: {p.SKU})" });
-        }
-
-        // GET: Pedidos/Index (página principal de pedidos)
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
-        {
-            var result = await _pedidoRepo.GetPagedAsync(
-                page,
-                pageSize,
-                filter: p => p.Activo,
-                orderBy: q => q.OrderByDescending(p => p.FechaPedido),
-                includeProperties: "Proveedor"
+            var param = left.Parameters[0];
+            var body = Expression.AndAlso(
+                left.Body,
+                Expression.Invoke(right, param)
             );
+            return Expression.Lambda<Func<T, bool>>(body, param);
+        }
 
-            return View(result);
+        private async Task CargarListas(object model)
+        {
+            var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
+                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+
+            var proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
+                .Items.Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = p.Nombre,
+                    Selected = model switch
+                    {
+                        PedidoCreateViewModel c => c.ProveedorId == p.Id,
+                        PedidoEditViewModel e => e.ProveedorId == p.Id,
+                        _ => false
+                    }
+                });
+
+            var productos = productosActivos
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Nombre} (SKU: {p.SKU})"
+                });
+
+            switch (model)
+            {
+                case PedidoCreateViewModel c:
+                    c.Proveedores = proveedores;
+                    c.Productos = productos;
+                    break;
+                case PedidoEditViewModel e:
+                    e.Proveedores = proveedores;
+                    e.Productos = productos;
+                    break;
+            }
         }
     }
 }

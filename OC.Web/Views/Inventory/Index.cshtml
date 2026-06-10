@@ -1,7 +1,7 @@
 @model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Producto>
 @{
-    ViewData["Title"] = "Inventario";
-    var seccion = ViewBag.Seccion as string ?? "productos";
+    ViewData["Title"] ="Inventario";
+    var seccion = ViewBag.Seccion as string ??"productos";
     var paginationProductos = ViewBag.PaginationProductos as PaginationInfo;
     var paginationTecnologias = ViewBag.PaginationTecnologias as PaginationInfo;
     var paginationAros = ViewBag.PaginationAros as PaginationInfo;
@@ -17,13 +17,20 @@
 }
 
 <div class="container-fluid px-4">
-    <div class="d-flex flex-column flex-md-row gap-3 justify-content-md-between align-items-md-center mb-4">
-        <h2 class="text-dark mb-0">
-            <i class="bi bi-box-seam me-2"></i> Inventario
-        </h2>
-        <div class="btn-toolbar page-header-toolbar mb-0 justify-content-md-end" role="toolbar">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-brand btn-ripple dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    <div class="page-header animate-fade-up">
+        <div class="page-header-text">
+            <div class="page-header-icon"><i class="bi bi-box-seam"></i></div>
+            <div>
+                <h1 class="page-title">Inventario</h1>
+                <p class="page-subtitle">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Productos, tecnologías de lente y aros.
+                </p>
+            </div>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button type="button" class="btn btn-brand dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-plus-circle me-2"></i> Agregar
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -52,20 +59,20 @@
     @* ── Tabs (sin Bootstrap JS, funcionan como links normales) ── *@
     <ul class="nav nav-tabs mb-0" id="inventarioTabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link text-dark fw-semibold @(seccion == "productos" ? "active" : "")"
-               href="@Url.Action("Index", new { seccion = "productos", page = 1, pageSize = 12 })">
+            <a class="nav-link text-dark fw-semibold @(seccion =="productos" ?"active" :"")"
+               href="@Url.Action("Index", new { seccion ="productos", page = 1, pageSize = 12 })">
                 <i class="bi bi-box-seam me-1"></i> Productos
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark fw-semibold @(seccion == "tecnologias" ? "active" : "")"
-               href="@Url.Action("Index", new { seccion = "tecnologias", tecPage = 1, tecPageSize = 12 })">
+            <a class="nav-link text-dark fw-semibold @(seccion =="tecnologias" ?"active" :"")"
+               href="@Url.Action("Index", new { seccion ="tecnologias", tecPage = 1, tecPageSize = 12 })">
                 <i class="bi bi-eyedropper me-1"></i> Tecnologías
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark fw-semibold @(seccion == "aros" ? "active" : "")"
-               href="@Url.Action("Index", new { seccion = "aros", aroPage = 1, aroPageSize = 12 })">
+            <a class="nav-link text-dark fw-semibold @(seccion =="aros" ?"active" :"")"
+               href="@Url.Action("Index", new { seccion ="aros", aroPage = 1, aroPageSize = 12 })">
                 <i class="bi bi-eyeglasses me-1"></i> Aros
             </a>
         </li>
@@ -93,7 +100,7 @@
 
     <div class="tab-content" id="inventarioTabContent">
         @* ── PRODUCTOS ── *@
-        <div class="tab-pane fade @(seccion == "productos" ? "show active" : "")" id="panel-productos" role="tabpanel">
+        <div class="tab-pane fade @(seccion =="productos" ?"show active" :"")" id="panel-productos" role="tabpanel">
             <div class="card-dashboard mt-0">
                 <div class="card-header bg-white py-2">
                     <form method="get" asp-action="Index" class="d-flex gap-2 align-items-center flex-wrap">
@@ -149,7 +156,7 @@
                                 <tbody>
                                     @foreach (var item in Model.Items)
                                     {
-                                        var stockClass = item.Stock < 6 ? "text-danger fw-bold" : "";
+                                        var stockClass = item.Stock < 6 ?"text-danger fw-bold" :"";
                                         <tr>
                                             <td class="text-center">
                                                 @if (!string.IsNullOrEmpty(item.RutaImagen))
@@ -240,7 +247,7 @@
         </div>
 
         @* ── TECNOLOGIAS ── *@
-        <div class="tab-pane fade @(seccion == "tecnologias" ? "show active" : "")" id="panel-tecnologias" role="tabpanel">
+        <div class="tab-pane fade @(seccion =="tecnologias" ?"show active" :"")" id="panel-tecnologias" role="tabpanel">
             <div class="card-dashboard mt-0">
                 <div class="card-header bg-white py-2">
                     <form method="get" asp-action="Index" class="d-flex gap-2 align-items-center flex-wrap">
@@ -320,7 +327,7 @@
         </div>
 
         @* ── AROS ── *@
-        <div class="tab-pane fade @(seccion == "aros" ? "show active" : "")" id="panel-aros" role="tabpanel">
+        <div class="tab-pane fade @(seccion =="aros" ?"show active" :"")" id="panel-aros" role="tabpanel">
             <div class="card-dashboard mt-0">
                 <div class="card-header bg-white py-2">
                     <form method="get" asp-action="Index" class="d-flex gap-2 align-items-center flex-wrap">
@@ -374,7 +381,7 @@
                                         <td>@item.Nombre</td>
                                         <td>@item.SKU</td>
                                         <td>₡@item.Precio.ToString("N2")</td>
-                                        <td class="@(item.Stock < 6 ? "text-danger fw-bold" : "")">@item.Stock</td>
+                                        <td class="@(item.Stock < 6 ?"text-danger fw-bold" :"")">@item.Stock</td>
                                         <td>
                                             @if (item.Activo)
                                             {

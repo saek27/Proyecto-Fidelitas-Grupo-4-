@@ -34,17 +34,36 @@ BEGIN TRY
 BEGIN TRANSACTION;
 
 -- ============================================================
+-- 0) ESQUEMA: garantiza columnas nuevas de Proveedor (idempotente)
+--    Es un espejo de lo que hace DbInitializer.EnsureProveedorSchema
+--    al arranque de la app, para que el seed corra sin depender de
+--    que la app se haya iniciado antes.
+-- ============================================================
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedores') AND name = 'NumeroTelefonico' AND system_type_id = 56)
+    ALTER TABLE [dbo].[Proveedores] ALTER COLUMN [NumeroTelefonico] nvarchar(9) NOT NULL;
+
+IF OBJECT_ID('dbo.CK_Proveedores_NumeroTelefonico','C') IS NOT NULL
+    ALTER TABLE [dbo].[Proveedores] DROP CONSTRAINT [CK_Proveedores_NumeroTelefonico];
+IF OBJECT_ID('dbo.CK_Proveedores_Correo','C') IS NOT NULL
+    ALTER TABLE [dbo].[Proveedores] DROP CONSTRAINT [CK_Proveedores_Correo];
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedores') AND name = 'ContactoAdicionalNombre')
+    ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalNombre] nvarchar(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedores') AND name = 'ContactoAdicionalTelefono')
+    ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalTelefono] nvarchar(20) NULL;
+
+-- ============================================================
 -- 1) PROVEEDORES (6)
 -- ============================================================
 PRINT '1) Insertando Proveedores...';
 SET IDENTITY_INSERT Proveedores ON;
-INSERT INTO Proveedores (Id, Nombre, Activo, NumeroTelefonico, Correo) VALUES
-(1, N'OptiLens Internacional S.A.',     1, 22334455, N'ventas@optilens.cr'),
-(2, N'Distribuidora Visual CR S.A.',    1, 24455667, N'contacto@distvisual.cr'),
-(3, N'Lentes del Valle S.A.',           1, 26677889, N'info@lentesdelvalle.cr'),
-(4, N'VisionLab Centroamerica',         1, 22899011, N'cr@visionlabca.com'),
-(5, N'Lux Óptica Mayorista',            1, 24332211, N'pedidos@luxoptica.cr'),
-(6, N'Andes Lentes Premium',            1, 22554433, N'comercial@andeslentes.cr');
+INSERT INTO Proveedores (Id, Nombre, Activo, NumeroTelefonico, Correo, ContactoAdicionalNombre, ContactoAdicionalTelefono) VALUES
+(1, N'OptiLens Internacional S.A.',     1, N'2233-4455', N'ventas@optilens.cr',         N'Marcela Solís Vargas',   N'8844-1122'),
+(2, N'Distribuidora Visual CR S.A.',    1, N'2445-5667', N'contacto@distvisual.cr',     N'Pablo Arias Méndez',     N'8999-3344'),
+(3, N'Lentes del Valle S.A.',           1, N'2667-7889', N'info@lentesdelvalle.cr',    NULL,                      NULL),
+(4, N'VisionLab Centroamerica',         1, N'2289-9011', N'cr@visionlabca.com',         N'Lucía Fernández Quesada', N'8766-5544'),
+(5, N'Lux Óptica Mayorista',            1, N'2433-2211', N'pedidos@luxoptica.cr',       NULL,                      NULL),
+(6, N'Andes Lentes Premium',            1, N'2255-4433', N'comercial@andeslentes.cr',   N'Esteban Rojas Castillo', N'8322-9911');
 SET IDENTITY_INSERT Proveedores OFF;
 
 -- ============================================================

@@ -20,17 +20,17 @@
                 </dl>
 
                 <div class="form-footer-actions justify-content-between align-items-center">
-                    <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="tecnologias" class="btn btn-outline-secondary btn-ripple">
+                    <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="tecnologias" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i> Volver al inventario
                     </a>
                     <div class="btn-group" role="group">
-                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-brand btn-ripple">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-brand">
                             <i class="bi bi-pencil me-1"></i> Editar
                         </a>
                         <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="m-0"
                               onsubmit="return confirm('¿Eliminar esta tecnología?');">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-outline-danger btn-ripple">
+                            <button type="submit" class="btn btn-outline-danger">
                                 <i class="bi bi-trash me-1"></i> Eliminar
                             </button>
                         </form>

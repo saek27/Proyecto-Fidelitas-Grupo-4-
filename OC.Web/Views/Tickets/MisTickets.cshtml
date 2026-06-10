@@ -2,7 +2,7 @@
 @using OC.Core.Services
 @using OC.Core.Domain.Entities
 @{
-    ViewData["Title"] = "Mis Tickets";
+    ViewData["Title"] ="Mis Tickets";
     var ticketsResueltos = ViewBag.TicketsResueltos as List<Ticket> ?? new List<Ticket>();
     var ticketsActivos = ViewBag.TicketsActivos as List<Ticket> ?? new List<Ticket>();
 }
@@ -10,7 +10,7 @@
 <div class="card-dashboard animate-on-scroll" data-delay="0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4><i class="bi bi-ticket me-2"></i> Mis Tickets de Soporte</h4>
-        <a asp-action="Create" class="btn btn-brand btn-ripple">
+        <a asp-action="Create" class="btn btn-brand">
             <i class="bi bi-plus-lg me-2"></i> Nuevo Ticket
         </a>
     </div>
@@ -54,10 +54,10 @@
                                 {
                                     var priorityClass = t.Prioridad switch
                                     {
-                                        "Urgente" => "danger",
-                                        "Alta" => "warning text-dark",
-                                        "Media" => "info text-dark",
-                                        _ => "secondary"
+"Urgente" =>"danger",
+"Alta" =>"warning text-dark",
+"Media" =>"info text-dark",
+                                        _ =>"secondary"
                                     };
                                     <span class="badge bg-@priorityClass">@t.Prioridad</span>
                                 }
@@ -67,19 +67,19 @@
                                 }
                             </td>
                             <td>
-                                @if (t.Estado == "Cerrado")
+                                @if (t.Estado =="Cerrado")
                                 {
                                     <span class="badge bg-success">Cerrado</span>
                                 }
-                                else if (t.Estado == "Resuelto")
+                                else if (t.Estado =="Resuelto")
                                 {
                                     <span class="badge bg-primary">Resuelto</span>
                                 }
-                                else if (t.Estado == "En Proceso")
+                                else if (t.Estado =="En Proceso")
                                 {
                                     <span class="badge bg-primary">En Proceso</span>
                                 }
-                                else if (t.Estado == "Asignado")
+                                else if (t.Estado =="Asignado")
                                 {
                                     <span class="badge bg-info text-dark">Asignado</span>
                                 }
@@ -107,7 +107,7 @@
                                 }
                             </td>
                             <td>@t.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>@(t.TecnicoAsignado?.Nombre ?? "Sin asignar")</td>
+                            <td>@(t.TecnicoAsignado?.Nombre ??"Sin asignar")</td>
                             <td>
                                 <a asp-action="Details" asp-route-id="@t.Id" class="btn btn-sm btn-outline-info" title="Ver detalle">
                                     <i class="bi bi-eye"></i>
@@ -187,7 +187,7 @@
             <ul class="pagination justify-content-center mt-4">
                 @for (int i = 1; i <= Model.TotalPages; i++)
                 {
-                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                    <li class="page-item @(i == Model.PageIndex ?"active" :"")">
                         <a class="page-link" asp-action="MisTickets" asp-route-page="@i">@i</a>
                     </li>
                 }

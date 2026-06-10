@@ -249,6 +249,58 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>
+        /// Red de seguridad para BDs con historial de migraciones inconsistente:
+        /// - Crea la tabla Proveedores si falta.
+        /// - Suelta los CHECK constraints naive (NumeroTelefonico BETWEEN 0..99999999 y Correo LIKE '%@%.%').
+        /// - Convierte NumeroTelefonico de int a nvarchar(9) si todavía es int.
+        /// Las validaciones reales viven en la entidad Proveedor.
+        /// </summary>
+        public static void EnsureProveedorSchema(AppDbContext context)
+        {
+            var sql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Proveedores')
+BEGIN
+    CREATE TABLE [Proveedores] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [Nombre] nvarchar(150) NOT NULL,
+        [NumeroTelefonico] nvarchar(9) NOT NULL,
+        [Correo] nvarchar(255) NOT NULL,
+        [Activo] bit NOT NULL DEFAULT (1),
+        [ContactoAdicionalNombre] nvarchar(100) NULL,
+        [ContactoAdicionalTelefono] nvarchar(20) NULL,
+        CONSTRAINT [PK_Proveedores] PRIMARY KEY ([Id])
+    );
+END
+ELSE
+BEGIN
+    -- Sueltas los CHECK constraints naive si existen
+    IF OBJECT_ID('dbo.CK_Proveedores_NumeroTelefonico','C') IS NOT NULL
+        ALTER TABLE [dbo].[Proveedores] DROP CONSTRAINT [CK_Proveedores_NumeroTelefonico];
+    IF OBJECT_ID('dbo.CK_Proveedores_Correo','C') IS NOT NULL
+        ALTER TABLE [dbo].[Proveedores] DROP CONSTRAINT [CK_Proveedores_Correo];
+
+    -- Convierte NumeroTelefonico de int a nvarchar(9) si está como int
+    IF EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Proveedores')
+          AND name = 'NumeroTelefonico'
+          AND system_type_id = 56  -- int
+    )
+    BEGIN
+        ALTER TABLE [dbo].[Proveedores] ALTER COLUMN [NumeroTelefonico] nvarchar(9) NOT NULL;
+    END
+
+    -- Columnas de contacto adicional (idempotente)
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedores') AND name = 'ContactoAdicionalNombre')
+        ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalNombre] nvarchar(100) NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedores') AND name = 'ContactoAdicionalTelefono')
+        ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalTelefono] nvarchar(20) NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

@@ -1,6 +1,6 @@
 ﻿@model OC.Web.ViewModels.TicketCierreViewModel
 @{
-    ViewData["Title"] = "Cerrar Ticket";
+    ViewData["Title"] ="Cerrar Ticket";
 }
 
 <div class="container mt-4">
@@ -69,10 +69,10 @@
                     </div>
 
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-danger btn-ripple">
+                        <button type="submit" class="btn btn-danger">
                             <i class="bi bi-check2-circle me-2"></i> Cerrar Ticket
                         </button>
-                        <a asp-action="PanelTecnico" class="btn btn-outline-secondary btn-ripple">
+                        <a asp-action="PanelTecnico" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i> Cancelar
                         </a>
                     </div>
@@ -93,7 +93,7 @@
             easing: 'easeOutCubic'
         });
 
-        document.querySelectorAll('.btn-ripple').forEach(btn => {
+        document.querySelectorAll('. ').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const ripple = document.createElement('span');
                 const rect = this.getBoundingClientRect();
