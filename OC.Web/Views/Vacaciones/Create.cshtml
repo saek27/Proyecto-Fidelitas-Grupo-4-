@@ -1,0 +1,62 @@
+@model OC.Web.ViewModels.SolicitudVacacionCreateViewModel
+@{
+    ViewData["Title"] = "Solicitar vacaciones";
+    var s = Model.Saldo;
+}
+
+<div class="container-fluid px-4">
+    <div class="form-header animate-fade-up mb-4">
+        <div class="form-header-icon"><i class="bi bi-sun"></i></div>
+        <div class="form-header-text">
+            <h1 class="page-title mb-1">Solicitar vacaciones</h1>
+            <p class="page-subtitle mb-0">
+                Tiene <strong>@s.DiasDisponibles día(s) disponible(s)</strong> de @s.DiasAcumulados acumulado(s).
+            </p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-dashboard animate-fade-up delay-1">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="FechaInicio">Fecha inicio</label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="FechaFin">Fecha fin</label>
+                                <input asp-for="FechaFin" type="date" class="form-control" required />
+                                <span asp-validation-for="FechaFin" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" asp-for="Motivo">Motivo (opcional)</label>
+                                <textarea asp-for="Motivo" class="form-control" rows="3" maxlength="500"></textarea>
+                            </div>
+                        </div>
+
+                        <p class="form-text mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Se cuentan días calendario (inicio y fin inclusive). Solo puede tener una solicitud pendiente a la vez.
+                        </p>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-brand">
+                                <i class="bi bi-send me-1"></i> Enviar solicitud
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary ms-1">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

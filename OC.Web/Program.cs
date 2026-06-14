@@ -132,6 +132,7 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsureValorClinicoAddColumns(context);
         OC.Data.Context.DbInitializer.EnsureOrdenTrabajoNewColumns(context);
         OC.Data.Context.DbInitializer.EnsureProveedorSchema(context);
+        OC.Data.Context.DbInitializer.EnsureSolicitudesVacacionTable(context);
         OC.Data.Context.DbInitializer.Initialize(context);
     }
     catch (Exception ex)

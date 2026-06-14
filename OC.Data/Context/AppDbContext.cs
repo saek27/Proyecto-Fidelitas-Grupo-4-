@@ -58,6 +58,8 @@ namespace OC.Data.Context
         //Permisos
         public DbSet<Permiso> Permisos { get; set; }
 
+        public DbSet<SolicitudVacacion> SolicitudesVacacion { get; set; }
+
         //Lentes y Aros
         public DbSet<TecnologiaLente> TecnologiaLentes { get; set; }
         public DbSet<Aro> Aros { get; set; }
@@ -250,6 +252,27 @@ namespace OC.Data.Context
             modelBuilder.Entity<Permiso>()
                 .Property(p => p.RutaDocumentoIncapacidad)
                 .HasMaxLength(512);
+
+            modelBuilder.Entity<SolicitudVacacion>()
+                .HasOne(s => s.Usuario)
+                .WithMany()
+                .HasForeignKey(s => s.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SolicitudVacacion>()
+                .HasOne(s => s.AprobadoPor)
+                .WithMany()
+                .HasForeignKey(s => s.AprobadoPorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SolicitudVacacion>()
+                .Property(s => s.Estado)
+                .HasMaxLength(20)
+                .HasDefaultValue("Pendiente");
+
+            modelBuilder.Entity<SolicitudVacacion>()
+                .Property(s => s.Motivo)
+                .HasMaxLength(500);
 
             //TecnologiaLente
             modelBuilder.Entity<TecnologiaLente>(entity =>

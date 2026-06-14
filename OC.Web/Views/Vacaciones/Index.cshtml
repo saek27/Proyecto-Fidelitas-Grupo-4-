@@ -1,0 +1,189 @@
+@model OC.Web.ViewModels.VacacionesIndexViewModel
+@{
+    ViewData["Title"] = "Vacaciones";
+    var pagination = new PaginationInfo
+    {
+        CurrentPage = Model.Solicitudes.PageIndex,
+        TotalPages = Model.Solicitudes.TotalPages,
+        GetPageUrl = (page) => Url.Action("Index", new { page, usuarioId = Model.UsuarioConsultaId })!
+    };
+}
+
+<div class="container-fluid px-4">
+    <div class="page-header animate-fade-up">
+        <div class="page-header-text">
+            <div class="page-header-icon"><i class="bi bi-sun"></i></div>
+            <div>
+                <h1 class="page-title">Vacaciones</h1>
+                <p class="page-subtitle">
+                    <i class="bi bi-info-circle me-1"></i>
+                    1 día por cada mes completo desde la fecha de contratación.
+                </p>
+            </div>
+        </div>
+        <div class="page-actions">
+            @if (Model.Saldo.PuedeSolicitar)
+            {
+                <a asp-action="Create" class="btn btn-brand">
+                    <i class="bi bi-plus-circle me-1"></i> Solicitar vacaciones
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show animate-fade-up mb-3" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show animate-fade-up mb-3" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.EsAdmin && !Model.Saldo.PuedeSolicitar && !string.IsNullOrEmpty(Model.Saldo.MotivoNoSolicitar))
+    {
+        <div class="alert alert-info animate-fade-up mb-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i>@Model.Saldo.MotivoNoSolicitar
+        </div>
+    }
+
+    @{
+        ViewData["TituloSaldo"] = "Mi saldo";
+    }
+    @await Html.PartialAsync("_SaldoVacaciones", Model.Saldo)
+
+    @if (Model.EsAdmin)
+    {
+        <div class="card-dashboard animate-fade-up delay-1 mb-3">
+            <div class="card-body filter-bar">
+                <form asp-action="Index" method="get" class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label" for="usuarioId">Consultar trabajador</label>
+                        <select name="usuarioId" id="usuarioId" class="form-select">
+                            <option value="">— Todos los trabajadores —</option>
+                            @foreach (var u in Model.UsuariosFiltro)
+                            {
+                                <option value="@u.Id" selected="@(Model.UsuarioConsultaId == u.Id)">@u.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-brand">
+                            <i class="bi bi-search me-1"></i> Consultar
+                        </button>
+                        @if (Model.UsuarioConsultaId.HasValue)
+                        {
+                            <a asp-action="Index" class="btn btn-outline-secondary ms-1">Limpiar</a>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.SaldoConsultado != null)
+        {
+            ViewData["TituloSaldo"] = "Saldo del trabajador";
+            @await Html.PartialAsync("_SaldoVacaciones", Model.SaldoConsultado)
+        }
+    }
+
+    <div class="card-dashboard animate-fade-up delay-2">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            @if (Model.EsAdmin && !Model.UsuarioConsultaId.HasValue)
+                            {
+                                <th>Trabajador</th>
+                            }
+                            <th>Fechas</th>
+                            <th class="text-center">Días</th>
+                            <th>Motivo</th>
+                            <th class="text-center" style="width:120px">Estado</th>
+                            <th>Revisado por</th>
+                            <th class="text-center" style="width:100px">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Solicitudes.Items)
+                        {
+                            <tr>
+                                @if (Model.EsAdmin && !Model.UsuarioConsultaId.HasValue)
+                                {
+                                    <td>@s.Usuario?.Nombre</td>
+                                }
+                                <td>
+                                    <span class="text-nowrap">@s.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                    —
+                                    <span class="text-nowrap">@s.FechaFin.ToString("dd/MM/yyyy")</span>
+                                </td>
+                                <td class="text-center">@s.DiasSolicitados</td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(s.Motivo) ? "—" : s.Motivo)</td>
+                                <td class="text-center">
+                                    @switch (s.Estado)
+                                    {
+                                        case "Aprobado":
+                                            <span class="status-badge status-badge-active">
+                                                <i class="bi bi-check-circle-fill"></i> Aprobado
+                                            </span>
+                                            break;
+                                        case "Rechazado":
+                                            <span class="status-badge" style="background:rgba(239,68,68,.12);color:#991b1b;">
+                                                <i class="bi bi-x-circle-fill"></i> Rechazado
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="status-badge" style="background:rgba(245,158,11,.12);color:#92400e;">
+                                                <i class="bi bi-clock"></i> Pendiente
+                                            </span>
+                                            break;
+                                    }
+                                </td>
+                                <td>@(s.AprobadoPor?.Nombre ?? "—")</td>
+                                <td class="text-center">
+                                    @if (Model.EsAdmin && s.Estado == "Pendiente")
+                                    {
+                                        <div class="action-buttons">
+                                            <form asp-action="Aprobar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@s.Id" />
+                                                <button type="submit" class="btn-action btn-action-success" title="Aprobar">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <form asp-action="Rechazar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@s.Id" />
+                                                <button type="submit" class="btn-action btn-action-danger" title="Rechazar">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Solicitudes.Items.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-sun"></i></div>
+                    <h5 class="empty-state-title">No hay solicitudes de vacaciones</h5>
+                    <p class="empty-state-text">Las solicitudes enviadas por los trabajadores aparecerán aquí.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_Pagination", pagination)
+</div>

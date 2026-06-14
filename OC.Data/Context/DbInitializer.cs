@@ -301,6 +301,32 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        public static void EnsureSolicitudesVacacionTable(AppDbContext context)
+        {
+            const string sql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SolicitudesVacacion')
+BEGIN
+    CREATE TABLE [SolicitudesVacacion] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [UsuarioId] int NOT NULL,
+        [FechaInicio] datetime2 NOT NULL,
+        [FechaFin] datetime2 NOT NULL,
+        [DiasSolicitados] int NOT NULL,
+        [Motivo] nvarchar(500) NULL,
+        [Estado] nvarchar(20) NOT NULL CONSTRAINT DF_SolicitudesVacacion_Estado DEFAULT (N'Pendiente'),
+        [FechaSolicitud] datetime2 NOT NULL,
+        [AprobadoPorId] int NULL,
+        CONSTRAINT [PK_SolicitudesVacacion] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_SolicitudesVacacion_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios]([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_SolicitudesVacacion_Usuarios_AprobadoPorId] FOREIGN KEY ([AprobadoPorId]) REFERENCES [Usuarios]([Id]) ON DELETE NO ACTION
+    );
+    CREATE INDEX [IX_SolicitudesVacacion_UsuarioId] ON [SolicitudesVacacion]([UsuarioId]);
+    CREATE INDEX [IX_SolicitudesVacacion_AprobadoPorId] ON [SolicitudesVacacion]([AprobadoPorId]);
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna
