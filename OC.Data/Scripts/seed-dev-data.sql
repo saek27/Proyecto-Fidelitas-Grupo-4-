@@ -55,6 +55,40 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedore
     ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalTelefono] nvarchar(20) NULL;
 
 -- ============================================================
+-- 0a) LIMPIEZA idempotente (orden inverso de dependencias FK)
+--     Permite re-ejecutar el seed sin chocar con PK existentes.
+--     DBCC CHECKIDENT ... RESEED, 0 resetea el identity a 1.
+-- ============================================================
+PRINT '0a) Limpiando datos previos (si existen)...';
+
+DELETE FROM DetallePedidos;
+DBCC CHECKIDENT ('DetallePedidos', RESEED, 0);
+DELETE FROM Pedidos;
+DBCC CHECKIDENT ('Pedidos', RESEED, 0);
+DELETE FROM EnviosNotificacion;
+DBCC CHECKIDENT ('EnviosNotificacion', RESEED, 0);
+DELETE FROM OrdenesTrabajo;
+DBCC CHECKIDENT ('OrdenesTrabajo', RESEED, 0);
+DELETE FROM DetalleVentas;
+DBCC CHECKIDENT ('DetalleVentas', RESEED, 0);
+DELETE FROM Ventas;
+DBCC CHECKIDENT ('Ventas', RESEED, 0);
+DELETE FROM ValoresClinicos;
+DBCC CHECKIDENT ('ValoresClinicos', RESEED, 0);
+DELETE FROM Expedientes;
+DBCC CHECKIDENT ('Expedientes', RESEED, 0);
+DELETE FROM Citas;
+DBCC CHECKIDENT ('Citas', RESEED, 0);
+DELETE FROM SolicitudesCitas;
+DBCC CHECKIDENT ('SolicitudesCitas', RESEED, 0);
+DELETE FROM Pacientes;
+DBCC CHECKIDENT ('Pacientes', RESEED, 0);
+DELETE FROM Proveedores;
+DBCC CHECKIDENT ('Proveedores', RESEED, 0);
+DELETE FROM Productos;
+DBCC CHECKIDENT ('Productos', RESEED, 0);
+
+-- ============================================================
 -- ============================================================
 -- 0b) CATÁLOGO DE PRODUCTOS (24) — necesario para FKs de DetalleVentas y DetallePedidos
 --     Editado por Hermes para que el seed corra en una BD nueva

@@ -30,11 +30,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Registro de Repositorios
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-// CONFIGURACI?N DE AUTENTICACI?N (Se movi? aqu? arriba)
+// CONFIGURACIÓN DE AUTENTICACIÓN (Se movió aquí arriba)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
+        options.LoginPath = "/Landing";
         options.AccessDeniedPath = "/Account/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
