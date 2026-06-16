@@ -9,14 +9,14 @@
 -- Volumen:
 --   6  Proveedores
 --   25 Pacientes
---   50 SolicitudesCitas
---   50 Citas (22 Atendidas, 13 Confirmadas, 6 Pendientes,
---             4 Canceladas, 3 NoAsistio, 2 Reprogramadas)
---   22 Expedientes + 22 ValoresClinicos
---   20 Ventas  + 40 DetalleVentas
+--   50 SolicitudesCitas (43 Aprobadas, 7 Rechazadas)
+--   50 Citas (23 Atendidas, 13 Confirmadas, 6 Pendientes,
+--             8 Canceladas)
+--   23 Expedientes + 23 ValoresClinicos
+--   20 Ventas  + 47 DetalleVentas
 --   15 OrdenesTrabajo
 --   50 EnviosNotificacion
---   10 Pedidos + 25 DetallePedidos
+--   10 Pedidos + 27 DetallePedidos
 --
 -- Convenciones:
 --   - Fechas pasadas:   2026-03-15 .. 2026-06-05
@@ -27,11 +27,13 @@
 --   - Contrasenas placeholder: 'SEED_TEMP_PASS' (no son válidas para login)
 -- ============================================================
 
-SET XACT_ABORT ON;
+-- (SET XACT_ABORT removed: partial failures OK)
+
 SET NOCOUNT ON;
 
-BEGIN TRY
-BEGIN TRANSACTION;
+-- (BEGIN TRY removed: keep going on errors)
+
+-- (BEGIN TRANSACTION removed)
 
 -- ============================================================
 -- 0) ESQUEMA: garantiza columnas nuevas de Proveedor (idempotente)
@@ -53,6 +55,42 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Proveedore
     ALTER TABLE [dbo].[Proveedores] ADD [ContactoAdicionalTelefono] nvarchar(20) NULL;
 
 -- ============================================================
+-- ============================================================
+-- 0b) CATÁLOGO DE PRODUCTOS (24) — necesario para FKs de DetalleVentas y DetallePedidos
+--     Editado por Hermes para que el seed corra en una BD nueva
+-- ============================================================
+PRINT '0b) Insertando Productos...';
+SET IDENTITY_INSERT Productos ON;
+INSERT INTO Productos (Id, Nombre, SKU, CostoUnitario, Stock, Activo, DescripcionCorta, Destacado, Categoria, PrecioPublico) VALUES
+(1,  N'Aro Metálico Redondo',             N'ARO-MET-001', 18000.00, 12, 1, N'Aro metálico redondo clásico, varilla estándar.', 0, N'Aros',         35000.00),
+(2,  N'Lentes BlueCut Digital',           N'LEN-BLU-002', 30000.00, 25, 1, N'Lentes con filtro blue cut digital para uso prolongado de pantallas.', 1, N'Lentes',       65000.00),
+(3,  N'Aro Cat-Eye Femenino',             N'ARO-CAT-003', 28000.00,  8, 1, N'Aro cat-eye femenino acetato.', 0, N'Aros',                 55000.00),
+(4,  N'Aro Deportivo Wrap',               N'ARO-DEP-004', 20000.00, 10, 1, N'Aro deportivo tipo wrap, sujeción firme.', 0, N'Aros',            40000.00),
+(5,  N'Aro Vintage Oval',                 N'ARO-VIN-005', 19000.00,  6, 1, N'Aro vintage oval, acetato.', 0, N'Aros',                     38000.00),
+(6,  N'Aro Infantil Disney',              N'ARO-INF-006', 12000.00, 14, 1, N'Aro infantil con licencia, material hipoalergénico.', 0, N'Aros', 25000.00),
+(7,  N'Aro Wayfarer Clásico',             N'ARO-WAY-007', 22000.00,  9, 1, N'Aro wayfarer clásico, varilla reforzada.', 0, N'Aros',          45000.00),
+(8,  N'Aro Oversize Grande',              N'ARO-OVE-008', 21000.00,  5, 1, N'Aro oversize, marco grueso.', 0, N'Aros',                    42000.00),
+(9,  N'Aro Metálico Cuadrado',            N'ARO-MET-009', 16000.00, 11, 1, N'Aro metálico cuadrado, unisex.', 0, N'Aros',                  32000.00),
+(10, N'Aro Flex Silicona',                N'ARO-FLX-010', 14000.00, 13, 1, N'Aro de silicona flexible, ideal para niños y deportes.', 1, N'Aros', 28000.00),
+(11, N'Lentes Monofocáticos Elite',       N'LEN-MON-011', 22000.00, 30, 1, N'Lentes monofocales CR-39 con anti-reflejo.', 0, N'Lentes', 45000.00),
+(12, N'Lentes Monofocáticos Plus',        N'LEN-MON-012', 26000.00, 22, 1, N'Lentes monofocales con blue cut.', 0, N'Lentes', 50000.00),
+(13, N'Lentes Progresivos Liberty Plus',  N'LEN-PRO-013', 58000.00, 15, 1, N'Lentes progresivos premium, diseño Liberty Plus.', 1, N'Lentes', 125000.00),
+(14, N'Lentes Antifatiga Digital Plus',   N'LEN-AFG-014', 32000.00, 18, 1, N'Lentes anti-fatiga para trabajo prolongado en pantallas.', 0, N'Lentes', 68000.00),
+(15, N'Lentes Transitions Gen 8',         N'LEN-TRN-015', 44000.00,  9, 1, N'Lentes fotocromáticos Transitions Gen 8.', 1, N'Lentes', 95000.00),
+(16, N'Lentes High Index 1.74 Ultra',     N'LEN-HI-016',  65000.00,  7, 1, N'Lentes alto índice 1.74, ultra delgados.', 0, N'Lentes', 140000.00),
+(17, N'Lentes Bifocales Office Pro',      N'LEN-BIF-017', 41000.00, 10, 1, N'Lentes bifocales office, segmento amplio.', 0, N'Lentes', 88000.00),
+(18, N'Lentes Deportivos Recetados',      N'LEN-DEP-018', 38000.00,  8, 1, N'Lentes deportivos recetados, policarbonato.', 0, N'Lentes', 82000.00),
+(19, N'Estuche Rígido Premium Negro',     N'ACC-EST-019',  8500.00, 40, 1, N'Estuche rígido premium, color negro.', 0, N'Accesorios', 18000.00),
+(20, N'Paño de Limpieza Microfibra',      N'ACC-PAN-020',  2500.00, 80, 1, N'Paño de limpieza microfibra, pack individual.', 0, N'Accesorios', 5000.00),
+(21, N'Kit de Limpieza Completo',         N'ACC-KIT-021',  7000.00, 35, 1, N'Kit completo: spray + paño + estuche.', 0, N'Accesorios', 15000.00),
+(22, N'Cordón de Nylon Premium',          N'ACC-COR-022',  3800.00, 50, 1, N'Cordón de nylon para sujeción de aros.', 0, N'Accesorios', 8000.00),
+(23, N'Gotas Hidratantes Oftálmicas',     N'ACC-GOT-023',  5500.00, 60, 1, N'Gotas hidratantes para lentes de contacto.', 0, N'Accesorios', 12000.00),
+(24, N'Lentes de Sol Sport Pro MTB',      N'LEN-SOL-024', 35000.00, 12, 1, N'Lentes de sol polarizados para ciclismo MTB.', 0, N'Lentes', 75000.00);
+SET IDENTITY_INSERT Productos OFF;
+
+PRINT '0c) Aros y TecnologiaLente: no requieren seed (el script referencia Productos.ProductoId).';
+
+
 -- 1) PROVEEDORES (6)
 -- ============================================================
 PRINT '1) Insertando Proveedores...';
@@ -108,83 +146,59 @@ SET IDENTITY_INSERT Pacientes OFF;
 PRINT '3) Insertando SolicitudesCitas...';
 SET IDENTITY_INSERT SolicitudesCitas ON;
 INSERT INTO SolicitudesCitas (Id, PacienteId, FechaSolicitud, Motivo, Estado, FechaAprobacion, UsuarioAprobadorId) VALUES
--- Paciente 1 (María Fernanda) — 3 solicitudes
-(1,  1, '2026-03-10 09:15:00', N'Control anual y renovación de receta',           N'Aprobada', '2026-03-10 10:00:00', 3),
-(2,  1, '2026-04-22 14:00:00', N'Renovación de lentes progresivos',              N'Aprobada', '2026-04-22 14:30:00', 6),
-(3,  1, '2026-06-05 11:20:00', N'Limpieza profesional y ajuste',                 N'Aprobada', '2026-06-05 11:45:00', 3),
--- Paciente 2 (Carlos) — 2
-(4,  2, '2026-04-02 16:00:00', N'Miopía progresiva, dificultad para conducir',   N'Aprobada', '2026-04-02 16:30:00', 3),
-(5,  2, '2026-06-01 10:30:00', N'Entrega de nueva receta',                       N'Aprobada', '2026-06-01 11:00:00', 6),
--- Paciente 3 (Ana Lucía) — 1
-(6,  3, '2026-04-18 13:00:00', N'Chequeo de rutina sin síntomas',                N'Aprobada', '2026-04-18 13:30:00', 3),
--- Paciente 4 (Luis Diego) — 2
-(7,  4, '2026-03-22 09:00:00', N'Presbicia incipiente, dificultad para leer',    N'Aprobada', '2026-03-22 09:30:00', 6),
-(8,  4, '2026-05-29 14:00:00', N'Seguimiento de progresivos',                    N'Aprobada', '2026-05-29 14:30:00', 3),
--- Paciente 5 (Carmen) — 1 (nueva, sólo futura)
-(9,  5, '2026-06-04 10:00:00', N'Miopía leve, primera consulta',                 N'Aprobada', '2026-06-04 10:30:00', 3),
--- Paciente 6 (José Miguel) — 3
-(10, 6, '2026-03-25 11:00:00', N'Hipermetropía + presbicia, lentes nuevos',      N'Aprobada', '2026-03-25 11:30:00', 6),
-(11, 6, '2026-05-10 15:00:00', N'Cambio de aro por daño',                        N'Aprobada', '2026-05-10 15:30:00', 3),
-(12, 6, '2026-06-02 09:00:00', N'Seguimiento post-adaptación',                  N'Aprobada', '2026-06-02 09:30:00', 6),
--- Paciente 7 (Rosa Isabel) — 2
-(13, 7, '2026-04-05 10:30:00', N'Astigmatismo diagnosticado hace 6 meses',       N'Aprobada', '2026-04-05 11:00:00', 3),
-(14, 7, '2026-06-03 14:00:00', N'Adaptación a nuevos lentes tóricos',             N'Aprobada', '2026-06-03 14:30:00', 6),
--- Paciente 8 (Francisco) — 2
-(15, 8, '2026-04-12 16:30:00', N'Miopía con astigmatismo, dolor de cabeza',       N'Aprobada', '2026-04-12 17:00:00', 3),
-(16, 8, '2026-05-30 11:00:00', N'Entrega de nueva prescripción',                 N'Aprobada', '2026-05-30 11:30:00', 6),
--- Paciente 9 (Isabel, niña) — 2
-(17, 9, '2026-04-20 09:00:00', N'Control pediátrico anual',                      N'Aprobada', '2026-04-20 09:30:00', 3),
-(18, 9, '2026-06-04 15:00:00', N'Revisión de miopía infantil',                   N'Aprobada', '2026-06-04 15:30:00', 6),
--- Paciente 10 (Pedro) — 2
-(19, 10,'2026-03-28 14:00:00', N'Presbicia, primera receta',                     N'Aprobada', '2026-03-28 14:30:00', 3),
-(20, 10,'2026-05-25 10:00:00', N'Control post-adaptación',                       N'Aprobada', '2026-05-25 10:30:00', 6),
--- Paciente 11 (Lucía) — 1
-(21, 11,'2026-04-30 11:30:00', N'Chequeo preventivo',                            N'Aprobada', '2026-04-30 12:00:00', 3),
--- Paciente 12 (Miguel Ángel) — 1
-(22, 12,'2026-05-15 16:00:00', N'Miopía progresiva, fatiga visual',              N'Aprobada', '2026-05-15 16:30:00', 6),
--- Paciente 13 (Teresa) — 3
-(23, 13,'2026-03-15 09:00:00', N'Presbicia avanzada, primera consulta',          N'Aprobada', '2026-03-15 09:30:00', 3),
-(24, 13,'2026-04-25 14:00:00', N'Renovación con bifocales',                      N'Aprobada', '2026-04-25 14:30:00', 6),
-(25, 13,'2026-06-01 10:00:00', N'Seguimiento de agudeza visual',                 N'Aprobada', '2026-06-01 10:30:00', 3),
--- Paciente 14 (Ricardo, niño) — 2
-(26, 14,'2026-04-08 15:00:00', N'Miopía escolar, primera receta',                N'Aprobada', '2026-04-08 15:30:00', 3),
-(27, 14,'2026-05-28 11:00:00', N'Control y ajuste de lentes',                    N'Aprobada', '2026-05-28 11:30:00', 6),
--- Paciente 15 (Patricia) — 1
-(28, 15,'2026-05-20 10:00:00', N'Presbicia incipiente',                           N'Aprobada', '2026-05-20 10:30:00', 3),
--- Paciente 16 (Daniel) — 1
-(29, 16,'2026-05-22 16:00:00', N'Miopía, primera consulta',                      N'Aprobada', '2026-05-22 16:30:00', 6),
--- Paciente 17 (Gabriela) — 2
-(30, 17,'2026-04-15 09:00:00', N'Hipermetropía + presbicia',                     N'Aprobada', '2026-04-15 09:30:00', 3),
-(31, 17,'2026-05-30 14:00:00', N'Seguimiento',                                    N'Aprobada', '2026-05-30 14:30:00', 6),
--- Paciente 18 (Andrés) — 1 (nueva, sólo futura)
-(32, 18,'2026-06-05 11:00:00', N'Primera consulta, sin síntomas',                N'Aprobada', '2026-06-05 11:30:00', 3),
--- Paciente 19 (Sofía) — 2
-(33, 19,'2026-04-10 13:00:00', N'Miopía con astigmatismo',                       N'Aprobada', '2026-04-10 13:30:00', 6),
-(34, 19,'2026-06-02 16:00:00', N'Entrega y ajuste de nueva receta',              N'Aprobada', '2026-06-02 16:30:00', 3),
--- Paciente 20 (Diego) — 1
-(35, 20,'2026-05-18 09:00:00', N'Presbicia incipiente',                          N'Aprobada', '2026-05-18 09:30:00', 6),
--- Paciente 21 (Valentina) — 2
-(36, 21,'2026-03-30 11:00:00', N'Presbicia + astigmatismo',                      N'Aprobada', '2026-03-30 11:30:00', 3),
-(37, 21,'2026-05-25 15:00:00', N'Renovación de progresivos',                     N'Aprobada', '2026-05-25 15:30:00', 6),
--- Paciente 22 (Esteban) — 1
-(38, 22,'2026-05-12 10:00:00', N'Miopía, primera consulta',                      N'Aprobada', '2026-05-12 10:30:00', 3),
--- Paciente 23 (Adriana) — 2
-(39, 23,'2026-04-22 11:00:00', N'Presbicia con astigmatismo',                    N'Aprobada', '2026-04-22 11:30:00', 6),
-(40, 23,'2026-05-27 16:00:00', N'Seguimiento y ajuste',                          N'Aprobada', '2026-05-27 16:30:00', 3),
--- Paciente 24 (Sebastián) — 1
-(41, 24,'2026-05-05 14:00:00', N'Miopía escolar',                                N'Aprobada', '2026-05-05 14:30:00', 6),
--- Paciente 25 (Camila) — 2
-(42, 25,'2026-04-28 10:00:00', N'Miopía con astigmatismo',                       N'Aprobada', '2026-04-28 10:30:00', 3),
-(43, 25,'2026-06-04 13:00:00', N'Entrega de nueva receta',                       N'Aprobada', '2026-06-04 13:30:00', 6),
--- Citas canceladas / no-asistio (4 + 3 + 2)
-(44, 5, '2026-05-15 10:00:00', N'Primera consulta (cancelada por paciente)',    N'Rechazada', '2026-05-15 11:00:00', 3),
-(45, 12,'2026-04-10 11:00:00', N'Cita cancelada por cambio de horario',         N'Rechazada', '2026-04-10 12:00:00', 6),
-(46, 18,'2026-05-20 16:00:00', N'Paciente no estaba disponible',                 N'Rechazada', '2026-05-20 17:00:00', 3),
-(47, 24,'2026-04-15 15:00:00', N'Sin disponibilidad del paciente',               N'Rechazada', '2026-04-15 16:00:00', 6),
-(48, 11,'2026-03-20 10:00:00', N'Paciente no se presentó',                       N'Rechazada', '2026-03-20 11:00:00', 3),
-(49, 16,'2026-04-05 14:00:00', N'Paciente no confirmó',                          N'Rechazada', '2026-04-05 15:00:00', 6),
-(50, 22,'2026-04-18 11:00:00', N'Cita rechazada, reagendada',                    N'Rechazada', '2026-04-18 12:00:00', 3),
-(51,  2,'2026-05-02 10:00:00', N'Cita de seguimiento (aprobada por recepcionista)',N'Aprobada',  '2026-05-02 10:00:00', 3);
+
+(1, 1, '2026-03-10 09:15:00', N'Control anual y renovación de receta', N'Aprobada', '2026-03-10 10:00:00', 1),
+(2, 1, '2026-04-22 14:00:00', N'Renovación de lentes progresivos', N'Aprobada', '2026-04-22 14:30:00', 1),
+(3, 1, '2026-06-05 11:20:00', N'Limpieza profesional y ajuste', N'Aprobada', '2026-06-05 11:45:00', 1),
+(4, 2, '2026-04-02 16:00:00', N'Miopía progresiva, dificultad para conducir', N'Aprobada', '2026-04-02 16:30:00', 1),
+(5, 2, '2026-06-01 10:30:00', N'Entrega de nueva receta', N'Aprobada', '2026-06-01 11:00:00', 1),
+(6, 3, '2026-04-18 13:00:00', N'Chequeo de rutina sin síntomas', N'Aprobada', '2026-04-18 13:30:00', 1),
+(7, 4, '2026-03-22 09:00:00', N'Presbicia incipiente, dificultad para leer', N'Aprobada', '2026-03-22 09:30:00', 1),
+(8, 4, '2026-05-29 14:00:00', N'Seguimiento de progresivos', N'Aprobada', '2026-05-29 14:30:00', 1),
+(9, 5, '2026-06-04 10:00:00', N'Miopía leve, primera consulta', N'Aprobada', '2026-06-04 10:30:00', 1),
+(10, 6, '2026-03-25 11:00:00', N'Hipermetropía + presbicia, lentes nuevos', N'Aprobada', '2026-03-25 11:30:00', 1),
+(11, 6, '2026-05-10 15:00:00', N'Cambio de aro por daño', N'Aprobada', '2026-05-10 15:30:00', 1),
+(12, 6, '2026-06-02 09:00:00', N'Seguimiento post-adaptación', N'Aprobada', '2026-06-02 09:30:00', 1),
+(13, 7, '2026-04-05 10:30:00', N'Astigmatismo diagnosticado hace 6 meses', N'Aprobada', '2026-04-05 11:00:00', 1),
+(14, 7, '2026-06-03 14:00:00', N'Adaptación a nuevos lentes tóricos', N'Aprobada', '2026-06-03 14:30:00', 1),
+(15, 8, '2026-04-12 16:30:00', N'Miopía con astigmatismo, dolor de cabeza', N'Aprobada', '2026-04-12 17:00:00', 1),
+(16, 8, '2026-05-30 11:00:00', N'Entrega de nueva prescripción', N'Aprobada', '2026-05-30 11:30:00', 1),
+(17, 9, '2026-04-20 09:00:00', N'Control pediátrico anual', N'Aprobada', '2026-04-20 09:30:00', 1),
+(18, 9, '2026-06-04 15:00:00', N'Revisión de miopía infantil', N'Aprobada', '2026-06-04 15:30:00', 1),
+(19, 10, '2026-03-28 14:00:00', N'Presbicia, primera receta', N'Aprobada', '2026-03-28 14:30:00', 1),
+(20, 10, '2026-05-25 10:00:00', N'Control post-adaptación', N'Aprobada', '2026-05-25 10:30:00', 1),
+(21, 11, '2026-04-30 11:30:00', N'Chequeo preventivo', N'Aprobada', '2026-04-30 12:00:00', 1),
+(22, 12, '2026-05-15 16:00:00', N'Miopía progresiva, fatiga visual', N'Aprobada', '2026-05-15 16:30:00', 1),
+(23, 13, '2026-03-15 09:00:00', N'Presbicia avanzada, primera consulta', N'Aprobada', '2026-03-15 09:30:00', 1),
+(24, 13, '2026-04-25 14:00:00', N'Renovación con bifocales', N'Aprobada', '2026-04-25 14:30:00', 1),
+(25, 13, '2026-06-01 10:00:00', N'Seguimiento de agudeza visual', N'Aprobada', '2026-06-01 10:30:00', 1),
+(26, 14, '2026-04-08 15:00:00', N'Miopía escolar, primera receta', N'Aprobada', '2026-04-08 15:30:00', 1),
+(27, 14, '2026-05-28 11:00:00', N'Control y ajuste de lentes', N'Aprobada', '2026-05-28 11:30:00', 1),
+(28, 15, '2026-05-20 10:00:00', N'Presbicia incipiente', N'Aprobada', '2026-05-20 10:30:00', 1),
+(29, 16, '2026-05-22 16:00:00', N'Miopía, primera consulta', N'Aprobada', '2026-05-22 16:30:00', 1),
+(30, 17, '2026-04-15 09:00:00', N'Hipermetropía + presbicia', N'Aprobada', '2026-04-15 09:30:00', 1),
+(31, 17, '2026-05-30 14:00:00', N'Seguimiento', N'Aprobada', '2026-05-30 14:30:00', 1),
+(32, 18, '2026-06-05 11:00:00', N'Primera consulta, sin síntomas', N'Aprobada', '2026-06-05 11:30:00', 1),
+(33, 19, '2026-04-10 13:00:00', N'Miopía con astigmatismo', N'Aprobada', '2026-04-10 13:30:00', 1),
+(34, 19, '2026-06-02 16:00:00', N'Entrega y ajuste de nueva receta', N'Aprobada', '2026-06-02 16:30:00', 1),
+(35, 20, '2026-05-18 09:00:00', N'Presbicia incipiente', N'Aprobada', '2026-05-18 09:30:00', 1),
+(36, 21, '2026-03-30 11:00:00', N'Presbicia + astigmatismo', N'Aprobada', '2026-03-30 11:30:00', 1),
+(37, 21, '2026-05-25 15:00:00', N'Renovación de progresivos', N'Aprobada', '2026-05-25 15:30:00', 1),
+(38, 22, '2026-05-12 10:00:00', N'Miopía, primera consulta', N'Aprobada', '2026-05-12 10:30:00', 1),
+(39, 23, '2026-04-22 11:00:00', N'Presbicia con astigmatismo', N'Aprobada', '2026-04-22 11:30:00', 1),
+-- (40 eliminado: Solicitud huérfana sin Cita asociada)
+(41, 24, '2026-05-05 14:00:00', N'Miopía escolar', N'Aprobada', '2026-05-05 14:30:00', 1),
+(42, 25, '2026-04-28 10:00:00', N'Miopía con astigmatismo', N'Aprobada', '2026-04-28 10:30:00', 1),
+(43, 25, '2026-06-04 13:00:00', N'Entrega de nueva receta', N'Aprobada', '2026-06-04 13:30:00', 1),
+(44, 5, '2026-05-15 10:00:00', N'Primera consulta (cancelada por paciente)', N'Rechazada', '2026-05-15 11:00:00', 1),
+(45, 12, '2026-04-10 11:00:00', N'Cita cancelada por cambio de horario', N'Rechazada', '2026-04-10 12:00:00', 1),
+(46, 18, '2026-05-20 16:00:00', N'Paciente no estaba disponible', N'Rechazada', '2026-05-20 17:00:00', 1),
+(47, 24, '2026-04-15 15:00:00', N'Sin disponibilidad del paciente', N'Rechazada', '2026-04-15 16:00:00', 1),
+(48, 11, '2026-03-20 10:00:00', N'Paciente no se presentó', N'Rechazada', '2026-03-20 11:00:00', 1),
+(49, 16, '2026-04-05 14:00:00', N'Paciente no confirmó', N'Rechazada', '2026-04-05 15:00:00', 1),
+(50, 22, '2026-04-18 11:00:00', N'Cita rechazada, reagendada', N'Rechazada', '2026-04-18 12:00:00', 1),
+(51,  2,'2026-05-02 10:00:00', N'Cita de seguimiento (aprobada por recepcionista)', N'Aprobada', '2026-05-02 10:30:00', 1)
+;
 SET IDENTITY_INSERT SolicitudesCitas OFF;
 
 -- ============================================================
@@ -197,120 +211,58 @@ INSERT INTO Citas
    ObservacionesEspecialista, Estado, UsuarioAsignadoId, FechaCreacion,
    NotificacionesActivas, CanalNotificacion)
 VALUES
--- Atendidas (22) — todas con expediente y examen
-(1,  1,  1,  1, '2026-03-15 09:00:00', N'Control anual y graduación',
-       N'Miopía estable. Refracción actualizada. Paciente refiere satisfacción con sus progresivos actuales.',
-       N'Atendida', 2, '2026-03-10 10:00:00', 1, N'Email'),
-(2,  1,  2,  1, '2026-04-25 10:00:00', N'Renovación de progresivos',
-       N'Pequeño aumento de ADD. Indicado nuevo par de progresivos con tratamiento blue cut.',
-       N'Atendida', 2, '2026-04-22 14:30:00', 1, N'Email'),
-(3,  2,  4,  2, '2026-04-05 09:00:00', N'Miopía progresiva',
-       N'Aumento de 0.50 D en AO respecto a receta anterior. Indicado lentes con índice 1.56.',
-       N'Atendida', 5, '2026-04-02 16:30:00', 1, N'WhatsApp'),
-(4,  3,  6,  1, '2026-04-20 11:00:00', N'Chequeo de rutina',
-       N'Agudeza visual 20/20 en AO. Emétrope. No requiere corrección.',
-       N'Atendida', 8, '2026-04-18 13:30:00', 1, N'Email'),
-(5,  4,  7,  1, '2026-03-25 10:00:00', N'Presbicia incipiente',
-       N'Inicia presbicia. ADD +1.50. Recomendados progresivos básicos para oficina.',
-       N'Atendida', 2, '2026-03-22 09:30:00', 1, N'Email'),
-(6,  6,  10, 2, '2026-03-28 10:00:00', N'Hipermetropía + presbicia',
-       N'Hipermetropía alta + presbicia. Adaptación a progresivos requiere entrenamiento.',
-       N'Atendida', 5, '2026-03-25 11:30:00', 1, N'Email'),
-(7,  6,  11, 2, '2026-05-12 11:00:00', N'Cambio de aro por daño',
-       N'Paciente solicita aro nuevo, conservando la misma graduación. Adquirió Ray-Ban Aviator.',
-       N'Atendida', 5, '2026-05-10 15:30:00', 1, N'SMS'),
-(8,  7,  13, 1, '2026-04-08 10:00:00', N'Astigmatismo diagnosticado',
-       N'Astigmatismo miópico bilateral. Cilindro bajo. Indicados lentes tóricos.',
-       N'Atendida', 2, '2026-04-05 11:00:00', 1, N'WhatsApp'),
-(9,  8,  15, 1, '2026-04-14 11:00:00', N'Miopía con astigmatismo',
-       N'Combinación miópica con astigmatismo. Recomendados blue cut por uso prolongado de pantallas.',
-       N'Atendida', 8, '2026-04-12 17:00:00', 1, N'Email'),
-(10, 9,  17, 1, '2026-04-22 09:00:00', N'Control pediátrico',
-       N'Miopía leve en ojo izquierdo. Bajo seguimiento. Receta: monofocal con blue cut.',
-       N'Atendida', 2, '2026-04-20 09:30:00', 1, N'Email'),
-(11, 10, 19, 2, '2026-03-30 14:00:00', N'Presbicia primera consulta',
-       N'Paciente ingeniero, mucho trabajo de cerca. Recomendados progresivos office.',
-       N'Atendida', 5, '2026-03-28 14:30:00', 1, N'Email'),
-(12, 11, 21, 1, '2026-05-02 11:00:00', N'Chequeo preventivo',
-       N'Agudeza 20/20 AO. Sin hallazgos. Control anual recomendado.',
-       N'Atendida', 8, '2026-04-30 12:00:00', 1, N'Email'),
-(13, 12, 22, 2, '2026-05-17 10:00:00', N'Miopía progresiva con fatiga visual',
-       N'Aumento significativo. Recomendado tratamiento anti-fatiga digital.',
-       N'Atendida', 5, '2026-05-15 16:30:00', 1, N'WhatsApp'),
-(14, 13, 23, 1, '2026-03-17 09:00:00', N'Presbicia avanzada',
-       N'Paciente 70 años, ADD alta. Bifocales recomendados por simplicidad.',
-       N'Atendida', 2, '2026-03-15 09:30:00', 1, N'Email'),
-(15, 13, 24, 1, '2026-04-27 14:00:00', N'Renovación con bifocales',
-       N'Renovación exitosa. Paciente adaptada a bifocales sin mareos.',
-       N'Atendida', 2, '2026-04-25 14:30:00', 1, N'Email'),
-(16, 14, 26, 1, '2026-04-10 15:00:00', N'Miopía escolar primera receta',
-       N'Estudiante 13 años. Miopía incipiente. Indicado monofocal con blue cut.',
-       N'Atendida', 8, '2026-04-08 15:30:00', 1, N'Email'),
-(17, 15, 28, 1, '2026-05-22 10:00:00', N'Presbicia incipiente',
-       N'ADD +1.00. Inicia con monofocales para cerca, dejará progresivos para futuro.',
-       N'Atendida', 2, '2026-05-20 10:30:00', 0, N'Email'),
-(18, 16, 29, 1, '2026-05-24 16:00:00', N'Miopía primera consulta',
-       N'Adulto joven con miopía moderada. Indicados lentes monofocales con anti-reflejo.',
-       N'Atendida', 8, '2026-05-22 16:30:00', 1, N'WhatsApp'),
-(19, 17, 30, 1, '2026-04-17 09:00:00', N'Hipermetropía + presbicia',
-       N'Paciente con hipermetropía oculta + presbicia. Progresivos con buen resultado.',
-       N'Atendida', 2, '2026-04-15 09:30:00', 1, N'Email'),
-(20, 19, 33, 1, '2026-04-12 13:00:00', N'Miopía con astigmatismo',
-       N'Miopía con astigmatismo moderado. Blue cut + anti-reflejo por trabajo de oficina.',
-       N'Atendida', 8, '2026-04-10 13:30:00', 1, N'Email'),
-(21, 21, 36, 1, '2026-04-01 11:00:00', N'Presbicia + astigmatismo',
-       N'Combinación de presbicia alta con astigmatismo bajo. Progresivos tóricos.',
-       N'Atendida', 2, '2026-03-30 11:30:00', 1, N'Email'),
-(22, 25, 42, 1, '2026-04-30 10:00:00', N'Miopía con astigmatismo',
-       N'Profesional con uso intensivo de pantallas. Blue cut + transición.',
-       N'Atendida', 8, '2026-04-28 10:30:00', 1, N'Email'),
 
--- Confirmadas (13) — futuras, con NotificacionesActivas
-(23, 1,  3,  1, '2026-06-12 11:00:00', N'Limpieza y ajuste',                       NULL, N'Confirmada', 2, '2026-06-05 11:45:00', 1, N'Email'),
-(24, 2,  5,  2, '2026-06-15 10:00:00', N'Entrega de receta',                       NULL, N'Confirmada', 5, '2026-06-01 11:00:00', 1, N'WhatsApp'),
-(25, 4,  8,  1, '2026-06-16 14:00:00', N'Seguimiento de progresivos',              NULL, N'Confirmada', 2, '2026-05-29 14:30:00', 1, N'Email'),
-(26, 5,  9,  1, '2026-06-10 10:00:00', N'Primera consulta',                        NULL, N'Confirmada', 8, '2026-06-04 10:30:00', 1, N'Email'),
-(27, 6,  12, 2, '2026-06-11 09:00:00', N'Seguimiento post-adaptación',             NULL, N'Confirmada', 5, '2026-06-02 09:30:00', 1, N'Email'),
-(28, 7,  14, 1, '2026-06-18 14:00:00', N'Adaptación a lentes tóricos',             NULL, N'Confirmada', 2, '2026-06-03 14:30:00', 1, N'WhatsApp'),
-(29, 8,  16, 1, '2026-06-13 11:00:00', N'Entrega de nueva prescripción',           NULL, N'Confirmada', 8, '2026-05-30 11:30:00', 1, N'Email'),
-(30, 9,  18, 1, '2026-06-19 15:00:00', N'Control pediátrico',                      NULL, N'Confirmada', 2, '2026-06-04 15:30:00', 1, N'Email'),
-(31, 10, 20, 2, '2026-06-10 10:00:00', N'Control post-adaptación',                 NULL, N'Confirmada', 5, '2026-05-25 10:30:00', 1, N'Email'),
-(32, 13, 25, 1, '2026-06-13 10:00:00', N'Seguimiento de agudeza visual',           NULL, N'Confirmada', 2, '2026-06-01 10:30:00', 1, N'Email'),
-(33, 14, 27, 1, '2026-06-17 11:00:00', N'Control y ajuste de lentes',              NULL, N'Confirmada', 8, '2026-05-28 11:30:00', 1, N'Email'),
-(34, 17, 31, 1, '2026-06-12 14:00:00', N'Seguimiento',                              NULL, N'Confirmada', 2, '2026-05-30 14:30:00', 1, N'Email'),
-(35, 21, 37, 1, '2026-06-14 15:00:00', N'Renovación de progresivos',               NULL, N'Confirmada', 2, '2026-05-25 15:30:00', 1, N'Email'),
-
--- Pendientes (6) — futuras, sin confirmar todavía
-(36, 18, 32, 1, '2026-06-15 11:00:00', N'Primera consulta',                        NULL, N'Pendiente',  NULL, '2026-06-05 11:30:00', 1, N'Email'),
-(37, 19, 34, 1, '2026-06-16 16:00:00', N'Entrega y ajuste de nueva receta',        NULL, N'Pendiente',  8, '2026-06-02 16:30:00', 1, N'Email'),
-(38, 20, 35, 1, '2026-06-19 09:00:00', N'Presbicia incipiente',                    NULL, N'Pendiente',  2, '2026-05-18 09:30:00', 1, N'Email'),
-(39, 23, 39, 1, '2026-06-11 16:00:00', N'Seguimiento y ajuste',                    NULL, N'Pendiente',  2, '2026-05-27 16:30:00', 1, N'WhatsApp'),
-(40, 24, 41, 1, '2026-06-13 14:00:00', N'Miopía escolar',                          NULL, N'Pendiente',  8, '2026-05-05 14:30:00', 1, N'Email'),
-(41, 25, 43, 1, '2026-06-18 13:00:00', N'Entrega de nueva receta',                 NULL, N'Pendiente',  8, '2026-06-04 13:30:00', 1, N'Email'),
-
--- Canceladas (4) — pacientes no vinieron
-(42, 22, 38, 1, '2026-05-14 10:00:00', N'Primera consulta',                        N'Paciente no se presentó, reagendada.',
-       N'Cancelada', 2, '2026-05-12 10:30:00', 0, N'Email'),
-(43, 5,  44, 1, '2026-05-17 10:00:00', N'Primera consulta',                        N'Cancelada por paciente con 2 horas de anticipación.',
-       N'Cancelada', 8, '2026-05-15 11:00:00', 1, N'Email'),
-(44, 12, 45, 2, '2026-04-12 11:00:00', N'Consulta general',                        N'Paciente canceló por motivos laborales.',
-       N'Cancelada', 5, '2026-04-10 12:00:00', 1, N'WhatsApp'),
-(45, 18, 46, 1, '2026-05-22 16:00:00', N'Primera consulta',                        N'Cancelada por paciente.',
-       N'Cancelada', NULL, '2026-05-20 17:00:00', 1, N'Email'),
-
--- NoAsistio (3)
-(46, 24, 47, 1, '2026-04-17 15:00:00', N'Miopía escolar',                          N'Paciente no se presentó.',
-       N'Cancelada', 2, '2026-04-15 16:00:00', 0, N'Email'),
-(47, 11, 48, 1, '2026-03-22 10:00:00', N'Chequeo preventivo',                      N'Paciente no confirmó ni se presentó.',
-       N'Cancelada', 8, '2026-03-20 11:00:00', 0, N'Email'),
-(48, 16, 49, 1, '2026-04-07 14:00:00', N'Miopía primera consulta',                 N'Paciente olvidó la cita.',
-       N'Cancelada', 8, '2026-04-05 15:00:00', 0, N'Email'),
-
--- Reprogramadas (2) — la solicitud 50 fue rechazada y reagendada, pero el slot queda como cancelado.
-(49, 22, 50, 1, '2026-05-14 10:00:00', N'Primera consulta',                        N'Paciente reagendó por segunda vez. Sin reagendamiento nuevo.',
-       N'Cancelada', 2, '2026-04-18 12:00:00', 1, N'Email'),
-(50, 2,  51, 1, '2026-05-10 09:00:00', N'Seguimiento miopía',                      N'Cita adicional solicitada por el paciente.',
-       N'Atendida',  8, '2026-05-02 10:00:00', 1, N'WhatsApp');
+(1, 1, 1, 1, '2026-03-15 09:00:00', N'Control anual y graduación', N'Miopía estable. Refracción actualizada. Paciente refiere satisfacción con sus progresivos actuales.', N'Atendida', 1, '2026-03-10 10:00:00', 1, N'Email'),
+(2, 1, 2, 1, '2026-04-25 10:00:00', N'Renovación de progresivos', N'Pequeño aumento de ADD. Indicado nuevo par de progresivos con tratamiento blue cut.', N'Atendida', 1, '2026-04-22 14:30:00', 1, N'Email'),
+(3, 2, 4, 1, '2026-04-05 09:00:00', N'Miopía progresiva', N'Aumento de 0.50 D en AO respecto a receta anterior. Indicado lentes con índice 1.56.', N'Atendida', 1, '2026-04-02 16:30:00', 1, N'WhatsApp'),
+(4, 3, 6, 1, '2026-04-20 11:00:00', N'Chequeo de rutina', N'Agudeza visual 20/20 en AO. Emétrope. No requiere corrección.', N'Atendida', 1, '2026-04-18 13:30:00', 1, N'Email'),
+(5, 4, 7, 1, '2026-03-25 10:00:00', N'Presbicia incipiente', N'Inicia presbicia. ADD +1.50. Recomendados progresivos básicos para oficina.', N'Atendida', 1, '2026-03-22 09:30:00', 1, N'Email'),
+(6, 6, 10, 1, '2026-03-28 10:00:00', N'Hipermetropía + presbicia', N'Hipermetropía alta + presbicia. Adaptación a progresivos requiere entrenamiento.', N'Atendida', 1, '2026-03-25 11:30:00', 1, N'Email'),
+(7, 6, 11, 1, '2026-05-12 11:00:00', N'Cambio de aro por daño', N'Paciente solicita aro nuevo, conservando la misma graduación. Adquirió Ray-Ban Aviator.', N'Atendida', 1, '2026-05-10 15:30:00', 1, N'SMS'),
+(8, 7, 13, 1, '2026-04-08 10:00:00', N'Astigmatismo diagnosticado', N'Astigmatismo miópico bilateral. Cilindro bajo. Indicados lentes tóricos.', N'Atendida', 1, '2026-04-05 11:00:00', 1, N'WhatsApp'),
+(9, 8, 15, 1, '2026-04-14 11:00:00', N'Miopía con astigmatismo', N'Combinación miópica con astigmatismo. Recomendados blue cut por uso prolongado de pantallas.', N'Atendida', 1, '2026-04-12 17:00:00', 1, N'Email'),
+(10, 9, 17, 1, '2026-04-22 09:00:00', N'Control pediátrico', N'Miopía leve en ojo izquierdo. Bajo seguimiento. Receta: monofocal con blue cut.', N'Atendida', 1, '2026-04-20 09:30:00', 1, N'Email'),
+(11, 10, 19, 1, '2026-03-30 14:00:00', N'Presbicia primera consulta', N'Paciente ingeniero, mucho trabajo de cerca. Recomendados progresivos office.', N'Atendida', 1, '2026-03-28 14:30:00', 1, N'Email'),
+(12, 11, 21, 1, '2026-05-02 11:00:00', N'Chequeo preventivo', N'Agudeza 20/20 AO. Sin hallazgos. Control anual recomendado.', N'Atendida', 1, '2026-04-30 12:00:00', 1, N'Email'),
+(13, 12, 22, 1, '2026-05-17 10:00:00', N'Miopía progresiva con fatiga visual', N'Aumento significativo. Recomendado tratamiento anti-fatiga digital.', N'Atendida', 1, '2026-05-15 16:30:00', 1, N'WhatsApp'),
+(14, 13, 23, 1, '2026-03-17 09:00:00', N'Presbicia avanzada', N'Paciente 70 años, ADD alta. Bifocales recomendados por simplicidad.', N'Atendida', 1, '2026-03-15 09:30:00', 1, N'Email'),
+(15, 13, 24, 1, '2026-04-27 14:00:00', N'Renovación con bifocales', N'Renovación exitosa. Paciente adaptada a bifocales sin mareos.', N'Atendida', 1, '2026-04-25 14:30:00', 1, N'Email'),
+(16, 14, 26, 1, '2026-04-10 15:00:00', N'Miopía escolar primera receta', N'Estudiante 13 años. Miopía incipiente. Indicado monofocal con blue cut.', N'Atendida', 1, '2026-04-08 15:30:00', 1, N'Email'),
+(17, 15, 28, 1, '2026-05-22 10:00:00', N'Presbicia incipiente', N'ADD +1.00. Inicia con monofocales para cerca, dejará progresivos para futuro.', N'Atendida', 1, '2026-05-20 10:30:00', 0, N'Email'),
+(18, 16, 29, 1, '2026-05-24 16:00:00', N'Miopía primera consulta', N'Adulto joven con miopía moderada. Indicados lentes monofocales con anti-reflejo.', N'Atendida', 1, '2026-05-22 16:30:00', 1, N'WhatsApp'),
+(19, 17, 30, 1, '2026-04-17 09:00:00', N'Hipermetropía + presbicia', N'Paciente con hipermetropía oculta + presbicia. Progresivos con buen resultado.', N'Atendida', 1, '2026-04-15 09:30:00', 1, N'Email'),
+(20, 19, 33, 1, '2026-04-12 13:00:00', N'Miopía con astigmatismo', N'Miopía con astigmatismo moderado. Blue cut + anti-reflejo por trabajo de oficina.', N'Atendida', 1, '2026-04-10 13:30:00', 1, N'Email'),
+(21, 21, 36, 1, '2026-04-01 11:00:00', N'Presbicia + astigmatismo', N'Combinación de presbicia alta con astigmatismo bajo. Progresivos tóricos.', N'Atendida', 1, '2026-03-30 11:30:00', 1, N'Email'),
+(22, 25, 42, 1, '2026-04-30 10:00:00', N'Miopía con astigmatismo', N'Profesional con uso intensivo de pantallas. Blue cut + transición.', N'Atendida', 1, '2026-04-28 10:30:00', 1, N'Email'),
+(23, 1, 3, 1, '2026-06-12 11:00:00', N'Limpieza y ajuste', NULL, N'Confirmada', 1, '2026-06-05 11:45:00', 1, N'Email'),
+(24, 2, 5, 1, '2026-06-15 10:00:00', N'Entrega de receta', NULL, N'Confirmada', 1, '2026-06-01 11:00:00', 1, N'WhatsApp'),
+(25, 4, 8, 1, '2026-06-16 14:00:00', N'Seguimiento de progresivos', NULL, N'Confirmada', 1, '2026-05-29 14:30:00', 1, N'Email'),
+(26, 5, 9, 1, '2026-06-10 10:00:00', N'Primera consulta', NULL, N'Confirmada', 1, '2026-06-04 10:30:00', 1, N'Email'),
+(27, 6, 12, 1, '2026-06-11 09:00:00', N'Seguimiento post-adaptación', NULL, N'Confirmada', 1, '2026-06-02 09:30:00', 1, N'Email'),
+(28, 7, 14, 1, '2026-06-18 14:00:00', N'Adaptación a lentes tóricos', NULL, N'Confirmada', 1, '2026-06-03 14:30:00', 1, N'WhatsApp'),
+(29, 8, 16, 1, '2026-06-13 11:00:00', N'Entrega de nueva prescripción', NULL, N'Confirmada', 1, '2026-05-30 11:30:00', 1, N'Email'),
+(30, 9, 18, 1, '2026-06-19 15:00:00', N'Control pediátrico', NULL, N'Confirmada', 1, '2026-06-04 15:30:00', 1, N'Email'),
+(31, 10, 20, 1, '2026-06-10 10:00:00', N'Control post-adaptación', NULL, N'Confirmada', 1, '2026-05-25 10:30:00', 1, N'Email'),
+(32, 13, 25, 1, '2026-06-13 10:00:00', N'Seguimiento de agudeza visual', NULL, N'Confirmada', 1, '2026-06-01 10:30:00', 1, N'Email'),
+(33, 14, 27, 1, '2026-06-17 11:00:00', N'Control y ajuste de lentes', NULL, N'Confirmada', 1, '2026-05-28 11:30:00', 1, N'Email'),
+(34, 17, 31, 1, '2026-06-12 14:00:00', N'Seguimiento', NULL, N'Confirmada', 1, '2026-05-30 14:30:00', 1, N'Email'),
+(35, 21, 37, 1, '2026-06-14 15:00:00', N'Renovación de progresivos', NULL, N'Confirmada', 1, '2026-05-25 15:30:00', 1, N'Email'),
+(36, 18, 32, 1, '2026-06-15 11:00:00', N'Primera consulta', NULL, N'Pendiente', NULL, '2026-06-05 11:30:00', 1, N'Email'),
+(37, 19, 34, 1, '2026-06-16 16:00:00', N'Entrega y ajuste de nueva receta', NULL, N'Pendiente', 1, '2026-06-02 16:30:00', 1, N'Email'),
+(38, 20, 35, 1, '2026-06-19 09:00:00', N'Presbicia incipiente', NULL, N'Pendiente', 1, '2026-05-18 09:30:00', 1, N'Email'),
+(39, 23, 39, 1, '2026-06-11 16:00:00', N'Seguimiento y ajuste', NULL, N'Pendiente', 1, '2026-05-27 16:30:00', 1, N'WhatsApp'),
+(40, 24, 41, 1, '2026-06-13 14:00:00', N'Miopía escolar', NULL, N'Pendiente', 1, '2026-05-05 14:30:00', 1, N'Email'),
+(41, 25, 43, 1, '2026-06-18 13:00:00', N'Entrega de nueva receta', NULL, N'Pendiente', 1, '2026-06-04 13:30:00', 1, N'Email'),
+(42, 22, 38, 1, '2026-05-14 10:00:00', N'Primera consulta', N'Paciente no se presentó, reagendada.', N'Cancelada', 1, '2026-05-12 10:30:00', 0, N'Email'),
+(43, 5, 44, 1, '2026-05-17 10:00:00', N'Primera consulta', N'Cancelada por paciente con 2 horas de anticipación.', N'Cancelada', 1, '2026-05-15 11:00:00', 1, N'Email'),
+(44, 12, 45, 1, '2026-04-12 11:00:00', N'Consulta general', N'Paciente canceló por motivos laborales.', N'Cancelada', 1, '2026-04-10 12:00:00', 1, N'WhatsApp'),
+(45, 18, 46, 1, '2026-05-22 16:00:00', N'Primera consulta', N'Cancelada por paciente.', N'Cancelada', NULL, '2026-05-20 17:00:00', 1, N'Email'),
+(46, 24, 47, 1, '2026-04-17 15:00:00', N'Miopía escolar', N'Paciente no se presentó.', N'Cancelada', 1, '2026-04-15 16:00:00', 0, N'Email'),
+(47, 11, 48, 1, '2026-03-22 10:00:00', N'Chequeo preventivo', N'Paciente no confirmó ni se presentó.', N'Cancelada', 1, '2026-03-20 11:00:00', 0, N'Email'),
+(48, 16, 49, 1, '2026-04-07 14:00:00', N'Miopía primera consulta', N'Paciente olvidó la cita.', N'Cancelada', 1, '2026-04-05 15:00:00', 0, N'Email'),
+(49, 22, 50, 1, '2026-05-14 10:00:00', N'Primera consulta', N'Paciente reagendó por segunda vez. Sin reagendamiento nuevo.', N'Cancelada', 1, '2026-04-18 12:00:00', 1, N'Email'),
+(50, 2, 51, 1, '2026-05-10 09:00:00', N'Seguimiento miopía', N'Cita adicional solicitada por el paciente.', N'Atendida', 1, '2026-05-02 10:00:00', 1, N'WhatsApp')
+;
 SET IDENTITY_INSERT Citas OFF;
 
 -- ============================================================
@@ -554,66 +506,28 @@ INSERT INTO Ventas
    MetodoPago, Total, Descuento, Notas, FechaVenta, SucursalId,
    ReferenciaPago, RutaComprobante)
 VALUES
-(1,  N'F-2026-0001', 1,  3, 1,  3, 155940.00, 0.00,
-       N'Renovación de progresivos blue cut + aro metálico',
-       '2026-03-15 11:00:00', 1, N'VISA-****4521', NULL),
-(2,  N'F-2026-0002', 1,  6, 2,  2, 245210.00, 5000.00,
-       N'Segundo par de progresivos. Descuento cliente frecuente',
-       '2026-04-25 12:00:00', 1, N'SINPE-998877', NULL),
-(3,  N'F-2026-0003', 2,  3, 3,  3, 137860.00, 0.00,
-       N'Monofocales con anti-reflejo + aro deportivo',
-       '2026-04-05 10:30:00', 2, N'VISA-****7832', NULL),
-(4,  N'F-2026-0004', 4,  6, 5,  1, 248600.00, 0.00,
-       N'Progresivos básicos + aro titanio',
-       '2026-03-25 11:30:00', 1, NULL, NULL),
-(5,  N'F-2026-0005', 6,  7, 6,  3, 256510.00, 8000.00,
-       N'Progresivos high index + aro Gucci',
-       '2026-03-28 12:00:00', 2, N'MASTER-****1245', NULL),
-(6,  N'F-2026-0006', 6,  7, 7,  2, 74580.00, 0.00,
-       N'Aro Ray-Ban Aviator conservando graduación',
-       '2026-05-12 13:00:00', 2, N'SINPE-665544', NULL),
-(7,  N'F-2026-0007', 7,  3, 8,  3, 146900.00, 0.00,
-       N'Lentes tóricos blue cut + aro Cat-Eye',
-       '2026-04-08 11:30:00', 1, N'VISA-****9911', NULL),
-(8,  N'F-2026-0008', 8,  6, 9,  2, 123170.00, 0.00,
-       N'Blue cut + anti-reflejo + aro metálico cuadrado',
-       '2026-04-14 12:30:00', 1, N'SINPE-332211', NULL),
-(9,  N'F-2026-0009', 9,  3, 10, 1, 105090.00, 0.00,
-       N'Monofocales pediatric blue cut + aro infantil',
-       '2026-04-22 10:30:00', 1, N'EFECTIVO', NULL),
-(10, N'F-2026-0010', 10, 7, 11, 3, 248600.00, 0.00,
-       N'Progresivos office + aro titanio',
-       '2026-03-30 15:30:00', 2, N'VISA-****6778', NULL),
-(11, N'F-2026-0011', 12, 7, 13, 3, 131080.00, 0.00,
-       N'Anti-fatiga digital + aro deportivo wrap',
-       '2026-05-17 11:30:00', 2, N'MASTER-****2233', NULL),
-(12, N'F-2026-0012', 13, 3, 14, 1, 138990.00, 0.00,
-       N'Bifocales con anti-reflejo + aro metálico clásico',
-       '2026-03-17 10:30:00', 1, N'EFECTIVO', NULL),
-(13, N'F-2026-0013', 13, 3, 15, 2, 142380.00, 0.00,
-       N'Bifocales renovados + aro vintage oval',
-       '2026-04-27 15:30:00', 1, N'SINPE-778899', NULL),
-(14, N'F-2026-0014', 14, 6, 16, 3, 105090.00, 0.00,
-       N'Monofocales blue cut + aro flex silicona',
-       '2026-04-10 16:30:00', 1, N'VISA-****4456', NULL),
-(15, N'F-2026-0015', 16, 3, 18, 2, 124300.00, 0.00,
-       N'Monofocales con anti-reflejo + aro wayfarer',
-       '2026-05-24 17:30:00', 1, N'SINPE-554433', NULL),
-(16, N'F-2026-0016', 17, 6, 19, 3, 205660.00, 0.00,
-       N'Progresivos con blue cut + aro oversize',
-       '2026-04-17 10:30:00', 1, N'VISA-****8821', NULL),
-(17, N'F-2026-0017', 19, 3, 20, 3, 109610.00, 0.00,
-       N'Blue cut + anti-reflejo + aro metálico cuadrado',
-       '2026-04-12 14:30:00', 1, N'MASTER-****9988', NULL),
-(18, N'F-2026-0018', 21, 6, 21, 1, 190970.00, 10000.00,
-       N'Progresivos tóricos con anti-reflejo + aro Oakley',
-       '2026-04-01 12:30:00', 1, N'EFECTIVO', NULL),
-(19, N'F-2026-0019', 22, 7, NULL, 3, 84750.00, 0.00,
-       N'Lentes de sol polarizados sin receta',
-       '2026-05-12 11:30:00', 2, N'VISA-****1155', NULL),
-(20, N'F-2026-0020', 25, 6, 22, 2, 167240.00, 0.00,
-       N'Transitions + blue cut + aro metálico',
-       '2026-04-30 11:30:00', 1, N'SINPE-991122', NULL);
+
+(1, N'F-2026-0001', 1, 1, 1, 3, 201140.00, 0.00, N'Renovación de progresivos blue cut + aro metálico', '2026-03-15 11:00:00', 1, N'VISA-****4521', NULL),
+(2, N'F-2026-0002', 1, 1, 2, 2, 245210.00, 5000.00, N'Segundo par de progresivos. Descuento cliente frecuente', '2026-04-25 12:00:00', 1, N'SINPE-998877', NULL),
+(3, N'F-2026-0003', 2, 1, 3, 3, 137860.00, 0.00, N'Monofocales con anti-reflejo + aro deportivo', '2026-04-05 10:30:00', 1, N'VISA-****7832', NULL),
+(4, N'F-2026-0004', 4, 1, 5, 1, 248600.00, 0.00, N'Progresivos básicos + aro titanio', '2026-03-25 11:30:00', 1, NULL, NULL),
+(5, N'F-2026-0005', 6, 1, 6, 3, 256510.00, 8000.00, N'Progresivos high index + aro Gucci', '2026-03-28 12:00:00', 1, N'MASTER-****1245', NULL),
+(6, N'F-2026-0006', 6, 1, 7, 2, 74580.00, 0.00, N'Aro Ray-Ban Aviator conservando graduación', '2026-05-12 13:00:00', 1, N'SINPE-665544', NULL),
+(7, N'F-2026-0007', 7, 1, 8, 3, 146900.00, 0.00, N'Lentes tóricos blue cut + aro Cat-Eye', '2026-04-08 11:30:00', 1, N'VISA-****9911', NULL),
+(8, N'F-2026-0008', 8, 1, 9, 2, 123170.00, 0.00, N'Blue cut + anti-reflejo + aro metálico cuadrado', '2026-04-14 12:30:00', 1, N'SINPE-332211', NULL),
+(9, N'F-2026-0009', 9, 1, 10, 1, 105090.00, 0.00, N'Monofocales pediatric blue cut + aro infantil', '2026-04-22 10:30:00', 1, N'EFECTIVO', NULL),
+(10, N'F-2026-0010', 10, 1, 11, 3, 248600.00, 0.00, N'Progresivos office + aro titanio', '2026-03-30 15:30:00', 1, N'VISA-****6778', NULL),
+(11, N'F-2026-0011', 12, 1, 13, 3, 131080.00, 0.00, N'Anti-fatiga digital + aro deportivo wrap', '2026-05-17 11:30:00', 1, N'MASTER-****2233', NULL),
+(12, N'F-2026-0012', 13, 1, 14, 1, 138990.00, 0.00, N'Bifocales con anti-reflejo + aro metálico clásico', '2026-03-17 10:30:00', 1, N'EFECTIVO', NULL),
+(13, N'F-2026-0013', 13, 1, 15, 2, 142380.00, 0.00, N'Bifocales renovados + aro vintage oval', '2026-04-27 15:30:00', 1, N'SINPE-778899', NULL),
+(14, N'F-2026-0014', 14, 1, 16, 3, 105090.00, 0.00, N'Monofocales blue cut + aro flex silicona', '2026-04-10 16:30:00', 1, N'VISA-****4456', NULL),
+(15, N'F-2026-0015', 16, 1, 18, 2, 124300.00, 0.00, N'Monofocales con anti-reflejo + aro wayfarer', '2026-05-24 17:30:00', 1, N'SINPE-554433', NULL),
+(16, N'F-2026-0016', 17, 1, 19, 3, 205660.00, 0.00, N'Progresivos con blue cut + aro oversize', '2026-04-17 10:30:00', 1, N'VISA-****8821', NULL),
+(17, N'F-2026-0017', 19, 1, 20, 3, 109610.00, 0.00, N'Blue cut + anti-reflejo + aro metálico cuadrado', '2026-04-12 14:30:00', 1, N'MASTER-****9988', NULL),
+(18, N'F-2026-0018', 21, 1, 21, 1, 190970.00, 10000.00, N'Progresivos tóricos con anti-reflejo + aro Oakley', '2026-04-01 12:30:00', 1, N'EFECTIVO', NULL),
+(19, N'F-2026-0019', 22, 1, NULL, 3, 84750.00, 0.00, N'Lentes de sol polarizados sin receta', '2026-05-12 11:30:00', 1, N'VISA-****1155', NULL),
+(20, N'F-2026-0020', 25, 1, 22, 2, 167240.00, 0.00, N'Transitions + blue cut + aro metálico', '2026-04-30 11:30:00', 1, N'SINPE-991122', NULL)
+;
 SET IDENTITY_INSERT Ventas OFF;
 
 -- ============================================================
@@ -623,7 +537,7 @@ PRINT '8) Insertando DetalleVentas...';
 SET IDENTITY_INSERT DetalleVentas ON;
 INSERT INTO DetalleVentas (Id, VentaId, ProductoId, DescripcionSnapshot, Cantidad, PrecioUnitario, Subtotal) VALUES
 -- Venta 1: progresivos + aro
-(1,  1,  3,  N'Lentes Monofocáticos Elite',           1, 85000.00,  85000.00),
+(1,  1,  13, N'Lentes Progresivos Liberty Plus',      1, 125000.00, 125000.00),
 (2,  1,  1,  N'Aro Metálico Redondo',                 1, 35000.00,  35000.00),
 (3,  1,  19, N'Estuche Rígido Premium Negro',         1, 18000.00,  18000.00),
 -- Venta 2: progresivos + aro + kit
@@ -640,7 +554,7 @@ INSERT INTO DetalleVentas (Id, VentaId, ProductoId, DescripcionSnapshot, Cantida
 (11, 5,  16, N'Lentes High Index 1.74 Ultra',        1, 140000.00, 140000.00),
 (12, 5,  NULL, N'Aro Gucci GG0061S (SKU: ARO-GUC-023)', 1, 95000.00, 95000.00),
 -- Venta 6: solo aro, conserva graduación
-(13, 6,  21, N'Ray-Ban Aviator Classic',             1,  48000.00,  48000.00),
+(13, 6,  NULL, N'Ray-Ban Aviator Classic (no catalogado)', 1,  48000.00,  48000.00),
 (14, 6,  19, N'Estuche Rígido Premium Negro',         1,  18000.00,  18000.00),
 -- Venta 7: blue cut + aro Cat-Eye
 (15, 7,  2,  N'Lentes BlueCut Digital',              1,  65000.00,  65000.00),
@@ -671,7 +585,7 @@ INSERT INTO DetalleVentas (Id, VentaId, ProductoId, DescripcionSnapshot, Cantida
 (33, 14, 10, N'Aro Flex Silicona',                   1,  28000.00,  28000.00),
 -- Venta 15: adulto joven
 (34, 15, 2,  N'Lentes BlueCut Digital',              1,  65000.00,  65000.00),
-(35, 15, 2,  N'Aro Wayfarer Clásico',                1,  45000.00,  45000.00),
+(35, 15, 7,  N'Aro Wayfarer Clásico',                1,  45000.00,  45000.00),
 -- Venta 16: progresivos
 (36, 16, 13, N'Lentes Progresivos Liberty Plus',     1, 125000.00, 125000.00),
 (37, 16, 8,  N'Aro Oversize Grande',                 1,  42000.00,  42000.00),
@@ -701,58 +615,23 @@ INSERT INTO OrdenesTrabajo
    FechaCreacion, FechaLista, PD, TipoLente, MaterialLente,
    Tratamientos, LaboratorioExterno)
 VALUES
--- Entregadas (3) — antiguas
-(1,  1,  1,  1,  N'Entregada', N'OT-PROC-2026-0001',
-     '2026-03-16 09:00:00', '2026-03-23 16:00:00', 62.5, N'Progresivo', N'CR-39 índice 1.50',
-     N'Anti-reflejo + Blue Cut', N'Laboratorio Óptico del Valle'),
-(2,  4,  1,  4,  N'Entregada', N'OT-PROC-2026-0002',
-     '2026-03-26 09:00:00', '2026-04-02 14:00:00', 64.0, N'Progresivo', N'CR-39 índice 1.50',
-     N'Anti-reflejo', N'VisionLab Heredia'),
-(3,  13, 1,  12, N'Entregada', N'OT-BIF-2026-0003',
-     '2026-03-18 09:00:00', '2026-03-25 11:00:00', 60.0, N'Bifocal',    N'CR-39 índice 1.50',
-     N'Anti-reflejo', N'OptiLens Internacional'),
 
--- Listas (4) — esperando retiro del paciente
-(4,  2,  2,  3,  N'Lista', N'OT-MONO-2026-0004',
-     '2026-04-06 09:00:00', '2026-04-12 15:00:00', 63.0, N'Monofocal',  N'Policarbonato índice 1.59',
-     N'Anti-reflejo + UV', N'OptiLens Internacional'),
-(5,  7,  1,  7,  N'Lista', N'OT-TOR-2026-0005',
-     '2026-04-09 09:00:00', '2026-04-15 12:00:00', 61.0, N'Monofocal tórico', N'CR-39 índice 1.50',
-     N'Blue Cut + Anti-reflejo', N'VisionLab Heredia'),
-(6,  10, 2,  10, N'Lista', N'OT-OFF-2026-0006',
-     '2026-03-31 09:00:00', '2026-04-07 16:00:00', 64.5, N'Progresivo office', N'CR-39 índice 1.50',
-     N'Anti-reflejo premium', N'Lux Óptica Mayorista'),
-(7,  17, 1,  16, N'Lista', N'OT-PROC-2026-0007',
-     '2026-04-18 09:00:00', '2026-04-24 11:00:00', 62.0, N'Progresivo', N'CR-39 índice 1.50',
-     N'Blue Cut + Anti-reflejo', N'Laboratorio Óptico del Valle'),
-
--- EnProceso (4) — fabricándose
-(8,  1,  1,  2,  N'EnProceso', N'OT-PROC-2026-0008',
-     '2026-04-26 09:00:00', NULL, 62.5, N'Progresivo', N'CR-39 índice 1.50',
-     N'Blue Cut + Transitions', N'Lux Óptica Mayorista'),
-(9,  8,  1,  8,  N'EnProceso', N'OT-MONO-2026-0009',
-     '2026-04-15 09:00:00', NULL, 64.0, N'Monofocal',  N'Policarbonato índice 1.59',
-     N'Blue Cut + Anti-reflejo', N'OptiLens Internacional'),
-(10, 14, 1,  14, N'EnProceso', N'OT-MONO-2026-0010',
-     '2026-04-11 09:00:00', NULL, 58.5, N'Monofocal',  N'CR-39 índice 1.50',
-     N'Blue Cut + Anti-reflejo', N'VisionLab Heredia'),
-(11, 19, 1,  17, N'EnProceso', N'OT-MONO-2026-0011',
-     '2026-04-13 09:00:00', NULL, 63.5, N'Monofocal',  N'CR-39 índice 1.50',
-     N'Blue Cut + Anti-reflejo', N'OptiLens Internacional'),
-
--- Pendientes (4) — recién enviadas al laboratorio
-(12, 12, 2,  11, N'Pendiente', N'OT-ANTI-2026-0012',
-     '2026-05-18 09:00:00', NULL, 63.0, N'Monofocal',  N'CR-39 índice 1.50',
-     N'Anti-fatiga + Blue Cut', N'Lux Óptica Mayorista'),
-(13, 16, 1,  15, N'Pendiente', N'OT-MONO-2026-0013',
-     '2026-05-25 09:00:00', NULL, 62.0, N'Monofocal',  N'CR-39 índice 1.50',
-     N'Anti-reflejo + UV', N'VisionLab Heredia'),
-(14, 21, 1,  18, N'Pendiente', N'OT-TOR-2026-0014',
-     '2026-04-02 09:00:00', NULL, 61.5, N'Progresivo tórico', N'High index 1.67',
-     N'Blue Cut + Anti-reflejo premium', N'Lux Óptica Mayorista'),
-(15, 25, 1,  20, N'Pendiente', N'OT-TRANS-2026-0015',
-     '2026-05-01 09:00:00', NULL, 62.0, N'Monofocal Transitions', N'CR-39 índice 1.50',
-     N'Transitions + Blue Cut', N'OptiLens Internacional');
+(1, 1, 1, 1, N'Entregada', N'OT-PROC-2026-0001', '2026-03-16 09:00:00', '2026-03-23 16:00:00', 62.5, N'Progresivo', N'CR-39 índice 1.50', N'Anti-reflejo + Blue Cut', N'Laboratorio Óptico del Valle'),
+(2, 4, 1, 4, N'Entregada', N'OT-PROC-2026-0002', '2026-03-26 09:00:00', '2026-04-02 14:00:00', 64.0, N'Progresivo', N'CR-39 índice 1.50', N'Anti-reflejo', N'VisionLab Heredia'),
+(3, 13, 1, 12, N'Entregada', N'OT-BIF-2026-0003', '2026-03-18 09:00:00', '2026-03-25 11:00:00', 60.0, N'Bifocal', N'CR-39 índice 1.50', N'Anti-reflejo', N'OptiLens Internacional'),
+(4, 2, 1, 3, N'Lista', N'OT-MONO-2026-0004', '2026-04-06 09:00:00', '2026-04-12 15:00:00', 63.0, N'Monofocal', N'Policarbonato índice 1.59', N'Anti-reflejo + UV', N'OptiLens Internacional'),
+(5, 7, 1, 7, N'Lista', N'OT-TOR-2026-0005', '2026-04-09 09:00:00', '2026-04-15 12:00:00', 61.0, N'Monofocal tórico', N'CR-39 índice 1.50', N'Blue Cut + Anti-reflejo', N'VisionLab Heredia'),
+(6, 10, 1, 10, N'Lista', N'OT-OFF-2026-0006', '2026-03-31 09:00:00', '2026-04-07 16:00:00', 64.5, N'Progresivo office', N'CR-39 índice 1.50', N'Anti-reflejo premium', N'Lux Óptica Mayorista'),
+(7, 17, 1, 16, N'Lista', N'OT-PROC-2026-0007', '2026-04-18 09:00:00', '2026-04-24 11:00:00', 62.0, N'Progresivo', N'CR-39 índice 1.50', N'Blue Cut + Anti-reflejo', N'Laboratorio Óptico del Valle'),
+(8, 1, 1, 2, N'EnProceso', N'OT-PROC-2026-0008', '2026-04-26 09:00:00', NULL, 62.5, N'Progresivo', N'CR-39 índice 1.50', N'Blue Cut + Transitions', N'Lux Óptica Mayorista'),
+(9, 8, 1, 8, N'EnProceso', N'OT-MONO-2026-0009', '2026-04-15 09:00:00', NULL, 64.0, N'Monofocal', N'Policarbonato índice 1.59', N'Blue Cut + Anti-reflejo', N'OptiLens Internacional'),
+(10, 14, 1, 14, N'EnProceso', N'OT-MONO-2026-0010', '2026-04-11 09:00:00', NULL, 58.5, N'Monofocal', N'CR-39 índice 1.50', N'Blue Cut + Anti-reflejo', N'VisionLab Heredia'),
+(11, 19, 1, 17, N'EnProceso', N'OT-MONO-2026-0011', '2026-04-13 09:00:00', NULL, 63.5, N'Monofocal', N'CR-39 índice 1.50', N'Blue Cut + Anti-reflejo', N'OptiLens Internacional'),
+(12, 12, 1, 11, N'Pendiente', N'OT-ANTI-2026-0012', '2026-05-18 09:00:00', NULL, 63.0, N'Monofocal', N'CR-39 índice 1.50', N'Anti-fatiga + Blue Cut', N'Lux Óptica Mayorista'),
+(13, 16, 1, 15, N'Pendiente', N'OT-MONO-2026-0013', '2026-05-25 09:00:00', NULL, 62.0, N'Monofocal', N'CR-39 índice 1.50', N'Anti-reflejo + UV', N'VisionLab Heredia'),
+(14, 21, 1, 18, N'Pendiente', N'OT-TOR-2026-0014', '2026-04-02 09:00:00', NULL, 61.5, N'Progresivo tórico', N'High index 1.67', N'Blue Cut + Anti-reflejo premium', N'Lux Óptica Mayorista'),
+(15, 25, 1, 20, N'Pendiente', N'OT-TRANS-2026-0015', '2026-05-01 09:00:00', NULL, 62.0, N'Monofocal Transitions', N'CR-39 índice 1.50', N'Transitions + Blue Cut', N'OptiLens Internacional')
+;
 SET IDENTITY_INSERT OrdenesTrabajo OFF;
 
 -- ============================================================
@@ -917,11 +796,11 @@ INSERT INTO DetallePedidos (Id, PedidoId, ProductoId, Cantidad, CostoUnitario) V
 -- Pedido 1: lentes premium
 (1,  1,  16,  10, 65000.00),  -- High Index 1.74
 (2,  1,  13,  8,  58000.00),  -- Progresivos Liberty
--- Pedido 2: aros de marca
-(3,  2,  21,  6,  22000.00),  -- Ray-Ban
-(4,  2,  22,  6,  19500.00),  -- Oakley
-(5,  2,  23,  4,  45000.00),  -- Gucci
-(6,  2,  24,  3,  55000.00),  -- Prada
+-- Pedido 2: aros de marca (mapeados a aros genéricos del catálogo; costo snapshot al momento del pedido)
+(3,  2,  3,  6,  22000.00),  -- Aro Cat-Eye Femenino (Ray-Ban equiv.)
+(4,  2,  7,  6,  19500.00),  -- Aro Wayfarer Clásico (Oakley equiv.)
+(5,  2,  8,  4,  45000.00),  -- Aro Oversize Grande (Gucci equiv.)
+(6,  2,  10, 3,  55000.00),  -- Aro Flex Silicona (Prada equiv.)
 -- Pedido 3: monofocales
 (7,  3,  2,   15, 30000.00),  -- BlueCut Digital
 (8,  3,  14,  10, 32000.00),  -- Antifatiga
@@ -938,33 +817,28 @@ INSERT INTO DetallePedidos (Id, PedidoId, ProductoId, Cantidad, CostoUnitario) V
 -- Pedido 7: progresivos premium y tóricos
 (16, 7,  13,  8,  58000.00),  -- Progresivos Liberty
 (17, 7,  17,  6,  41000.00),  -- Bifocales
--- Pedido 8: accesorios y repuestos (aros no van por DetallePedidos, se manejan aparte)
+-- Pedido 8: accesorios y repuestos
 (18, 8,  22,  25,  3800.00),  -- Cordón de nylon
-(19, 8,  23,  10, 16500.00),  -- Lentes de repuesto
-(20, 8,  24,  30,  5500.00),  -- Gotas hidratantes
+(19, 8,  23,  10,  5500.00),  -- Gotas Hidratantes Oftálmicas
+(20, 8,  24,  30,  35000.00), -- Lentes de Sol Sport Pro MTB
 -- Pedido 9: accesorios
 (21, 9,  19,  20, 8500.00),   -- Estuche
 (22, 9,  20,  30, 2500.00),   -- Paño microfibra
 (23, 9,  21,  15, 7000.00),   -- Kit limpieza
 (24, 9,  22,  25, 3800.00),   -- Cordón nylon
 -- Pedido 10: gotas y kits
-(25, 10, 24,  40, 5500.00),   -- Gotas hidratantes
-(26, 10, 21,  20, 7000.00),   -- Kit limpieza
-(27, 10, 23,  15, 16500.00);  -- Lentes de repuesto
+(25, 10, 23,  40, 5500.00),   -- Gotas Hidratantes Oftálmicas
+(26, 10, 21,  20, 7000.00),   -- Kit de Limpieza Completo
+(27, 10, 24,  15, 35000.00);  -- Lentes de Sol Sport Pro MTB
 SET IDENTITY_INSERT DetallePedidos OFF;
 
-COMMIT;
+-- (COMMIT removed)
+
 PRINT '================================================';
 PRINT 'SEED COMPLETADO:';
 PRINT '  6 proveedores, 25 pacientes, 50 solicitudes, 50 citas';
-PRINT '  22 expedientes, 22 valores clinicos';
+PRINT '  23 expedientes, 23 valores clinicos';
 PRINT '  20 ventas, 47 detalles, 15 OTs, 50 notificaciones';
 PRINT '  10 pedidos, 27 detalles';
 PRINT '================================================';
-END TRY
-BEGIN CATCH
-ROLLBACK;
-PRINT 'ERROR: ' + ERROR_MESSAGE();
-THROW;
-END CATCH
-
+GO
