@@ -282,15 +282,37 @@
             }
 
         .validation-error {
-            background: rgba(239,68,68,.15);
-            border: 1px solid rgba(239,68,68,.3);
+            background: rgba(239,68,68,.22);
+            border: 1px solid rgba(248,113,113,.55);
             border-radius: 12px;
-            padding: 10px 14px;
+            padding: 12px 14px;
             font-size: 13px;
-            color: #fca5a5;
+            font-weight: 500;
+            color: #fecaca;
             margin-bottom: 20px;
             animation: shake 0.4s ease;
+            opacity: 1 !important;
+            transform: none !important;
+            line-height: 1.45;
         }
+
+            .validation-error ul {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                color: #fecaca;
+                display: inline;
+            }
+
+            .validation-error li {
+                color: #fecaca;
+                display: inline;
+            }
+
+            .validation-error .validation-summary-errors {
+                display: inline;
+                color: #fecaca;
+            }
 
         @@keyframes shake {
             0%, 100% {
@@ -377,11 +399,20 @@
             <form asp-action="Login" method="post" id="loginForm">
                 @Html.AntiForgeryToken()
 
-                @if (ViewData.ModelState.ErrorCount > 0)
+                @{
+                    var loginErrors = ViewData.ModelState
+                        .Where(e => string.IsNullOrEmpty(e.Key))
+                        .SelectMany(e => e.Value?.Errors ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.ModelBinding.ModelError>())
+                        .Select(e => e.ErrorMessage)
+                        .Where(m => !string.IsNullOrWhiteSpace(m))
+                        .Distinct()
+                        .ToList();
+                }
+                @if (loginErrors.Count > 0)
                 {
-                    <div class="validation-error login-animate-item" data-delay="200">
+                    <div class="validation-error" role="alert" aria-live="polite">
                         <i class="bi bi-exclamation-circle me-2"></i>
-                        <span asp-validation-summary="ModelOnly"></span>
+                        @string.Join(" ", loginErrors)
                     </div>
                 }
 

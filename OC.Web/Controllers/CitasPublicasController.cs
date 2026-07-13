@@ -17,6 +17,8 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<SolicitudCita> _solicitudesRepo;
         private readonly IGenericRepository<Cita> _citasRepo;
         private readonly IGenericRepository<Expediente> _expedienteRepo;
+        private readonly IGenericRepository<Sucursal> _sucursalesRepo;
+        private readonly IGenericRepository<Usuario> _usuariosRepo;
         private readonly INotificationService _notificationService;
 
         public CitasPublicasController(
@@ -24,12 +26,16 @@ namespace OC.Web.Controllers
             IGenericRepository<SolicitudCita> solicitudesRepo,
             IGenericRepository<Cita> citasRepo,
             IGenericRepository<Expediente> expedienteRepo,
+            IGenericRepository<Sucursal> sucursalesRepo,
+            IGenericRepository<Usuario> usuariosRepo,
             INotificationService notificationService)
         {
             _pacientesRepo = pacientesRepo;
             _solicitudesRepo = solicitudesRepo;
             _citasRepo = citasRepo;
             _expedienteRepo = expedienteRepo;
+            _sucursalesRepo = sucursalesRepo;
+            _usuariosRepo = usuariosRepo;
             _notificationService = notificationService;
         }
 
@@ -182,6 +188,153 @@ namespace OC.Web.Controllers
             );
 
             return View(resultado);
+        }
+
+        [Authorize(Roles = "Optometrista,Recepcion,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> Crear()
+        {
+            return View(await PrepararCrearCitaModelAsync(new CrearCitaStaffViewModel()));
+        }
+
+        [Authorize(Roles = "Optometrista,Recepcion,Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Crear(CrearCitaStaffViewModel model)
+        {
+            if (model.PacienteId <= 0)
+                ModelState.AddModelError(nameof(model.PacienteId), "Debe seleccionar un paciente.");
+
+            if (model.SucursalId <= 0)
+                ModelState.AddModelError(nameof(model.SucursalId), "Debe seleccionar una sucursal.");
+
+            if (model.FechaHora <= DateTime.Now)
+                ModelState.AddModelError(nameof(model.FechaHora), "La fecha y hora deben ser posteriores a la actual.");
+
+            if (!ModelState.IsValid)
+                return View(await PrepararCrearCitaModelAsync(model));
+
+            var paciente = await _pacientesRepo.GetByIdAsync(model.PacienteId);
+            if (paciente == null)
+            {
+                ModelState.AddModelError(nameof(model.PacienteId), "El paciente seleccionado no existe.");
+                return View(await PrepararCrearCitaModelAsync(model));
+            }
+
+            var ocupado = await _citasRepo.GetPagedAsync(
+                1, 1,
+                filter: c => c.SucursalId == model.SucursalId
+                    && c.FechaHora == model.FechaHora
+                    && c.Estado != EstadoCita.Cancelada);
+            if (ocupado.Items.Any())
+            {
+                ModelState.AddModelError(nameof(model.FechaHora), "Ese horario ya no está disponible en la sucursal seleccionada.");
+                return View(await PrepararCrearCitaModelAsync(model));
+            }
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            int? usuarioAprobadorId = int.TryParse(userIdClaim, out var uid) ? uid : null;
+
+            var solicitud = new SolicitudCita
+            {
+                PacienteId = model.PacienteId,
+                Motivo = string.IsNullOrWhiteSpace(model.MotivoConsulta)
+                    ? "Cita registrada por recepción/staff"
+                    : model.MotivoConsulta.Trim(),
+                FechaSolicitud = DateTime.Now,
+                Estado = "Aprobada",
+                FechaAprobacion = DateTime.Now,
+                UsuarioAprobadorId = usuarioAprobadorId
+            };
+            await _solicitudesRepo.AddAsync(solicitud);
+
+            var cita = new Cita
+            {
+                PacienteId = model.PacienteId,
+                SolicitudCitaId = solicitud.Id,
+                SucursalId = model.SucursalId,
+                FechaHora = model.FechaHora,
+                MotivoConsulta = model.MotivoConsulta?.Trim(),
+                Estado = EstadoCita.Confirmada,
+                UsuarioAsignadoId = model.UsuarioAsignadoId > 0 ? model.UsuarioAsignadoId : null,
+                FechaCreacion = DateTime.Now,
+                NotificacionesActivas = true,
+                CanalNotificacion = "Email"
+            };
+            await _citasRepo.AddAsync(cita);
+
+            TempData["Success"] = $"Cita creada correctamente para {paciente.NombreCompleto}.";
+            return RedirectToAction(nameof(CitasPaciente));
+        }
+
+        [Authorize(Roles = "Optometrista,Recepcion,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> ObtenerHorasDisponibles(int sucursalId, string fecha)
+        {
+            if (sucursalId <= 0 || !DateTime.TryParse(fecha, out var date))
+                return Json(Array.Empty<string>());
+
+            const int horaInicio = 8;
+            const int horaFin = 18;
+            var inicioDia = date.Date.AddHours(horaInicio);
+            var finDia = date.Date.AddHours(horaFin);
+
+            var citasOcupadas = await _citasRepo.GetPagedAsync(
+                1, 500,
+                filter: c => c.SucursalId == sucursalId
+                    && c.FechaHora >= inicioDia
+                    && c.FechaHora < finDia
+                    && c.Estado != EstadoCita.Cancelada);
+
+            var slotsOcupados = citasOcupadas.Items
+                .Select(c => c.FechaHora.ToString("HH:mm"))
+                .ToHashSet();
+
+            var disponibles = new List<string>();
+            for (int h = horaInicio; h < horaFin; h++)
+            {
+                if (!slotsOcupados.Contains($"{h:D2}:00")) disponibles.Add($"{h:D2}:00");
+                if (!slotsOcupados.Contains($"{h:D2}:30")) disponibles.Add($"{h:D2}:30");
+            }
+
+            return Json(disponibles);
+        }
+
+        private async Task<CrearCitaStaffViewModel> PrepararCrearCitaModelAsync(CrearCitaStaffViewModel model)
+        {
+            var pacientes = await _pacientesRepo.GetPagedAsync(
+                1, 500,
+                orderBy: q => q.OrderBy(p => p.Apellidos).ThenBy(p => p.Nombres));
+            var sucursales = await _sucursalesRepo.GetPagedAsync(1, 100, filter: s => s.Activo);
+            var usuarios = await _usuariosRepo.GetPagedAsync(
+                1, 500,
+                filter: u => u.Activo,
+                includeProperties: "Rol");
+
+            model.PacientesList = pacientes.Items.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = p.Id.ToString(),
+                Text = $"{p.NombreCompleto} ({p.Cedula})",
+                Selected = p.Id == model.PacienteId
+            }).ToList();
+
+            model.SucursalesList = sucursales.Items.Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = s.Id.ToString(),
+                Text = s.Nombre,
+                Selected = s.Id == model.SucursalId
+            }).ToList();
+
+            model.OptometristasList = usuarios.Items
+                .Where(u => u.Rol != null && u.Rol.Nombre.Equals("Optometrista", StringComparison.OrdinalIgnoreCase))
+                .Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = u.Id.ToString(),
+                    Text = u.Nombre,
+                    Selected = model.UsuarioAsignadoId == u.Id
+                }).ToList();
+
+            return model;
         }
 
         [Authorize(Roles = "Optometrista, Recepcion, Admin")]

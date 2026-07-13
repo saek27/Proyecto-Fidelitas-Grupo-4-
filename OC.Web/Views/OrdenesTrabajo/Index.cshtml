@@ -149,7 +149,8 @@
                                 <td class="text-center">
                                     @if (User.IsInRole("TecnicoOcular") &&
                                          (o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.Pendiente ||
-                                          o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.EnProceso))
+                                          o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.EnProceso ||
+                                          o.Estado == OC.Core.Domain.Entities.EstadoOrdenTrabajo.Lista))
                                     {
                                         <a asp-action="Edit" asp-route-id="@o.Id"
                                            class="btn-action btn-action-primary" title="Cambiar estado">

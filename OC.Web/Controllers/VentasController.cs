@@ -21,6 +21,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Usuario> _usuarioRepo;
         private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
         private readonly IGenericRepository<Aro> _aroRepo;
+        private readonly IGenericRepository<OrdenTrabajo> _ordenesRepo;
 
 
         public VentasController(
@@ -31,7 +32,8 @@ namespace OC.Web.Controllers
             IGenericRepository<ValorClinico> valorClinicoRepo,
             IGenericRepository<Usuario> usuarioRepo,
             IGenericRepository<TecnologiaLente> tecnologiaRepo,
-            IGenericRepository<Aro> aroRepo)
+            IGenericRepository<Aro> aroRepo,
+            IGenericRepository<OrdenTrabajo> ordenesRepo)
         {
             _ventaRepo = ventaRepo;
             _detalleRepo = detalleRepo;
@@ -41,6 +43,7 @@ namespace OC.Web.Controllers
             _usuarioRepo = usuarioRepo;
             _tecnologiaRepo = tecnologiaRepo;
             _aroRepo = aroRepo;
+            _ordenesRepo = ordenesRepo;
         }
 
         // GET: /Ventas
@@ -61,15 +64,63 @@ namespace OC.Web.Controllers
                }
            }*/
 
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(
+            int page = 1,
+            string? search = null,
+            string? metodo = null,
+            string? desde = null,
+            string? hasta = null,
+            string? sort = null)
         {
             try
             {
+                ViewBag.Search = search;
+                ViewBag.Metodo = metodo;
+                ViewBag.Desde = desde;
+                ViewBag.Hasta = hasta;
+                ViewBag.Sort = sort;
+
+                DateTime? fDesde = null;
+                DateTime? fHasta = null;
+                if (!string.IsNullOrWhiteSpace(desde) && DateTime.TryParse(desde, out var d1))
+                    fDesde = d1.Date;
+                if (!string.IsNullOrWhiteSpace(hasta) && DateTime.TryParse(hasta, out var d2))
+                    fHasta = d2.Date.AddDays(1).AddTicks(-1);
+
+                MetodoPago? metodoPago = null;
+                if (!string.IsNullOrWhiteSpace(metodo) && Enum.TryParse<MetodoPago>(metodo, true, out var mp))
+                    metodoPago = mp;
+
+                System.Linq.Expressions.Expression<Func<Venta, bool>>? filter = null;
+                var term = search?.Trim();
+
+                if (!string.IsNullOrWhiteSpace(term) || metodoPago.HasValue || fDesde.HasValue || fHasta.HasValue)
+                {
+                    filter = v =>
+                        (string.IsNullOrWhiteSpace(term)
+                            || (v.NumeroFactura != null && v.NumeroFactura.ToLower().Contains(term.ToLower()))
+                            || (v.Paciente != null && (
+                                (v.Paciente.Nombres != null && v.Paciente.Nombres.ToLower().Contains(term.ToLower()))
+                                || (v.Paciente.Apellidos != null && v.Paciente.Apellidos.ToLower().Contains(term.ToLower()))
+                                || (v.Paciente.Cedula != null && v.Paciente.Cedula.Contains(term))
+                                || ((v.Paciente.Nombres + " " + v.Paciente.Apellidos).ToLower().Contains(term.ToLower()))))
+                            || (v.Usuario != null && v.Usuario.Nombre != null && v.Usuario.Nombre.ToLower().Contains(term.ToLower())))
+                        && (!metodoPago.HasValue || v.MetodoPago == metodoPago.Value)
+                        && (!fDesde.HasValue || v.FechaVenta >= fDesde.Value)
+                        && (!fHasta.HasValue || v.FechaVenta <= fHasta.Value);
+                }
+
+                Func<IQueryable<Venta>, IOrderedQueryable<Venta>> orderBy = q => q.OrderByDescending(v => v.FechaVenta);
+                if (sort == "asc")
+                    orderBy = q => q.OrderBy(v => v.Total);
+                else if (sort == "desc")
+                    orderBy = q => q.OrderByDescending(v => v.Total);
+
                 var resultado = await _ventaRepo.GetPagedAsync(
-                    page, 10, null,
+                    page, 10, filter, orderBy,
                     includeProperties: "Paciente,Usuario");
 
-                return View(resultado); // 🔥 AQUÍ está la clave
+                return View(resultado);
             }
             catch (Exception ex)
             {
@@ -350,7 +401,12 @@ namespace OC.Web.Controllers
                     }
                 }
 
-                TempData["Success"] = $"Venta {venta.NumeroFactura} registrada correctamente.";
+                // 9. Crear orden de trabajo automática (lentes/aros o venta con valor clínico)
+                var ordenCreadaId = await CrearOrdenTrabajoSiCorrespondeAsync(venta, detalles);
+
+                TempData["Success"] = ordenCreadaId.HasValue
+                    ? $"Venta {venta.NumeroFactura} registrada. Orden de trabajo #{ordenCreadaId} creada automáticamente."
+                    : $"Venta {venta.NumeroFactura} registrada correctamente.";
                 return RedirectToAction("Factura", new { id = venta.Id });
             }
             catch (Exception ex)
@@ -359,6 +415,44 @@ namespace OC.Web.Controllers
                 await RecargarViewBag();
                 return View(model);
             }
+        }
+
+        /// <summary>
+        /// Genera una orden Pendiente vinculada a la venta cuando hay lentes/aros
+        /// o receta (ValorClinico). No duplica si ya existe orden para esa venta.
+        /// </summary>
+        private async Task<int?> CrearOrdenTrabajoSiCorrespondeAsync(Venta venta, List<DetalleVentaInputModel> detalles)
+        {
+            var tieneLentesOAros = detalles.Any(d => !d.ProductoId.HasValue);
+            var tieneReceta = venta.ValorClinicoId.HasValue;
+            if (!tieneLentesOAros && !tieneReceta)
+                return null;
+
+            var existente = await _ordenesRepo.GetPagedAsync(
+                1, 1, o => o.VentaId == venta.Id);
+            if (existente.Items.Any())
+                return existente.Items.First().Id;
+
+            var tipoLente = detalles
+                .Where(d => !d.ProductoId.HasValue
+                            && !string.IsNullOrWhiteSpace(d.DescripcionSnapshot)
+                            && d.DescripcionSnapshot.StartsWith("Lentes", StringComparison.OrdinalIgnoreCase))
+                .Select(d => d.DescripcionSnapshot)
+                .FirstOrDefault();
+
+            var orden = new OrdenTrabajo
+            {
+                PacienteId = venta.PacienteId,
+                SucursalId = venta.SucursalId,
+                VentaId = venta.Id,
+                Estado = EstadoOrdenTrabajo.Pendiente,
+                FechaCreacion = DateTime.Now,
+                Referencia = venta.NumeroFactura,
+                TipoLente = tipoLente
+            };
+
+            await _ordenesRepo.AddAsync(orden);
+            return orden.Id;
         }
 
         // GET: /Ventas/Factura/5

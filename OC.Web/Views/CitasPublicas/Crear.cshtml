@@ -1,0 +1,158 @@
+@model OC.Web.ViewModels.CrearCitaStaffViewModel
+@{
+    ViewData["Title"] = "Nueva cita";
+}
+
+<div class="container-fluid px-4">
+    <div class="form-header animate-fade-up mb-4">
+        <div class="form-header-icon"><i class="bi bi-calendar-plus"></i></div>
+        <div class="form-header-text">
+            <h1 class="page-title mb-1">Nueva cita</h1>
+            <p class="page-subtitle mb-0">Registre una cita seleccionando un paciente existente.</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-dashboard animate-fade-up delay-1">
+                <div class="card-body">
+                    <form asp-action="Crear" method="post" id="formCrearCita">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="FechaHora" id="fechaHoraCompleta" />
+
+                        <div class="mb-3">
+                            <label asp-for="PacienteId" class="form-label"></label>
+                            <select asp-for="PacienteId" class="form-select" id="PacienteId">
+                                <option value="0">— Seleccione un paciente —</option>
+                                @if (Model.PacientesList != null)
+                                {
+                                    @foreach (var p in Model.PacientesList)
+                                    {
+                                        <option value="@p.Value" selected="@p.Selected">@p.Text</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="PacienteId" class="text-danger"></span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="SucursalId" class="form-label"></label>
+                                <select asp-for="SucursalId" class="form-select" id="sucursalId">
+                                    <option value="0">— Seleccione sucursal —</option>
+                                    @if (Model.SucursalesList != null)
+                                    {
+                                        @foreach (var s in Model.SucursalesList)
+                                        {
+                                            <option value="@s.Value" selected="@s.Selected">@s.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="SucursalId" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="fecha">Fecha</label>
+                                <input type="date" id="fecha" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="hora">Hora disponible</label>
+                                <select id="hora" class="form-select" required>
+                                    <option value="">Seleccione sucursal y fecha</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="UsuarioAsignadoId" class="form-label"></label>
+                                <select asp-for="UsuarioAsignadoId" class="form-select" asp-items="Model.OptometristasList">
+                                    <option value="">Ninguno</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="MotivoConsulta" class="form-label"></label>
+                                <textarea asp-for="MotivoConsulta" class="form-control" rows="3" maxlength="500"></textarea>
+                            </div>
+                        </div>
+
+                        <p class="form-text mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Horario de atención: 8:00 a 18:00. Slots cada 30 minutos.
+                        </p>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-brand">
+                                <i class="bi bi-calendar-check me-1"></i> Guardar cita
+                            </button>
+                            <a asp-action="CitasPaciente" class="btn btn-outline-secondary ms-1">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var sucursalId = document.getElementById('sucursalId');
+            var fecha = document.getElementById('fecha');
+            var hora = document.getElementById('hora');
+            var fechaHoraCompleta = document.getElementById('fechaHoraCompleta');
+
+            function cargarHoras() {
+                var sid = sucursalId.value;
+                var f = fecha.value;
+                hora.innerHTML = '<option value="">Cargando...</option>';
+                if (!sid || sid === '0' || !f) {
+                    hora.innerHTML = '<option value="">Seleccione sucursal y fecha</option>';
+                    return;
+                }
+                fetch('@Url.Action("ObtenerHorasDisponibles", "CitasPublicas")?sucursalId=' + encodeURIComponent(sid) + '&fecha=' + encodeURIComponent(f))
+                    .then(function (r) { return r.json(); })
+                    .then(function (horas) {
+                        hora.innerHTML = '<option value="">Seleccione hora</option>';
+                        if (horas && horas.length) {
+                            horas.forEach(function (h) {
+                                var opt = document.createElement('option');
+                                opt.value = h;
+                                opt.textContent = h;
+                                hora.appendChild(opt);
+                            });
+                        } else {
+                            hora.innerHTML = '<option value="">Sin disponibilidad</option>';
+                        }
+                    })
+                    .catch(function () {
+                        hora.innerHTML = '<option value="">Error al cargar</option>';
+                    });
+            }
+
+            function actualizarHidden() {
+                var f = fecha.value;
+                var h = hora.value;
+                if (!f || !h || h.indexOf(':') < 0) return;
+                var parts = h.split(':');
+                fechaHoraCompleta.value = f + 'T' + (parts[0] || '08') + ':' + (parts[1] || '00') + ':00';
+            }
+
+            sucursalId.addEventListener('change', cargarHoras);
+            fecha.addEventListener('change', cargarHoras);
+            hora.addEventListener('change', actualizarHidden);
+
+            document.getElementById('formCrearCita').addEventListener('submit', function (e) {
+                actualizarHidden();
+                if (!document.getElementById('PacienteId').value || document.getElementById('PacienteId').value === '0') {
+                    e.preventDefault();
+                    alert('Debe seleccionar un paciente.');
+                    return false;
+                }
+                if (!hora.value || hora.value.indexOf(':') < 0) {
+                    e.preventDefault();
+                    alert('Seleccione una hora disponible.');
+                    return false;
+                }
+            });
+        })();
+    </script>
+}

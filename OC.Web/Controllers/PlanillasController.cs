@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace OC.Web.Controllers
 {
- 
+    [Authorize]
     public class PlanillasController : Controller
     {
         private readonly IGenericRepository<Planilla> _planillaRepo;
@@ -23,6 +23,7 @@ namespace OC.Web.Controllers
         }
 
         // GET: Planillas/Index
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index(int page = 1)
         {
             var planillas = await _planillaRepo.GetPagedAsync(
@@ -51,6 +52,7 @@ namespace OC.Web.Controllers
         // POST: Planillas/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(PlanillaCreateViewModel model)
         {
             // Recargar lista de empleados por si hay error
@@ -187,6 +189,7 @@ namespace OC.Web.Controllers
         // POST: Planillas/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, PlanillaCreateViewModel model)
         {
             if (id != model.Id)
@@ -285,6 +288,7 @@ namespace OC.Web.Controllers
             return View(planilla);
         }
         // GET: Planillas/Details/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Details(int id)
         {
             var planilla = (await _planillaRepo.GetPagedAsync(
@@ -301,6 +305,7 @@ namespace OC.Web.Controllers
 
         // AJAX: Buscar empleados por cédula o nombre
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> BuscarEmpleados(string term)
         {
             if (string.IsNullOrWhiteSpace(term) || term.Length < 2)

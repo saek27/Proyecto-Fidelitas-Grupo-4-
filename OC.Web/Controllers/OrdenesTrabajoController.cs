@@ -174,7 +174,7 @@ namespace OC.Web.Controllers
             {
                 { (EstadoOrdenTrabajo.Pendiente,  EstadoOrdenTrabajo.EnProceso), new[] { "TecnicoOcular", "Admin" } },
                 { (EstadoOrdenTrabajo.EnProceso,  EstadoOrdenTrabajo.Lista),     new[] { "TecnicoOcular", "Admin" } },
-                { (EstadoOrdenTrabajo.Lista,      EstadoOrdenTrabajo.Entregada), new[] { "Recepcion",    "Admin" } },
+                { (EstadoOrdenTrabajo.Lista,      EstadoOrdenTrabajo.Entregada), new[] { "TecnicoOcular", "Recepcion", "Admin" } },
             };
 
             var key = (estadoAnterior, estado);
