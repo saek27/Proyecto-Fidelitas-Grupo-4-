@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Folder Include="NewFolder\" />
+    <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="wwwroot\uploads\documentos\" />
   </ItemGroup>
 
