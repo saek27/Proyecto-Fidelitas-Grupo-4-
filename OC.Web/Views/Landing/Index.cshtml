@@ -3,6 +3,15 @@
     ViewData["Title"] = "Inicio - Óptica Comunal";
     var destacados = ViewBag.Destacados as IEnumerable<OC.Core.Domain.Entities.Producto>;
     var productosCarrusel = ViewBag.ProductosCarrusel as IEnumerable<OC.Core.Domain.Entities.Producto>;
+    var imagenesPorProducto = ViewBag.ImagenesPorProducto as Dictionary<int, string>
+                              ?? new Dictionary<int, string>();
+
+    string ImagenPara(int productoId, string? legacyRuta)
+    {
+        if (imagenesPorProducto.TryGetValue(productoId, out var ruta) && !string.IsNullOrEmpty(ruta))
+            return ruta;
+        return string.IsNullOrEmpty(legacyRuta) ? "/images/default-product.jpg" : legacyRuta;
+    }
 }
 
 
@@ -17,7 +26,7 @@
             <div class="hero-slide @(i == 0 ? "active" : "")" data-index="@i">
 
                 <div class="hero-slide__bg"
-                     style="background-image:url('@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)');">
+                     style="background-image:url('@(ImagenPara(prod.Id, prod.RutaImagen))');">
                 </div>
 
                 <div class="hero-slide__overlay"></div>
@@ -37,7 +46,7 @@
                     </div>
                 </div>
 
-                <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)"
+                <img src="@(ImagenPara(prod.Id, prod.RutaImagen))"
                      alt="@prod.Nombre"
                      class="hero-slide__img" />
             </div>
@@ -122,7 +131,7 @@ else
                 <div class="col-12 col-sm-6 col-lg-3 animate-on-scroll">
                     <div class="card product-card h-100">
                         <div class="img-wrapper relative">
-                            <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)" alt="@prod.Nombre">
+                            <img src="@(ImagenPara(prod.Id, prod.RutaImagen))" alt="@prod.Nombre">
                         </div>
                         <div class="card-body d-flex flex-column p-4">
                             <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>

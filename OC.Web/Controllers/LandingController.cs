@@ -29,6 +29,7 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<DetalleVenta> _detalleVentaRepo;   // ← agregado
         private readonly IGenericRepository<EnvioNotificacion> _notificacionRepo;
         private readonly IGenericRepository<Usuario> _usuarioRepo;
+        private readonly IProductoImagenRepository _imagenRepo;
         private readonly IWebHostEnvironment _env;
 
         public LandingController(
@@ -41,6 +42,7 @@ namespace OC.Web.Controllers
             IGenericRepository<DetalleVenta> detalleVentaRepo,
             IGenericRepository<EnvioNotificacion> notificacionRepo,
             IGenericRepository<Usuario> usuarioRepo,
+            IProductoImagenRepository imagenRepo,
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
@@ -52,6 +54,7 @@ namespace OC.Web.Controllers
             _detalleVentaRepo = detalleVentaRepo;
             _notificacionRepo = notificacionRepo;
             _usuarioRepo = usuarioRepo;
+            _imagenRepo = imagenRepo;
             _env = env;
         }
 
@@ -71,13 +74,21 @@ namespace OC.Web.Controllers
         [Route("landing/index")]
         public async Task<IActionResult> Index()
         {
-            var productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado && !string.IsNullOrEmpty(p.RutaImagen));
+            var productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado);
             if (!productosCarrusel.Items.Any())
-                productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && !string.IsNullOrEmpty(p.RutaImagen));
+                productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo);
             ViewBag.ProductosCarrusel = productosCarrusel.Items;
 
             var destacados = await _productoRepo.GetPagedAsync(1, 8, filter: p => p.Destacado && p.Activo);
             ViewBag.Destacados = destacados.Items;
+
+            // Dict {productoId, rutaImagenPrincipal} para que las vistas usen la imagen correcta
+            var ids = productosCarrusel.Items.Select(p => p.Id)
+                .Concat(destacados.Items.Select(p => p.Id))
+                .Distinct()
+                .ToList();
+            ViewBag.ImagenesPorProducto = await CargarImagenesPrincipalesAsync(ids);
+
             return View();
         }
 
@@ -94,6 +105,7 @@ namespace OC.Web.Controllers
             );
             ViewBag.CategoriaActual = categoria;
             ViewBag.Busqueda = busqueda;
+            ViewBag.ImagenesPorProducto = await CargarImagenesPrincipalesAsync(productos.Items.Select(p => p.Id).ToList());
             return View(productos);
         }
 
@@ -103,6 +115,25 @@ namespace OC.Web.Controllers
         {
             var producto = await _productoRepo.GetByIdAsync(id);
             if (producto == null) return NotFound();
+
+            var imagenes = await _imagenRepo.GetActivasByProductoIdAsync(id);
+            // Si la tabla nueva no tiene filas (caso edge pre-migración), caer al fallback
+            // de la ruta legacy en Productos.RutaImagen
+            if ((imagenes == null || imagenes.Count == 0) && !string.IsNullOrEmpty(producto.RutaImagen))
+            {
+                imagenes = new List<ProductoImagen>
+                {
+                    new ProductoImagen
+                    {
+                        ProductoId = producto.Id,
+                        Ruta = producto.RutaImagen,
+                        EsPrincipal = true,
+                        Orden = 0,
+                        Activo = true
+                    }
+                };
+            }
+            ViewBag.Imagenes = imagenes;
             return View(producto);
         }
 
@@ -583,6 +614,27 @@ namespace OC.Web.Controllers
         {
             var claim = User.FindFirstValue("PacienteId");
             return int.TryParse(claim, out int id) ? id : null;
+        }
+
+        /// <summary>
+        /// Devuelve {productoId, rutaImagenPrincipal} usando la tabla ProductoImagenes
+        /// (principal primero, fallback a Productos.RutaImagen legacy).
+        /// </summary>
+        private async Task<Dictionary<int, string>> CargarImagenesPrincipalesAsync(List<int> productoIds)
+        {
+            if (productoIds == null || productoIds.Count == 0)
+                return new Dictionary<int, string>();
+
+            var dict = new Dictionary<int, string>();
+            foreach (var pid in productoIds)
+            {
+                var imagenes = await _imagenRepo.GetActivasByProductoIdAsync(pid);
+                if (imagenes != null && imagenes.Count > 0)
+                {
+                    dict[pid] = imagenes[0].Ruta; // ya viene ordenada: principal primero
+                }
+            }
+            return dict;
         }
     }
 }

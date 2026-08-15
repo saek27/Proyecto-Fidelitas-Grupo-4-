@@ -30,6 +30,7 @@ namespace OC.Data.Context
         public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<Pedido> Pedidos { get; set; }
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<ProductoImagen> ProductoImagenes { get; set; }
 
 
         public DbSet<Expediente> Expedientes { get; set; }

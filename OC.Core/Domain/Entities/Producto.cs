@@ -29,5 +29,8 @@ namespace OC.Core.Domain.Entities
         public bool Destacado { get; set; }
         public string? Categoria { get; set; }
         public decimal PrecioPublico { get; set; }
+
+        /// <summary>Imágenes múltiples del producto (carrusel del landing).</summary>
+        public ICollection<ProductoImagen> Imagenes { get; set; } = new List<ProductoImagen>();
     }
 }

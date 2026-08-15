@@ -19,18 +19,21 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<DetallePedido> _detalleRepo;
         private readonly AppDbContext _context;
+        private readonly IProductoImagenRepository _imagenRepo;
 
         public PedidosController(
             IGenericRepository<Pedido> pedidoRepo,
             IGenericRepository<Proveedor> proveedorRepo,
             IGenericRepository<Producto> productoRepo,
             IGenericRepository<DetallePedido> detalleRepo,
+            IProductoImagenRepository imagenRepo,
             AppDbContext context)
         {
             _pedidoRepo = pedidoRepo;
             _proveedorRepo = proveedorRepo;
             _productoRepo = productoRepo;
             _detalleRepo = detalleRepo;
+            _imagenRepo = imagenRepo;
             _context = context;
         }
 
@@ -344,8 +347,27 @@ namespace OC.Web.Controllers
         private async Task CargarListas(object model)
         {
             var productosActivos = (await _productoRepo.GetPagedAsync(1, 100, filter: p => p.Activo)).Items.ToList();
-            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(
-                productosActivos.ToDictionary(p => p.Id.ToString(), p => p.RutaImagen ?? ""));
+            // Resolver la ruta de imagen por producto desde ProductoImagenes (principal primero, fallback a legacy).
+            // Una sola query para todos los productos del catálogo: SELECT ProductoId, MIN(EsPrincipal DESC, Orden ASC)
+            var imagenesPorProducto = await _context.ProductoImagenes
+                .AsNoTracking()
+                .Where(i => i.Activo && productosActivos.Select(p => p.Id).Contains(i.ProductoId))
+                .GroupBy(i => i.ProductoId)
+                .Select(g => new
+                {
+                    ProductoId = g.Key,
+                    Ruta = g.OrderByDescending(x => x.EsPrincipal).ThenBy(x => x.Orden).ThenBy(x => x.Id).First().Ruta
+                })
+                .ToDictionaryAsync(x => x.ProductoId, x => x.Ruta);
+
+            var dictImagenes = productosActivos.ToDictionary(
+                p => p.Id.ToString(),
+                p => imagenesPorProducto.TryGetValue(p.Id, out var ruta)
+                    ? ruta
+                    : (p.RutaImagen ?? "")
+            );
+
+            ViewBag.ProductoImagenesJson = JsonSerializer.Serialize(dictImagenes);
 
             var proveedores = (await _proveedorRepo.GetPagedAsync(1, 100, filter: p => p.Activo))
                 .Items.Select(p => new SelectListItem

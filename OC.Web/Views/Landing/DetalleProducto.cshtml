@@ -3,6 +3,12 @@
     ViewData["Title"] = Model.Nombre;
 }
 @model OC.Core.Domain.Entities.Producto
+@{
+    var imagenes = ViewBag.Imagenes as List<OC.Core.Domain.Entities.ProductoImagen>
+                   ?? new List<OC.Core.Domain.Entities.ProductoImagen>();
+    var carouselId = "carouselProducto" + Model.Id;
+    var defaultImg = "/images/default-product.jpg";
+}
 
 <div class="container my-5 pt-5">
 
@@ -19,21 +25,94 @@
         </div>
     }
 
-    <div class="row g-5 align-items-center animate-on-scroll">
+    <div class="row g-5 align-items-start animate-on-scroll">
 
+        <!-- ============ CARRUSEL DE IMÁGENES ============ -->
         <div class="col-12 col-lg-6">
-            <div class="card card-premium border-0 shadow-lg p-4 d-flex align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 450px; border-radius: 20px;">
-                <div class="position-absolute rounded-circle" style="width: 300px; height: 300px; background: rgba(14, 165, 233, 0.15); filter: blur(50px); z-index: 0;"></div>
+            <div class="card card-premium border-0 shadow-lg p-3 position-relative overflow-hidden" style="border-radius: 20px;">
 
-                <img src="@(string.IsNullOrEmpty(Model.RutaImagen) ? "/images/default-product.jpg" : Model.RutaImagen)"
-                     class="img-fluid position-relative z-1"
-                     alt="@Model.Nombre"
-                     style="max-height: 380px; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4)); transition: transform 0.5s ease;"
-                     onmouseover="this.style.transform='scale(1.08)'"
-                     onmouseout="this.style.transform='scale(1)'">
+                @if (imagenes.Count > 1)
+                {
+                    <div id="@carouselId" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+                        <!-- Indicators -->
+                        <div class="carousel-indicators" style="bottom: 12px; margin-bottom: 0;">
+                            @for (int i = 0; i < imagenes.Count; i++)
+                            {
+                                <button type="button" data-bs-target="#@carouselId" data-bs-slide-to="@i"
+                                        class="@(i == 0 ? "active" : "") @(imagenes[i].EsPrincipal ? "indicador-principal" : "")"
+                                        aria-current="@(i == 0 ? "true" : "false")"
+                                        aria-label="Slide @(i + 1)"></button>
+                            }
+                        </div>
+
+                        <!-- Slides: altura fija pero proporcional, imagen a object-fit:contain -->
+                        <div class="carousel-inner rounded" style="overflow: hidden; background: rgba(15, 23, 42, 0.4);">
+                            @for (int i = 0; i < imagenes.Count; i++)
+                            {
+                                var img = imagenes[i];
+                                <div class="carousel-item @(i == 0 ? "active" : "")">
+                                    <div class="d-flex align-items-center justify-content-center"
+                                         style="aspect-ratio: 1 / 1; width: 100%;">
+                                        <img src="@(string.IsNullOrEmpty(img.Ruta) ? defaultImg : img.Ruta)"
+                                             class="img-fluid"
+                                             alt="@Model.Nombre"
+                                             style="max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4));"
+                                             onerror="this.onerror=null; this.src='@defaultImg';" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Controles -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#@carouselId" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Anterior</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#@carouselId" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Siguiente</span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <!-- Imagen única (sin carrusel) -->
+                    <div class="d-flex align-items-center justify-content-center"
+                         style="aspect-ratio: 1 / 1; width: 100%; background: rgba(15, 23, 42, 0.4); border-radius: 12px;">
+                        <img src="@(string.IsNullOrEmpty(Model.RutaImagen) ? defaultImg : (imagenes.FirstOrDefault()?.Ruta ?? Model.RutaImagen))"
+                             class="img-fluid"
+                             alt="@Model.Nombre"
+                             style="max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4)); transition: transform 0.5s ease;"
+                             onmouseover="this.style.transform='scale(1.05)'"
+                             onmouseout="this.style.transform='scale(1)'"
+                             onerror="this.onerror=null; this.src='@defaultImg';" />
+                    </div>
+                }
+
+                <!-- ============ THUMBNAILS (solo si hay más de 1 imagen) ============ -->
+                @if (imagenes.Count > 1)
+                {
+                    <div class="d-flex flex-wrap gap-2 justify-content-center mt-3 pt-3" style="border-top: 1px solid var(--glass-border);">
+                        @for (int i = 0; i < imagenes.Count; i++)
+                        {
+                            var img = imagenes[i];
+                            <button type="button" class="p-0 border-0 bg-transparent thumbnail-btn @(i == 0 ? "active" : "")"
+                                    data-bs-target="#@carouselId" data-bs-slide-to="@i"
+                                    style="width: 64px; height: 64px; cursor: pointer; border-radius: 8px; overflow: hidden; outline: @(i == 0 ? "2px solid var(--brand-accent)" : "2px solid transparent"); outline-offset: 2px; transition: outline 0.2s, transform 0.15s;"
+                                    onmouseover="if(!this.classList.contains('active')) this.style.outline='2px solid rgba(255,255,255,0.3)'; this.style.transform='scale(1.05)';"
+                                    onmouseout="if(!this.classList.contains('active')) this.style.outline='2px solid transparent'; this.style.transform='scale(1)';">
+                                <img src="@(string.IsNullOrEmpty(img.Ruta) ? defaultImg : img.Ruta)"
+                                     alt="Miniatura @(i + 1)"
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='@defaultImg';" />
+                            </button>
+                        }
+                    </div>
+                }
             </div>
         </div>
 
+        <!-- ============ INFO DEL PRODUCTO ============ -->
         <div class="col-12 col-lg-6">
 
             <nav aria-label="breadcrumb" class="mb-3">
@@ -94,3 +173,18 @@
         </div>
     </div>
 </div>
+
+<style>
+    .thumbnail-btn.active {
+        outline: 2px solid var(--brand-accent) !important;
+    }
+    .carousel-indicators button.indicador-principal {
+        background-color: var(--brand-accent);
+    }
+    .carousel-control-prev, .carousel-control-next {
+        width: 8%;
+    }
+    .carousel-control-prev-icon, .carousel-control-next-icon {
+        filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
+    }
+</style>

@@ -327,6 +327,46 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>Crea la tabla ProductoImagenes y migra las imágenes existentes desde Productos.RutaImagen.</summary>
+        public static void EnsureProductoImagenesTable(AppDbContext context)
+        {
+            // 1) Crear la tabla si no existe
+            const string createSql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ProductoImagenes')
+BEGIN
+    CREATE TABLE [ProductoImagenes] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [ProductoId] int NOT NULL,
+        [Ruta] nvarchar(512) NOT NULL,
+        [Orden] int NOT NULL DEFAULT (0),
+        [EsPrincipal] bit NOT NULL DEFAULT (0),
+        [Activo] bit NOT NULL DEFAULT (1),
+        [FechaCreacion] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_ProductoImagenes] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_ProductoImagenes_Productos_ProductoId] FOREIGN KEY ([ProductoId]) REFERENCES [Productos]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_ProductoImagenes_ProductoId] ON [ProductoImagenes]([ProductoId]);
+    CREATE INDEX [IX_ProductoImagenes_ProductoId_Activo] ON [ProductoImagenes]([ProductoId], [Activo]);
+END
+";
+            context.Database.ExecuteSqlRaw(createSql);
+
+            // 2) Migración de datos: para cada Producto con RutaImagen no nula,
+            //    crear una fila en ProductoImagenes con EsPrincipal=1 y Activo=1.
+            //    Idempotente: solo si el producto aún no tiene ninguna fila activa.
+            const string migrateSql = @"
+INSERT INTO ProductoImagenes (ProductoId, Ruta, Orden, EsPrincipal, Activo, FechaCreacion)
+SELECT p.Id, p.RutaImagen, 0, 1, 1, SYSUTCDATETIME()
+FROM Productos p
+WHERE p.RutaImagen IS NOT NULL
+  AND LTRIM(RTRIM(p.RutaImagen)) <> ''
+  AND NOT EXISTS (
+      SELECT 1 FROM ProductoImagenes pi WHERE pi.ProductoId = p.Id
+  );
+";
+            context.Database.ExecuteSqlRaw(migrateSql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

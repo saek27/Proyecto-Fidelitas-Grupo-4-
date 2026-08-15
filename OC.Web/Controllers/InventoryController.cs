@@ -13,23 +13,25 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Producto> _productoRepo;
         private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
         private readonly IGenericRepository<Aro> _aroRepo;
+        private readonly IProductoImagenRepository _imagenRepo;
 
         private readonly IWebHostEnvironment _env;
 
         private static readonly string[] ExtensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private const long TamanoMaxImagenBytes = 5 * 1024 * 1024;
+        private const int MaxImagenesPorProducto = 7;
 
         public InventoryController(
             IGenericRepository<Producto> productoRepo,
             IGenericRepository<TecnologiaLente> tecnologiaRepo,
             IGenericRepository<Aro> aroRepo,
-
+            IProductoImagenRepository imagenRepo,
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
             _tecnologiaRepo = tecnologiaRepo;
             _aroRepo = aroRepo;
-
+            _imagenRepo = imagenRepo;
             _env = env;
         }
 
@@ -110,6 +112,7 @@ namespace OC.Web.Controllers
         public IActionResult Create(string seccion = "productos")
         {
             ViewBag.Seccion = seccion;
+            ViewBag.MaxImagenes = MaxImagenesPorProducto;
 // categoria eliminada
 
             return View(new Producto());
@@ -128,9 +131,14 @@ namespace OC.Web.Controllers
                 nameof(Producto.Stock),
                 nameof(Producto.Destacado))]
             Producto model,
-            IFormFile? imagenProducto)
+            List<IFormFile>? imagenesProducto)
         {
-            imagenProducto ??= Request.Form.Files.GetFile("imagenProducto");
+            // Si el form no usa List, intentar recuperar archivos manualmente
+            if (imagenesProducto == null || imagenesProducto.Count == 0)
+            {
+                var archivos = Request.Form.Files.GetFiles("imagenesProducto");
+                if (archivos.Count > 0) imagenesProducto = archivos.ToList();
+            }
 
             if (string.IsNullOrWhiteSpace(model.SKU))
             {
@@ -144,26 +152,62 @@ namespace OC.Web.Controllers
                 ModelState.AddModelError(nameof(Producto.SKU), "Ya existe un producto con este SKU.");
             }
 
-            if (imagenProducto != null && imagenProducto.Length > 0)
+            // Validar imágenes (si las hay)
+            if (imagenesProducto != null && imagenesProducto.Count > 0)
             {
-                var err = ValidarImagen(imagenProducto);
-                if (err != null)
-                    ModelState.AddModelError(nameof(imagenProducto), err);
+                if (imagenesProducto.Count > MaxImagenesPorProducto)
+                {
+                    ModelState.AddModelError("imagenesProducto",
+                        $"Máximo {MaxImagenesPorProducto} imágenes por producto.");
+                }
+                else
+                {
+                    foreach (var img in imagenesProducto.Where(i => i.Length > 0))
+                    {
+                        var err = ValidarImagen(img);
+                        if (err != null)
+                        {
+                            ModelState.AddModelError("imagenesProducto", err);
+                            break;
+                        }
+                    }
+                }
             }
 
             if (!ModelState.IsValid)
+            {
+                ViewBag.Seccion = "productos";
+                ViewBag.MaxImagenes = MaxImagenesPorProducto;
                 return View(model);
+            }
 
             model.SKU = skuNorm;
             model.Activo = true;
-            model.RutaImagen = null;
-
-            if (imagenProducto != null && imagenProducto.Length > 0)
-            {
-                model.RutaImagen = await GuardarImagenProductoAsync(imagenProducto);
-            }
+            model.RutaImagen = null; // Ya no se usa, queda por compat
 
             await _productoRepo.AddAsync(model);
+
+            // Guardar imágenes si se subieron
+            if (imagenesProducto != null && imagenesProducto.Count > 0)
+            {
+                int orden = 1;
+                bool primeraEsPrincipal = true;
+                foreach (var img in imagenesProducto.Where(i => i.Length > 0))
+                {
+                    var ruta = await GuardarImagenProductoAsync(img);
+                    var entidad = new ProductoImagen
+                    {
+                        ProductoId = model.Id,
+                        Ruta = ruta,
+                        Orden = orden++,
+                        EsPrincipal = primeraEsPrincipal,
+                        Activo = true,
+                        FechaCreacion = DateTime.UtcNow
+                    };
+                    await _imagenRepo.AddAsync(entidad);
+                    primeraEsPrincipal = false;
+                }
+            }
 
             TempData["Success"] = "Producto registrado correctamente.";
             return RedirectToAction(nameof(Index), new { seccion = "productos" });
@@ -183,6 +227,11 @@ namespace OC.Web.Controllers
             var producto = await _productoRepo.GetByIdAsync(id);
             if (producto == null)
                 return NotFound();
+
+            var imagenes = await _imagenRepo.GetAllByProductoIdAsync(id);
+            ViewBag.Imagenes = imagenes;
+            ViewBag.MaxImagenes = MaxImagenesPorProducto;
+
             return View(producto);
         }
 
@@ -201,19 +250,51 @@ namespace OC.Web.Controllers
                 nameof(Producto.Destacado),
                 nameof(Producto.Activo))]
             Producto model,
-            IFormFile? imagenProducto)
+            List<IFormFile>? imagenesProducto,
+            int? imagenPrincipalId,
+            string? ordenImagenes)
         {
-            imagenProducto ??= Request.Form.Files.GetFile("imagenProducto");
+            if (imagenesProducto == null || imagenesProducto.Count == 0)
+            {
+                var archivos = Request.Form.Files.GetFiles("imagenesProducto");
+                if (archivos.Count > 0) imagenesProducto = archivos.ToList();
+            }
 
             var existente = await _productoRepo.GetByIdAsync(model.Id);
             if (existente == null)
                 return NotFound();
 
-            if (imagenProducto != null && imagenProducto.Length > 0)
+            var imagenesActuales = await _imagenRepo.GetActivasByProductoIdAsync(model.Id);
+
+            // 1) Detectar imágenes marcadas para eliminar (soft delete)
+            var idsAEliminar = new HashSet<int>();
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("eliminarImagen_")))
             {
-                var err = ValidarImagen(imagenProducto);
-                if (err != null)
-                    ModelState.AddModelError(nameof(imagenProducto), err);
+                if (int.TryParse(Request.Form[key], out var idImg))
+                    idsAEliminar.Add(idImg);
+            }
+
+            // 2) Validar tope si se suben imágenes nuevas
+            int totalTrasSubida = imagenesActuales.Count - idsAEliminar.Count;
+            if (imagenesProducto != null && imagenesProducto.Count > 0)
+            {
+                if (totalTrasSubida + imagenesProducto.Count > MaxImagenesPorProducto)
+                {
+                    ModelState.AddModelError("imagenesProducto",
+                        $"Máximo {MaxImagenesPorProducto} imágenes por producto. Tras borrar tiene {totalTrasSubida} activas y quiere subir {imagenesProducto.Count}.");
+                }
+                else
+                {
+                    foreach (var img in imagenesProducto.Where(i => i.Length > 0))
+                    {
+                        var err = ValidarImagen(img);
+                        if (err != null)
+                        {
+                            ModelState.AddModelError("imagenesProducto", err);
+                            break;
+                        }
+                    }
+                }
             }
 
             if (!ModelState.IsValid)
@@ -226,9 +307,15 @@ namespace OC.Web.Controllers
                 existente.Stock = model.Stock;
                 existente.Destacado = model.Destacado;
                 existente.Activo = model.Activo;
+
+                var imagenesParaRepintar = await _imagenRepo.GetAllByProductoIdAsync(model.Id);
+                ViewBag.Imagenes = imagenesParaRepintar;
+                ViewBag.MaxImagenes = MaxImagenesPorProducto;
+                ViewBag.Seccion = "productos";
                 return View(existente);
             }
 
+            // Actualizar datos del producto
             existente.Nombre = model.Nombre;
             existente.SKU = string.IsNullOrWhiteSpace(model.SKU)
                 ? existente.SKU
@@ -241,13 +328,78 @@ namespace OC.Web.Controllers
             existente.Destacado = model.Destacado;
             existente.Activo = model.Activo;
 
-            if (imagenProducto != null && imagenProducto.Length > 0)
+            await _productoRepo.UpdateAsync(existente);
+
+            // 3) Aplicar soft delete
+            foreach (var idImg in idsAEliminar)
             {
-                TryDeleteImagenFisica(existente.RutaImagen);
-                existente.RutaImagen = await GuardarImagenProductoAsync(imagenProducto);
+                await _imagenRepo.SoftDeleteAsync(idImg);
             }
 
-            await _productoRepo.UpdateAsync(existente);
+            // 4) Subir nuevas imágenes (la primera subida nueva se marca como principal
+            //    solo si NO se eligió explícitamente otra principal y no hay ninguna activa)
+            if (imagenesProducto != null && imagenesProducto.Count > 0)
+            {
+                int orden = imagenesActuales.Count - idsAEliminar.Count + 1;
+                foreach (var img in imagenesProducto.Where(i => i.Length > 0))
+                {
+                    var ruta = await GuardarImagenProductoAsync(img);
+                    var entidad = new ProductoImagen
+                    {
+                        ProductoId = existente.Id,
+                        Ruta = ruta,
+                        Orden = orden++,
+                        EsPrincipal = false,
+                        Activo = true,
+                        FechaCreacion = DateTime.UtcNow
+                    };
+                    await _imagenRepo.AddAsync(entidad);
+                }
+            }
+
+            // 5) Marcar principal (si el usuario eligió una)
+            if (imagenPrincipalId.HasValue && imagenPrincipalId.Value > 0)
+            {
+                // Verificar que la imagen pertenece al producto y está activa
+                var img = await _imagenRepo.GetByIdAsync(imagenPrincipalId.Value);
+                if (img != null && img.ProductoId == existente.Id && img.Activo)
+                {
+                    await _imagenRepo.MarcarPrincipalAsync(imagenPrincipalId.Value);
+                }
+            }
+            else
+            {
+                // Si el usuario NO eligió principal pero había alguna marcada y se eliminó,
+                // el repo MarcarPrincipalAsync ya desmarca las demás al setear. Pero si
+                // tras los soft deletes NO quedó ninguna marcada como principal, marcamos
+                // la primera activa restante.
+                var principalActual = await _imagenRepo.GetPrincipalAsync(existente.Id);
+                if (principalActual == null)
+                {
+                    var activas = await _imagenRepo.GetActivasByProductoIdAsync(existente.Id);
+                    if (activas.Count > 0)
+                    {
+                        await _imagenRepo.MarcarPrincipalAsync(activas[0].Id);
+                    }
+                }
+            }
+
+            // 6) Actualizar orden si vino en el form
+            //    Formato esperado: ordenImagenes = "id1:orden1,id2:orden2,..."
+            if (!string.IsNullOrWhiteSpace(ordenImagenes))
+            {
+                var pares = ordenImagenes.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var par in pares)
+                {
+                    var partes = par.Split(':');
+                    if (partes.Length == 2 &&
+                        int.TryParse(partes[0], out var idImg) &&
+                        int.TryParse(partes[1], out var ordenImg))
+                    {
+                        await _imagenRepo.UpdateOrdenAsync(idImg, ordenImg);
+                    }
+                }
+            }
 
             TempData["Success"] = "Producto actualizado correctamente.";
             return RedirectToAction(nameof(Details), new { id = model.Id });
@@ -267,6 +419,74 @@ namespace OC.Web.Controllers
             TempData["Success"] = "Producto eliminado del catálogo.";
             return RedirectToAction(nameof(Index), new { seccion = "productos" });
         }
+
+        // ============================================================
+        // GESTIÓN DE IMÁGENES (soft delete -> hard delete)
+        // ============================================================
+
+        /// <summary>Pantalla de gestión: muestra activas + inactivas, permite "Eliminar definitivamente".</summary>
+        [HttpGet]
+        public async Task<IActionResult> GestionImagenes(int id)
+        {
+            var producto = await _productoRepo.GetByIdAsync(id);
+            if (producto == null) return NotFound();
+
+            var imagenes = await _imagenRepo.GetAllByProductoIdAsync(id);
+            ViewBag.Producto = producto;
+            return View(imagenes);
+        }
+
+        /// <summary>Hard delete: borra el archivo del disco y la fila de BD.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarImagenDefinitiva(int imagenId, int productoId)
+        {
+            var imagen = await _imagenRepo.GetByIdAsync(imagenId);
+            if (imagen == null || imagen.ProductoId != productoId)
+            {
+                TempData["Error"] = "Imagen no encontrada.";
+                return RedirectToAction(nameof(GestionImagenes), new { id = productoId });
+            }
+
+            // Borrar archivo del disco
+            TryDeleteImagenFisica(imagen.Ruta);
+
+            // Borrar fila de BD
+            await _imagenRepo.DeleteAsync(imagenId);
+
+            TempData["Success"] = "Imagen eliminada definitivamente.";
+            return RedirectToAction(nameof(GestionImagenes), new { id = productoId });
+        }
+
+        /// <summary>Restaurar una imagen inactiva (Activo=true).</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestaurarImagen(int imagenId, int productoId)
+        {
+            var imagen = await _imagenRepo.GetByIdAsync(imagenId);
+            if (imagen == null || imagen.ProductoId != productoId)
+            {
+                TempData["Error"] = "Imagen no encontrada.";
+                return RedirectToAction(nameof(GestionImagenes), new { id = productoId });
+            }
+
+            // Verificar tope
+            var activas = await _imagenRepo.CountActivasAsync(productoId);
+            if (activas >= MaxImagenesPorProducto)
+            {
+                TempData["Error"] = $"No se puede restaurar: ya hay {activas} imágenes activas (máximo {MaxImagenesPorProducto}).";
+                return RedirectToAction(nameof(GestionImagenes), new { id = productoId });
+            }
+
+            await _imagenRepo.RestoreAsync(imagenId);
+
+            TempData["Success"] = "Imagen restaurada.";
+            return RedirectToAction(nameof(GestionImagenes), new { id = productoId });
+        }
+
+        // ============================================================
+        // HELPERS PRIVADOS
+        // ============================================================
 
         private string? ValidarImagen(IFormFile file)
         {

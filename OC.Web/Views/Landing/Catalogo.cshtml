@@ -1,6 +1,15 @@
 ﻿@{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Catálogo de Lentes";
+    var imagenesPorProducto = ViewBag.ImagenesPorProducto as Dictionary<int, string>
+                              ?? new Dictionary<int, string>();
+
+    string ImagenPara(int productoId, string? legacyRuta)
+    {
+        if (imagenesPorProducto.TryGetValue(productoId, out var ruta) && !string.IsNullOrEmpty(ruta))
+            return ruta;
+        return string.IsNullOrEmpty(legacyRuta) ? "/images/default-product.jpg" : legacyRuta;
+    }
 }
 @model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Producto>
 
@@ -44,7 +53,7 @@
                         <div class="col-12 col-sm-6 col-xl-4 animate-on-scroll">
                             <div class="card product-card h-100 shadow-sm">
                                 <div class="img-wrapper relative">
-                                    <img src="@(string.IsNullOrEmpty(prod.RutaImagen) ? "/images/default-product.jpg" : prod.RutaImagen)" alt="@prod.Nombre">
+                                    <img src="@(ImagenPara(prod.Id, prod.RutaImagen))" alt="@prod.Nombre">
                                 </div>
                                 <div class="card-body d-flex flex-column p-4">
                                     <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>

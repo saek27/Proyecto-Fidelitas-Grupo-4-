@@ -1,6 +1,7 @@
 @model OC.Core.Domain.Entities.Producto
 @{
-    ViewData["Title"] ="Nuevo Producto";
+    ViewData["Title"] = "Nuevo Producto";
+    var maxImagenes = ViewBag.MaxImagenes as int? ?? 7;
 }
 
 <div class="container mt-4">
@@ -9,7 +10,7 @@
             <div class="card-dashboard animate-on-scroll" data-delay="0">
                 <h4 class="mb-4"><i class="bi bi-plus-circle me-2"></i> Nuevo Producto</h4>
 
-                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                <form asp-action="Create" method="post" enctype="multipart/form-data" id="formCrearProducto">
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                     <div class="row">
@@ -50,9 +51,16 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Imagen del producto</label>
-                        <input type="file" name="imagenProducto" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
-                        <div class="form-text">Opcional. JPG, PNG, GIF o WEBP. Máximo 5 MB.</div>
+                        <label class="form-label fw-semibold">Imágenes del producto</label>
+                        <input type="file" name="imagenesProducto" id="imagenesInput" class="form-control"
+                               accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+                        <div class="form-text">
+                            Podés subir hasta <strong>@maxImagenes imágenes</strong>. La primera que subas será la <strong>principal</strong> en el catálogo.
+                            JPG, PNG, GIF o WEBP. Máximo 5 MB cada una.
+                        </div>
+                        <div id="imagenesCounter" class="small text-muted mt-1">0 / @maxImagenes imágenes seleccionadas</div>
+                        <div id="imagenesPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        <span id="imagenesError" class="text-danger"></span>
                     </div>
 
                     <div class="row">
@@ -107,6 +115,43 @@
                 width: '100%',
                 tags: true,
                 language: { noResults: function () { return "Escriba y presione Enter para crear"; } }
+            });
+
+            // Preview de múltiples imágenes + tope
+            const maxImagenes = @maxImagenes;
+            const input = document.getElementById('imagenesInput');
+            const preview = document.getElementById('imagenesPreview');
+            const counter = document.getElementById('imagenesCounter');
+
+            input.addEventListener('change', function () {
+                preview.innerHTML = '';
+                const files = Array.from(this.files);
+
+                if (files.length > maxImagenes) {
+                    counter.textContent = `${files.length} / ${maxImagenes} imágenes — EXCEDE EL TOPE`;
+                    counter.classList.remove('text-muted');
+                    counter.classList.add('text-danger', 'fw-bold');
+                } else {
+                    counter.textContent = `${files.length} / ${maxImagenes} imágenes seleccionadas`;
+                    counter.classList.remove('text-danger', 'fw-bold');
+                    counter.classList.add('text-muted');
+                }
+
+                files.slice(0, maxImagenes).forEach((file, i) => {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const div = document.createElement('div');
+                        div.className = 'position-relative';
+                        div.style.cssText = 'width: 90px; height: 90px;';
+                        div.innerHTML = `
+                            <img src="${e.target.result}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 2px solid ${i === 0 ? 'var(--color-warning)' : 'var(--color-border)'};" />
+                            ${i === 0 ? '<span class="position-absolute top-0 start-0 badge bg-warning text-dark" style="font-size: 0.65rem;">Principal</span>' : ''}
+                            <span class="position-absolute bottom-0 end-0 badge bg-dark" style="font-size: 0.65rem;">${i + 1}</span>
+                        `;
+                        preview.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                });
             });
         });
     </script>
