@@ -50,16 +50,33 @@
                         <span asp-validation-for="DescripcionCorta" class="text-danger"></span>
                     </div>
 
+                    <!-- ============ DROP-ZONE + SORTABLE DE IMÁGENES ============ -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Imágenes del producto</label>
-                        <input type="file" name="imagenesProducto" id="imagenesInput" class="form-control"
-                               accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
-                        <div class="form-text">
-                            Podés subir hasta <strong>@maxImagenes imágenes</strong>. La primera que subas será la <strong>principal</strong> en el catálogo.
-                            JPG, PNG, GIF o WEBP. Máximo 5 MB cada una.
+                        <label class="form-label fw-semibold">
+                            Imágenes del producto
+                            <span class="badge bg-secondary" id="imagenesCounter">0 / @maxImagenes</span>
+                        </label>
+
+                        <!-- Drop-zone -->
+                        <div id="dropZone" class="drop-zone d-flex flex-column align-items-center justify-content-center text-center"
+                             tabindex="0" role="button" aria-label="Arrastrá imágenes o hacé click para elegir">
+                            <i class="bi bi-cloud-arrow-up-fill" style="font-size: 2.5rem; color: var(--color-brand);"></i>
+                            <p class="mb-1 fw-semibold mt-2">Arrastrá imágenes acá</p>
+                            <p class="text-muted small mb-0">o hacé click para elegir archivos</p>
+                            <p class="text-muted small mb-0 mt-2">
+                                Hasta <strong>@maxImagenes</strong> imágenes · JPG, PNG, GIF, WEBP · Máx 5 MB c/u
+                            </p>
+                            <!-- Input file oculto, se dispara via click en dropZone -->
+                            <input type="file" name="imagenesProducto" id="imagenesInput" class="d-none"
+                                   accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
                         </div>
-                        <div id="imagenesCounter" class="small text-muted mt-1">0 / @maxImagenes imágenes seleccionadas</div>
-                        <div id="imagenesPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+
+                        <!-- Toasts para errores / advertencias (se apilan arriba del preview) -->
+                        <div id="imagenesToasts" class="mt-2"></div>
+
+                        <!-- Preview + sortable -->
+                        <div id="imagenesPreview" class="d-flex flex-wrap gap-2 mt-3"></div>
+
                         <span id="imagenesError" class="text-danger"></span>
                     </div>
 
@@ -101,11 +118,151 @@
 @section Styles {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <style>
+        .drop-zone {
+            border: 2px dashed var(--color-border);
+            border-radius: 12px;
+            padding: 32px 16px;
+            background: rgba(59, 130, 246, 0.03);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+            min-height: 160px;
+        }
+        .drop-zone:hover {
+            border-color: var(--color-brand);
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .drop-zone:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .drop-zone.drag-over {
+            border-color: var(--color-success);
+            background: rgba(16, 185, 129, 0.12);
+            transform: scale(1.01);
+        }
+        .preview-card {
+            width: 110px;
+            height: 130px;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: grab;
+            border: 2px solid var(--color-border);
+            background: #f8f9fa;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .preview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+        }
+        .preview-card.es-principal {
+            border-color: var(--color-warning);
+            border-width: 3px;
+        }
+        .preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none; /* que no interfiera con el drag */
+        }
+        .preview-card .grip {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            color: rgba(255,255,255,0.85);
+            background: rgba(0,0,0,0.4);
+            border-radius: 4px;
+            padding: 0 4px;
+            font-size: 0.85rem;
+            z-index: 3;
+        }
+        .preview-card .badge-principal {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: var(--color-warning);
+            color: #1e293b;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 3;
+        }
+        .preview-card .badge-orden {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 3;
+        }
+        .preview-card .btn-quitar {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(220, 53, 69, 0.95);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 0.75rem;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .preview-card:hover .btn-quitar {
+            opacity: 1;
+        }
+        /* SortableJS ghost */
+        .sortable-ghost-preview {
+            opacity: 0.4;
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px dashed var(--color-warning) !important;
+        }
+        .sortable-chosen-preview {
+            cursor: grabbing !important;
+        }
+        /* Toast de error */
+        .img-toast {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideDown 0.25s ease-out;
+        }
+        .img-toast-error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #b91c1c;
+        }
+        .img-toast-warning {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #92400e;
+        }
+        @@keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 }
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script>
         $(function () {
             $('#CategoriaSelect').select2({
@@ -117,41 +274,243 @@
                 language: { noResults: function () { return "Escriba y presione Enter para crear"; } }
             });
 
-            // Preview de múltiples imágenes + tope
             const maxImagenes = @maxImagenes;
+            const extensionesValidas = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            const maxBytes = 5 * 1024 * 1024;
+
+            const dropZone = document.getElementById('dropZone');
             const input = document.getElementById('imagenesInput');
             const preview = document.getElementById('imagenesPreview');
             const counter = document.getElementById('imagenesCounter');
+            const toastsBox = document.getElementById('imagenesToasts');
 
+            // Mantenemos los File objetos seleccionados por el usuario en este array
+            // Es la "fuente de verdad" que se envía al backend al hacer submit
+            let selectedFiles = [];
+
+            // ================================================================
+            // DROP-ZONE: click, drag-over, drop
+            // ================================================================
+
+            // Click en drop-zone = abrir file picker
+            dropZone.addEventListener('click', function () { input.click(); });
+            dropZone.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    input.click();
+                }
+            });
+
+            // Drag visual
+            ['dragenter', 'dragover'].forEach(function (evt) {
+                dropZone.addEventListener(evt, function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('drag-over');
+                });
+            });
+            ['dragleave', 'dragend', 'drop'].forEach(function (evt) {
+                dropZone.addEventListener(evt, function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('drag-over');
+                });
+            });
+
+            // Drop = agregar archivos
+            dropZone.addEventListener('drop', function (e) {
+                const files = Array.from(e.dataTransfer.files || []);
+                addFiles(files);
+            });
+
+            // Selección via input file tradicional
             input.addEventListener('change', function () {
-                preview.innerHTML = '';
-                const files = Array.from(this.files);
+                const files = Array.from(this.files || []);
+                addFiles(files);
+                // Limpiamos el input para que seleccionar los MISMOS archivos después dispare change
+                input.value = '';
+            });
 
-                if (files.length > maxImagenes) {
-                    counter.textContent = `${files.length} / ${maxImagenes} imágenes — EXCEDE EL TOPE`;
-                    counter.classList.remove('text-muted');
-                    counter.classList.add('text-danger', 'fw-bold');
-                } else {
-                    counter.textContent = `${files.length} / ${maxImagenes} imágenes seleccionadas`;
-                    counter.classList.remove('text-danger', 'fw-bold');
-                    counter.classList.add('text-muted');
+            // ================================================================
+            // AGREGAR ARCHIVOS (validación + render)
+            // ================================================================
+
+            function addFiles(files) {
+                clearToasts();
+                let ignorados = [];
+                let agregados = 0;
+
+                for (const file of files) {
+                    const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+                    if (!extensionesValidas.includes(ext)) {
+                        ignorados.push(`"${file.name}" no es una imagen válida`);
+                        continue;
+                    }
+                    if (file.size > maxBytes) {
+                        ignorados.push(`"${file.name}" excede 5 MB`);
+                        continue;
+                    }
+                    if (selectedFiles.length >= maxImagenes) {
+                        ignorados.push(`"${file.name}" (tope ${maxImagenes} alcanzado)`);
+                        continue;
+                    }
+                    selectedFiles.push(file);
+                    agregados++;
                 }
 
-                files.slice(0, maxImagenes).forEach((file, i) => {
+                // Si dropearon más de los que se podían agregar, avisar
+                if (files.length > agregados && ignorados.length > 0) {
+                    showToast(ignorados.join('. '), ignorados.length === files.length ? 'error' : 'warning');
+                }
+
+                renderPreview();
+            }
+
+            // ================================================================
+            // RENDER DEL PREVIEW (drag-and-drop sortable)
+            // ================================================================
+
+            function renderPreview() {
+                preview.innerHTML = '';
+                selectedFiles.forEach(function (file, i) {
+                    const card = document.createElement('div');
+                    card.className = 'preview-card sortable-preview-item' + (i === 0 ? ' es-principal' : '');
+                    // data-original-index: posición original del archivo (no cambia tras re-renders)
+                    // data-current-index: posición actual (se usa para el botón "quitar")
+                    card.setAttribute('data-original-index', i);
+                    card.setAttribute('data-current-index', i);
+
                     const reader = new FileReader();
                     reader.onload = function (e) {
-                        const div = document.createElement('div');
-                        div.className = 'position-relative';
-                        div.style.cssText = 'width: 90px; height: 90px;';
-                        div.innerHTML = `
-                            <img src="${e.target.result}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 2px solid ${i === 0 ? 'var(--color-warning)' : 'var(--color-border)'};" />
-                            ${i === 0 ? '<span class="position-absolute top-0 start-0 badge bg-warning text-dark" style="font-size: 0.65rem;">Principal</span>' : ''}
-                            <span class="position-absolute bottom-0 end-0 badge bg-dark" style="font-size: 0.65rem;">${i + 1}</span>
+                        card.innerHTML = `
+                            <img src="${e.target.result}" alt="preview ${i + 1}" />
+                            <span class="grip"><i class="bi bi-grip-vertical"></i></span>
+                            ${i === 0 ? '<span class="badge-principal"><i class="bi bi-star-fill"></i> Principal</span>' : ''}
+                            <span class="badge-orden">#${i + 1}</span>
+                            <button type="button" class="btn-quitar" data-current-index="${i}" title="Quitar"><i class="bi bi-x"></i></button>
                         `;
-                        preview.appendChild(div);
+
+                        // Botón quitar
+                        card.querySelector('.btn-quitar').addEventListener('click', function (ev) {
+                            ev.stopPropagation();
+                            const idx = parseInt(this.getAttribute('data-current-index'), 10);
+                            selectedFiles.splice(idx, 1);
+                            renderPreview();
+                        });
                     };
                     reader.readAsDataURL(file);
+
+                    preview.appendChild(card);
                 });
+
+                // Actualizar contador
+                if (selectedFiles.length === 0) {
+                    counter.textContent = `0 / ${maxImagenes}`;
+                    counter.className = 'badge bg-secondary';
+                } else if (selectedFiles.length >= maxImagenes) {
+                    counter.textContent = `${selectedFiles.length} / ${maxImagenes} (completo)`;
+                    counter.className = 'badge bg-success';
+                } else {
+                    counter.textContent = `${selectedFiles.length} / ${maxImagenes}`;
+                    counter.className = 'badge bg-secondary';
+                }
+
+                // Reinicializar sortable sobre el preview
+                if (typeof Sortable !== 'undefined') {
+                    if (preview._sortable) preview._sortable.destroy();
+                    preview._sortable = Sortable.create(preview, {
+                        animation: 180,
+                        ghostClass: 'sortable-ghost-preview',
+                        chosenClass: 'sortable-chosen-preview',
+                        dragClass: 'sortable-drag',
+                        onEnd: function () {
+                            // Reordenar el array selectedFiles según el orden DOM actual.
+                            // Cada card tiene data-original-index que apunta al archivo original
+                            // (este atributo NO se modifica durante el drag, así que es estable).
+                            const newOrder = [];
+                            const itemsEnOrden = [];
+                            preview.querySelectorAll('.sortable-preview-item').forEach(function (item) {
+                                const originalIdx = parseInt(item.getAttribute('data-original-index'), 10);
+                                newOrder.push(selectedFiles[originalIdx]);
+                                itemsEnOrden.push(item);
+                            });
+                            selectedFiles = newOrder;
+
+                            // Actualización visual SIN re-renderizar (preserva data-original-index):
+                            // - Renumerar badges #N
+                            // - Marcar principal el primero
+                            // - Actualizar data-current-index (para el botón quitar)
+                            itemsEnOrden.forEach(function (item, newIdx) {
+                                const badge = item.querySelector('.badge-orden');
+                                if (badge) badge.textContent = '#' + (newIdx + 1);
+
+                                const btnQuitar = item.querySelector('.btn-quitar');
+                                if (btnQuitar) btnQuitar.setAttribute('data-current-index', newIdx);
+
+                                item.setAttribute('data-current-index', newIdx);
+
+                                if (newIdx === 0) {
+                                    item.classList.add('es-principal');
+                                    if (!item.querySelector('.badge-principal')) {
+                                        const bp = document.createElement('span');
+                                        bp.className = 'badge-principal';
+                                        bp.innerHTML = '<i class="bi bi-star-fill"></i> Principal';
+                                        item.insertBefore(bp, item.firstChild);
+                                    }
+                                } else {
+                                    item.classList.remove('es-principal');
+                                    const bp = item.querySelector('.badge-principal');
+                                    if (bp) bp.remove();
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            // ================================================================
+            // TOASTS
+            // ================================================================
+
+            function showToast(msg, tipo) {
+                const div = document.createElement('div');
+                div.className = 'img-toast img-toast-' + tipo;
+                const icon = tipo === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill';
+                div.innerHTML = `<i class="bi ${icon}"></i><span>${msg}</span>`;
+                toastsBox.appendChild(div);
+                // Auto-remover después de 6s
+                setTimeout(function () {
+                    div.style.transition = 'opacity 0.3s';
+                    div.style.opacity = '0';
+                    setTimeout(function () { div.remove(); }, 300);
+                }, 6000);
+            }
+
+            function clearToasts() {
+                toastsBox.innerHTML = '';
+            }
+
+            // ================================================================
+            // SUBMIT: armar FormData con los archivos en el orden del preview
+            // ================================================================
+
+            document.getElementById('formCrearProducto').addEventListener('submit', function (e) {
+                // Si el usuario NO eligió ningún archivo, no fallar (campo opcional)
+                if (selectedFiles.length === 0) return;
+
+                // Reemplazar el input file con archivos en el orden correcto.
+                // Como el input original está dentro del form, lo limpiamos y
+                // lo populamos con nuevos DataTransfer items en el orden visible.
+                try {
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(function (f) { dt.items.add(f); });
+                    input.files = dt.files;
+                } catch (err) {
+                    // DataTransfer no soportado: el submit enviará lo que esté en input.files
+                    // (que estará vacío si solo dropearon). Mostramos aviso.
+                    e.preventDefault();
+                    showToast('Tu navegador no soporta drag-and-drop para envío. Usá el botón de selección.', 'error');
+                }
             });
         });
     </script>
