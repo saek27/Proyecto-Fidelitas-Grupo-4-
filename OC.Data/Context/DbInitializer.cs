@@ -421,6 +421,82 @@ END
             context.Database.ExecuteSqlRaw(sql);
         }
 
+        /// <summary>Agrega la columna DescripcionCorta a la tabla Aros si no existe.</summary>
+        public static void EnsureAroDescripcionCortaColumn(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Aros','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Aros') AND name = 'DescripcionCorta'
+    )
+    BEGIN
+        ALTER TABLE Aros ADD DescripcionCorta nvarchar(500) NULL;
+    END
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
+        /// <summary>Crea la tabla CarruselItems (6 slots fijos) si no existe. Cada fila = 1 slot del carrusel del landing.</summary>
+        public static void EnsureCarruselItemsTable(AppDbContext context)
+        {
+            var sql = @"
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'CarruselItems')
+BEGIN
+    CREATE TABLE CarruselItems (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        Posicion TINYINT NOT NULL,
+        Tipo NVARCHAR(20) NOT NULL,
+        ProductoId INT NULL,
+        AroId INT NULL,
+        CONSTRAINT UQ_CarruselItems_Posicion UNIQUE (Posicion),
+        CONSTRAINT CK_CarruselItems_XOR CHECK (
+            (ProductoId IS NOT NULL AND AroId IS NULL) OR
+            (AroId IS NOT NULL AND ProductoId IS NULL)
+        ),
+        CONSTRAINT CK_CarruselItems_Tipo CHECK (Tipo IN ('Producto','Aro')),
+        CONSTRAINT CK_CarruselItems_Posicion_Rango CHECK (Posicion BETWEEN 1 AND 6),
+        CONSTRAINT FK_CarruselItems_Producto FOREIGN KEY (ProductoId) REFERENCES Productos(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_CarruselItems_Aro FOREIGN KEY (AroId) REFERENCES Aros(Id) ON DELETE CASCADE
+    );
+    CREATE INDEX IX_CarruselItems_ProductoId ON CarruselItems(ProductoId) WHERE ProductoId IS NOT NULL;
+    CREATE INDEX IX_CarruselItems_AroId ON CarruselItems(AroId) WHERE AroId IS NOT NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
+        /// <summary>Crea la tabla DestacadosItems (8 slots fijos) si no existe. Cada fila = 1 slot de la sección destacados del landing.</summary>
+        public static void EnsureDestacadosItemsTable(AppDbContext context)
+        {
+            var sql = @"
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'DestacadosItems')
+BEGIN
+    CREATE TABLE DestacadosItems (
+        Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        Posicion TINYINT NOT NULL,
+        Tipo NVARCHAR(20) NOT NULL,
+        ProductoId INT NULL,
+        AroId INT NULL,
+        CONSTRAINT UQ_DestacadosItems_Posicion UNIQUE (Posicion),
+        CONSTRAINT CK_DestacadosItems_XOR CHECK (
+            (ProductoId IS NOT NULL AND AroId IS NULL) OR
+            (AroId IS NOT NULL AND ProductoId IS NULL)
+        ),
+        CONSTRAINT CK_DestacadosItems_Tipo CHECK (Tipo IN ('Producto','Aro')),
+        CONSTRAINT CK_DestacadosItems_Posicion_Rango CHECK (Posicion BETWEEN 1 AND 8),
+        CONSTRAINT FK_DestacadosItems_Producto FOREIGN KEY (ProductoId) REFERENCES Productos(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_DestacadosItems_Aro FOREIGN KEY (AroId) REFERENCES Aros(Id) ON DELETE CASCADE
+    );
+    CREATE INDEX IX_DestacadosItems_ProductoId ON DestacadosItems(ProductoId) WHERE ProductoId IS NOT NULL;
+    CREATE INDEX IX_DestacadosItems_AroId ON DestacadosItems(AroId) WHERE AroId IS NOT NULL;
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

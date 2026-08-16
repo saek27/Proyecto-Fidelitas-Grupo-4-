@@ -65,6 +65,8 @@ namespace OC.Data.Context
         public DbSet<TecnologiaLente> TecnologiaLentes { get; set; }
         public DbSet<Aro> Aros { get; set; }
         public DbSet<AroImagen> AroImagenes { get; set; }
+        public DbSet<LandingItemCarrusel> CarruselItems { get; set; }
+        public DbSet<LandingItemDestacado> DestacadosItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

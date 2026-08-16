@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OC.Core.Contracts.IRepositories;
 using OC.Core.Domain.Entities;
+using OC.Data.Context;
 using OC.Web.Models;
 using System.Linq.Expressions;
 
@@ -14,6 +16,9 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<TecnologiaLente> _tecnologiaRepo;
         private readonly IGenericRepository<Aro> _aroRepo;
         private readonly IProductoImagenRepository _imagenRepo;
+        private readonly ILandingCarruselRepository _landingCarruselRepo;
+        private readonly ILandingDestacadoRepository _landingDestacadoRepo;
+        private readonly AppDbContext _db;
 
         private readonly IWebHostEnvironment _env;
 
@@ -26,12 +31,18 @@ namespace OC.Web.Controllers
             IGenericRepository<TecnologiaLente> tecnologiaRepo,
             IGenericRepository<Aro> aroRepo,
             IProductoImagenRepository imagenRepo,
+            ILandingCarruselRepository landingCarruselRepo,
+            ILandingDestacadoRepository landingDestacadoRepo,
+            AppDbContext db,
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
             _tecnologiaRepo = tecnologiaRepo;
             _aroRepo = aroRepo;
             _imagenRepo = imagenRepo;
+            _landingCarruselRepo = landingCarruselRepo;
+            _landingDestacadoRepo = landingDestacadoRepo;
+            _db = db;
             _env = env;
         }
 
@@ -105,6 +116,38 @@ namespace OC.Web.Controllers
             };
             ViewBag.Tecnologias = tecnologias.Items.ToList();
             ViewBag.Aros = aros.Items.ToList();
+
+            // ── LANDING: slots del carrusel + destacados + disponibles ──
+            if (seccion == "landing")
+            {
+                var carrusel = await _landingCarruselRepo.GetAllAsync();
+                var destacados = await _landingDestacadoRepo.GetAllAsync();
+
+                // IDs ya asignados a slots
+                var idsEnCarruselProducto = new HashSet<int>(carrusel.Where(c => c.ProductoId.HasValue).Select(c => c.ProductoId!.Value));
+                var idsEnCarruselAro = new HashSet<int>(carrusel.Where(c => c.AroId.HasValue).Select(c => c.AroId!.Value));
+                var idsEnDestProducto = new HashSet<int>(destacados.Where(d => d.ProductoId.HasValue).Select(d => d.ProductoId!.Value));
+                var idsEnDestAro = new HashSet<int>(destacados.Where(d => d.AroId.HasValue).Select(d => d.AroId!.Value));
+
+                // Pool de productos y aros elegibles (Activo=true, marcados como destacados/landing)
+                var todosProductos = (await _productoRepo.GetAllAsync(p => p.Activo)).ToList();
+                var todosAros = (await _aroRepo.GetAllAsync(a => a.Activo)).ToList();
+
+                // Disponibles: marcado=true pero NO está en ningún slot
+                var disponiblesProductos = todosProductos
+                    .Where(p => p.Destacado && !idsEnCarruselProducto.Contains(p.Id) && !idsEnDestProducto.Contains(p.Id))
+                    .ToList();
+                var disponiblesAros = todosAros
+                    .Where(a => a.MostrarEnLanding && !idsEnCarruselAro.Contains(a.Id) && !idsEnDestAro.Contains(a.Id))
+                    .ToList();
+
+                ViewBag.CarruselItems = carrusel;
+                ViewBag.DestacadosItems = destacados;
+                ViewBag.DisponiblesProductos = disponiblesProductos;
+                ViewBag.DisponiblesAros = disponiblesAros;
+                ViewBag.TodosProductos = todosProductos;  // para thumbnails en slots
+                ViewBag.TodosAros = todosAros;
+            }
 
             return View(productos);
         }
@@ -531,6 +574,195 @@ namespace OC.Web.Controllers
             if (System.IO.File.Exists(path))
             {
                 try { System.IO.File.Delete(path); } catch { /* ignorar bloqueos */ }
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════════════
+        //  LANDING — endpoints para guardar el orden de los slots
+        //  Reciben `orden` = lista mixta de strings "P:<id>" (Producto) o "A:<id>" (Aro).
+        //  Cascada: marca Destacado/MostrarEnLanding en los que entran,
+        //           desmarca en los que salen.
+        // ════════════════════════════════════════════════════════════════════════════
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GuardarCarrusel([FromForm] List<string> orden)
+        {
+            if (orden == null) orden = new List<string>();
+            if (orden.Count > 6)
+                return Json(new { ok = false, error = "El carrusel admite máximo 6 items." });
+
+            // Cascada: items que SALEN del carrusel deben desmarcar Destacado
+            // (pero solo si tampoco están en destacados)
+            var nuevosProductos = new HashSet<int>();
+            var nuevosAros = new HashSet<int>();
+            var itemsLimpios = new List<LandingItemInput>();
+
+            foreach (var token in orden)
+            {
+                if (string.IsNullOrWhiteSpace(token)) continue;
+                var partes = token.Split(':');
+                if (partes.Length != 2) continue;
+                var tipo = partes[0].Trim().ToUpperInvariant();
+                if (!int.TryParse(partes[1].Trim(), out var id) || id <= 0) continue;
+
+                if (tipo == "P")
+                {
+                    nuevosProductos.Add(id);
+                    itemsLimpios.Add(new LandingItemInput("Producto", id));
+                }
+                else if (tipo == "A")
+                {
+                    nuevosAros.Add(id);
+                    itemsLimpios.Add(new LandingItemInput("Aro", id));
+                }
+            }
+
+            try
+            {
+                await _landingCarruselRepo.ReplaceAllAsync(itemsLimpios);
+
+                // Cascada de flags
+                await SincronizarFlagsCarrusel(nuevosProductos, nuevosAros);
+
+                return Json(new { ok = true, count = itemsLimpios.Count });
+            }
+            catch (System.Exception ex)
+            {
+                return Json(new { ok = false, error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GuardarDestacados([FromForm] List<string> orden)
+        {
+            if (orden == null) orden = new List<string>();
+            if (orden.Count > 8)
+                return Json(new { ok = false, error = "Destacados admite máximo 8 items." });
+
+            var nuevosProductos = new HashSet<int>();
+            var nuevosAros = new HashSet<int>();
+            var itemsLimpios = new List<LandingItemInput>();
+
+            foreach (var token in orden)
+            {
+                if (string.IsNullOrWhiteSpace(token)) continue;
+                var partes = token.Split(':');
+                if (partes.Length != 2) continue;
+                var tipo = partes[0].Trim().ToUpperInvariant();
+                if (!int.TryParse(partes[1].Trim(), out var id) || id <= 0) continue;
+
+                if (tipo == "P")
+                {
+                    nuevosProductos.Add(id);
+                    itemsLimpios.Add(new LandingItemInput("Producto", id));
+                }
+                else if (tipo == "A")
+                {
+                    nuevosAros.Add(id);
+                    itemsLimpios.Add(new LandingItemInput("Aro", id));
+                }
+            }
+
+            try
+            {
+                await _landingDestacadoRepo.ReplaceAllAsync(itemsLimpios);
+                await SincronizarFlagsDestacados(nuevosProductos, nuevosAros);
+
+                return Json(new { ok = true, count = itemsLimpios.Count });
+            }
+            catch (System.Exception ex)
+            {
+                return Json(new { ok = false, error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Para cada Producto en el carrusel: Destacado=1.
+        /// Para los que SALEN: si tampoco están en destacados, Destacado=0.
+        /// Mismo patrón para Aros con MostrarEnLanding.
+        /// </summary>
+        private async Task SincronizarFlagsCarrusel(HashSet<int> productosEnSlot, HashSet<int> arosEnSlot)
+        {
+            var destItems = await _landingDestacadoRepo.GetAllAsync();
+            var destProdIds = new HashSet<int>(destItems.Where(d => d.ProductoId.HasValue).Select(d => d.ProductoId!.Value));
+            var destAroIds = new HashSet<int>(destItems.Where(d => d.AroId.HasValue).Select(d => d.AroId!.Value));
+
+            // Productos: marcar los que están en carrusel
+            foreach (var id in productosEnSlot)
+                await _db.Database.ExecuteSqlRawAsync(
+                    "UPDATE Productos SET Destacado = 1 WHERE Id = {0}", id);
+
+            // Productos que SALEN: si NO están en destacados, desmarcar
+            var todosProdEnCarruselAntes = await _db.Productos
+                .Where(p => p.Activo)
+                .ToListAsync();
+            foreach (var p in todosProdEnCarruselAntes.Where(p => p.Destacado))
+            {
+                bool estaEnCarruselNuevo = productosEnSlot.Contains(p.Id);
+                bool estaEnDestacados = destProdIds.Contains(p.Id);
+                if (!estaEnCarruselNuevo && !estaEnDestacados)
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE Productos SET Destacado = 0 WHERE Id = {0}", p.Id);
+            }
+
+            // Aros: marcar los que están en carrusel
+            foreach (var id in arosEnSlot)
+                await _db.Database.ExecuteSqlRawAsync(
+                    "UPDATE Aros SET MostrarEnLanding = 1 WHERE Id = {0}", id);
+
+            // Aros que SALEN
+            var todosArosActivos = await _db.Aros
+                .Where(a => a.Activo)
+                .ToListAsync();
+            foreach (var a in todosArosActivos.Where(a => a.MostrarEnLanding))
+            {
+                bool estaEnCarruselNuevo = arosEnSlot.Contains(a.Id);
+                bool estaEnDestacados = destAroIds.Contains(a.Id);
+                if (!estaEnCarruselNuevo && !estaEnDestacados)
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE Aros SET MostrarEnLanding = 0 WHERE Id = {0}", a.Id);
+            }
+        }
+
+        private async Task SincronizarFlagsDestacados(HashSet<int> productosEnSlot, HashSet<int> arosEnSlot)
+        {
+            var carItems = await _landingCarruselRepo.GetAllAsync();
+            var carProdIds = new HashSet<int>(carItems.Where(c => c.ProductoId.HasValue).Select(c => c.ProductoId!.Value));
+            var carAroIds = new HashSet<int>(carItems.Where(c => c.AroId.HasValue).Select(c => c.AroId!.Value));
+
+            // Marcar los que entran
+            foreach (var id in productosEnSlot)
+                await _db.Database.ExecuteSqlRawAsync(
+                    "UPDATE Productos SET Destacado = 1 WHERE Id = {0}", id);
+            foreach (var id in arosEnSlot)
+                await _db.Database.ExecuteSqlRawAsync(
+                    "UPDATE Aros SET MostrarEnLanding = 1 WHERE Id = {0}", id);
+
+            // Los que SALEN: si NO están en carrusel tampoco, desmarcar
+            var todosProdDestacados = await _db.Productos
+                .Where(p => p.Activo && p.Destacado)
+                .ToListAsync();
+            foreach (var p in todosProdDestacados)
+            {
+                bool estaEnDestNuevo = productosEnSlot.Contains(p.Id);
+                bool estaEnCarrusel = carProdIds.Contains(p.Id);
+                if (!estaEnDestNuevo && !estaEnCarrusel)
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE Productos SET Destacado = 0 WHERE Id = {0}", p.Id);
+            }
+
+            var todosArosLanding = await _db.Aros
+                .Where(a => a.Activo && a.MostrarEnLanding)
+                .ToListAsync();
+            foreach (var a in todosArosLanding)
+            {
+                bool estaEnDestNuevo = arosEnSlot.Contains(a.Id);
+                bool estaEnCarrusel = carAroIds.Contains(a.Id);
+                if (!estaEnDestNuevo && !estaEnCarrusel)
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE Aros SET MostrarEnLanding = 0 WHERE Id = {0}", a.Id);
             }
         }
     }

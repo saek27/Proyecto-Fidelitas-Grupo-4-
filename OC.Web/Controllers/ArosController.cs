@@ -41,6 +41,7 @@ namespace OC.Web.Controllers
                 nameof(Aro.SKU),
                 nameof(Aro.Precio),
                 nameof(Aro.Stock),
+                nameof(Aro.DescripcionCorta),
                 nameof(Aro.MostrarEnLanding))]
             Aro model,
             List<IFormFile>? imagenesAro)
@@ -158,6 +159,7 @@ namespace OC.Web.Controllers
                 nameof(Aro.Precio),
                 nameof(Aro.Stock),
                 nameof(Aro.Activo),
+                nameof(Aro.DescripcionCorta),
                 nameof(Aro.MostrarEnLanding))]
             Aro model,
             List<IFormFile>? imagenesAro,
@@ -226,6 +228,7 @@ namespace OC.Web.Controllers
             existente.Stock = model.Stock;
             existente.Activo = model.Activo;
             existente.MostrarEnLanding = model.MostrarEnLanding;
+            existente.DescripcionCorta = model.DescripcionCorta;
 
             await _aroRepo.UpdateAsync(existente);
 

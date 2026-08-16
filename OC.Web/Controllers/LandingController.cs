@@ -32,6 +32,8 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<Usuario> _usuarioRepo;
         private readonly IProductoImagenRepository _imagenRepo;
         private readonly IAroImagenRepository _aroImagenRepo;
+        private readonly ILandingCarruselRepository _landingCarruselRepo;
+        private readonly ILandingDestacadoRepository _landingDestacadoRepo;
         private readonly IWebHostEnvironment _env;
 
         public LandingController(
@@ -47,6 +49,8 @@ namespace OC.Web.Controllers
             IGenericRepository<Usuario> usuarioRepo,
             IProductoImagenRepository imagenRepo,
             IAroImagenRepository aroImagenRepo,
+            ILandingCarruselRepository landingCarruselRepo,
+            ILandingDestacadoRepository landingDestacadoRepo,
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
@@ -61,6 +65,8 @@ namespace OC.Web.Controllers
             _usuarioRepo = usuarioRepo;
             _imagenRepo = imagenRepo;
             _aroImagenRepo = aroImagenRepo;
+            _landingCarruselRepo = landingCarruselRepo;
+            _landingDestacadoRepo = landingDestacadoRepo;
             _env = env;
         }
 
@@ -80,31 +86,84 @@ namespace OC.Web.Controllers
         [Route("landing/index")]
         public async Task<IActionResult> Index()
         {
-            // Carrusel principal (top 6) = Productos destacados + Aros con MostrarEnLanding=true.
-            // Si no hay productos destacados pero sí aros, mostrar aros.
-            var productosDestProd = (await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado)).Items;
-            if (productosDestProd.Count == 0)
-                productosDestProd = (await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo)).Items;
+            // ── SEED: la primera vez, llenar las tablas desde los flags actuales ──
+            if (await _landingCarruselRepo.CountAsync() == 0)
+            {
+                await SeedCarruselDesdeFlags();
+            }
+            if (await _landingDestacadoRepo.CountAsync() == 0)
+            {
+                await SeedDestacadosDesdeFlags();
+            }
 
-            var arosDestProd = (await _aroRepo.GetPagedAsync(1, 6, filter: a => a.Activo && a.MostrarEnLanding)).Items;
-
-            // Mezclar alternando Productos y Aros, completar hasta el límite.
-            var carruselMix = IntercalarLimitado<LandingItemVm>(
-                productosDestProd.Select(p => new LandingItemVm { Tipo = "Producto", Id = p.Id, Nombre = p.Nombre, Descripcion = p.DescripcionCorta, Precio = p.PrecioPublico, RutaImagenLegacy = p.RutaImagen, DetalleUrl = $"/landing/detalle-producto/{p.Id}" }).ToList(),
-                arosDestProd.Select(a => new LandingItemVm { Tipo = "Aro", Id = a.Id, Nombre = a.Nombre, Descripcion = a.SKU, Precio = a.Precio, RutaImagenLegacy = a.RutaImagen, DetalleUrl = $"/landing/detalle-aro/{a.Id}" }).ToList(),
-                6
-            );
+            // ── Carrusel: leer de la tabla nueva (6 items máx) ──
+            var carruselDb = await _landingCarruselRepo.GetAllAsync();
+            var carruselMix = carruselDb.Select(ci =>
+            {
+                if (ci.Tipo == "Producto" && ci.Producto != null)
+                {
+                    var p = ci.Producto;
+                    return new LandingItemVm
+                    {
+                        Tipo = "Producto",
+                        Id = p.Id,
+                        Nombre = p.Nombre,
+                        Descripcion = p.DescripcionCorta,
+                        Precio = p.PrecioPublico,
+                        RutaImagenLegacy = p.RutaImagen,
+                        DetalleUrl = $"/landing/detalle-producto/{p.Id}"
+                    };
+                }
+                else
+                {
+                    var a = ci.Aro;
+                    return new LandingItemVm
+                    {
+                        Tipo = "Aro",
+                        Id = a.Id,
+                        Nombre = a.Nombre,
+                        Descripcion = a.DescripcionCorta ?? a.SKU,
+                        Precio = a.Precio,
+                        RutaImagenLegacy = a.RutaImagen,
+                        DetalleUrl = $"/landing/detalle-aro/{a.Id}"
+                    };
+                }
+            }).ToList();
             ViewBag.CarruselMix = carruselMix;
 
-            // Productos Destacados (top 8) — mismo criterio
-            var productosDest = (await _productoRepo.GetPagedAsync(1, 8, filter: p => p.Activo && p.Destacado)).Items;
-            var arosDest = (await _aroRepo.GetPagedAsync(1, 8, filter: a => a.Activo && a.MostrarEnLanding)).Items;
-
-            var destacadosMix = IntercalarLimitado<LandingItemVm>(
-                productosDest.Select(p => new LandingItemVm { Tipo = "Producto", Id = p.Id, Nombre = p.Nombre, Descripcion = p.DescripcionCorta, Precio = p.PrecioPublico, RutaImagenLegacy = p.RutaImagen, DetalleUrl = $"/landing/detalle-producto/{p.Id}" }).ToList(),
-                arosDest.Select(a => new LandingItemVm { Tipo = "Aro", Id = a.Id, Nombre = a.Nombre, Descripcion = a.SKU, Precio = a.Precio, RutaImagenLegacy = a.RutaImagen, DetalleUrl = $"/landing/detalle-aro/{a.Id}" }).ToList(),
-                8
-            );
+            // ── Destacados: leer de la tabla nueva (8 items máx) ──
+            var destDb = await _landingDestacadoRepo.GetAllAsync();
+            var destacadosMix = destDb.Select(di =>
+            {
+                if (di.Tipo == "Producto" && di.Producto != null)
+                {
+                    var p = di.Producto;
+                    return new LandingItemVm
+                    {
+                        Tipo = "Producto",
+                        Id = p.Id,
+                        Nombre = p.Nombre,
+                        Descripcion = p.DescripcionCorta,
+                        Precio = p.PrecioPublico,
+                        RutaImagenLegacy = p.RutaImagen,
+                        DetalleUrl = $"/landing/detalle-producto/{p.Id}"
+                    };
+                }
+                else
+                {
+                    var a = di.Aro;
+                    return new LandingItemVm
+                    {
+                        Tipo = "Aro",
+                        Id = a.Id,
+                        Nombre = a.Nombre,
+                        Descripcion = a.DescripcionCorta ?? a.SKU,
+                        Precio = a.Precio,
+                        RutaImagenLegacy = a.RutaImagen,
+                        DetalleUrl = $"/landing/detalle-aro/{a.Id}"
+                    };
+                }
+            }).ToList();
             ViewBag.DestacadosMix = destacadosMix;
 
             // Dict de imagen principal para IDs de Productos
@@ -122,6 +181,40 @@ namespace OC.Web.Controllers
             ViewBag.ImagenesPorAro = await CargarImagenesPrincipalesArosAsync(idsAro);
 
             return View();
+        }
+
+        /// <summary>
+        /// Seed inicial: toma los productos Destacado=true + aros MostrarEnLanding=true,
+        /// los intercala (1 y 1) y los persiste en CarruselItems con Posicion 1..N.
+        /// </summary>
+        private async Task SeedCarruselDesdeFlags()
+        {
+            var productos = (await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado)).Items;
+            var aros = (await _aroRepo.GetPagedAsync(1, 6, filter: a => a.Activo && a.MostrarEnLanding)).Items;
+
+            var mezclados = IntercalarLimitado<LandingItemInput>(
+                productos.Select(p => new LandingItemInput("Producto", p.Id)).ToList(),
+                aros.Select(a => new LandingItemInput("Aro", a.Id)).ToList(),
+                6
+            );
+
+            if (mezclados.Any())
+                await _landingCarruselRepo.ReplaceAllAsync(mezclados);
+        }
+
+        private async Task SeedDestacadosDesdeFlags()
+        {
+            var productos = (await _productoRepo.GetPagedAsync(1, 8, filter: p => p.Activo && p.Destacado)).Items;
+            var aros = (await _aroRepo.GetPagedAsync(1, 8, filter: a => a.Activo && a.MostrarEnLanding)).Items;
+
+            var mezclados = IntercalarLimitado<LandingItemInput>(
+                productos.Select(p => new LandingItemInput("Producto", p.Id)).ToList(),
+                aros.Select(a => new LandingItemInput("Aro", a.Id)).ToList(),
+                8
+            );
+
+            if (mezclados.Any())
+                await _landingDestacadoRepo.ReplaceAllAsync(mezclados);
         }
 
         [AllowAnonymous]
