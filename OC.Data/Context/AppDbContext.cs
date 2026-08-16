@@ -64,6 +64,7 @@ namespace OC.Data.Context
         //Lentes y Aros
         public DbSet<TecnologiaLente> TecnologiaLentes { get; set; }
         public DbSet<Aro> Aros { get; set; }
+        public DbSet<AroImagen> AroImagenes { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

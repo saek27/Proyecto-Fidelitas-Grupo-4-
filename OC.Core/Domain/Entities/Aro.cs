@@ -25,5 +25,11 @@ namespace OC.Core.Domain.Entities
 
         [MaxLength(512)]
         public string? RutaImagen { get; set; }
+
+        /// <summary>Si true, el aro aparece en el catálogo público del landing (sección "Lentes Graduados").</summary>
+        public bool MostrarEnLanding { get; set; } = false;
+
+        /// <summary>Imágenes múltiples del aro (carrusel del catálogo).</summary>
+        public ICollection<AroImagen> Imagenes { get; set; } = new List<AroImagen>();
     }
 }

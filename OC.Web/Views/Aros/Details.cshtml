@@ -1,28 +1,102 @@
 @model OC.Core.Domain.Entities.Aro
+@using OC.Core.Domain.Entities
 @{
     ViewData["Title"] = $"Aro {Model.Nombre}";
+    var galeria = ViewBag.Galeria as List<AroImagen> ?? new List<AroImagen>();
+    var primeraImagen = galeria.FirstOrDefault();
+    var defaultImg = "/images/default-product.jpg";
+    var maxImagenes = ViewBag.MaxImagenesPorAro as int? ?? 7;
+
+    // Construir items para PhotoSwipe (necesita ancho/alto, así que usamos dimensiones reales)
+    // Si no las tenemos, ponemos valores por defecto y PhotoSwipe las detecta al cargar.
+    var pswpItems = galeria.Select((img, i) => new
+    {
+        src = img.Ruta,
+        msrc = img.Ruta, // mini (mismo src está bien para empezar)
+        w = 1200,        // ancho "estimado"; PhotoSwipe mide al cargar
+        h = 1200,
+        title = $"{Model.Nombre} - Imagen {i + 1}",
+        alt = Model.Nombre
+    }).ToList();
 }
 
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card-dashboard animate-on-scroll" data-delay="0">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4><i class="bi bi-eyeglasses me-2"></i> Detalle del Aro</h4>
-                    <span class="badge @(Model.Activo ?"bg-success" :"bg-secondary")">
-                        @(Model.Activo ?"Activo" :"Inactivo")
+                    <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">
+                        @(Model.Activo ? "Activo" : "Inactivo")
                     </span>
                 </div>
 
-                @if (!string.IsNullOrEmpty(Model.RutaImagen))
+                <!-- ============ GALERÍA DE IMÁGENES (PhotoSwipe) ============ -->
+                @if (galeria.Any())
                 {
-                    <div class="mb-4 text-center text-md-start">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-uppercase text-muted mb-0 small fw-semibold">
+                                <i class="bi bi-images me-1"></i> Galería
+                                <span class="badge bg-secondary ms-1">@galeria.Count / @maxImagenes</span>
+                                @if (primeraImagen?.EsPrincipal == true)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1" title="Imagen principal">
+                                        <i class="bi bi-star-fill"></i> Principal visible
+                                    </span>
+                                }
+                            </h6>
+                            <small class="text-muted">
+                                <i class="bi bi-zoom-in"></i> Tocá una imagen para ampliar
+                            </small>
+                        </div>
+
+                        <!-- Grid de miniaturas clickeables -->
+                        <div class="row g-2" id="aroGallery">
+                            @foreach (var (img, idx) in galeria.Select((v, i) => (v, i)))
+                            {
+                                <div class="col-6 col-sm-4 col-md-3">
+                                    <a href="@img.Ruta"
+                                       data-pswp-width="1200" data-pswp-height="1200"
+                                       data-pswp-target="aroGallery"
+                                       target="_blank" rel="noopener"
+                                       class="aro-thumb position-relative d-block overflow-hidden rounded border @(img.EsPrincipal ? "border-warning border-2" : "")"
+                                       style="aspect-ratio: 1 / 1; cursor: zoom-in;">
+                                        <img src="@img.Ruta" alt="@Model.Nombre" loading="lazy"
+                                             style="width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease;"
+                                             onmouseover="this.style.transform='scale(1.06)'"
+                                             onmouseout="this.style.transform='scale(1)'"
+                                             onerror="this.onerror=null; this.src='@defaultImg';" />
+                                        @if (img.EsPrincipal)
+                                        {
+                                            <span class="position-absolute top-0 start-0 m-1 badge bg-warning text-dark" style="font-size: 0.65rem;">
+                                                <i class="bi bi-star-fill"></i>
+                                            </span>
+                                        }
+                                        <span class="position-absolute bottom-0 end-0 m-1 badge bg-dark" style="font-size: 0.65rem; opacity: 0.85;">
+                                            #@(idx + 1)
+                                        </span>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(Model.RutaImagen))
+                {
+                    <div class="mb-4 text-center">
                         <img src="@Model.RutaImagen" alt="@Model.Nombre" class="rounded border shadow-sm"
-                             style="max-height:200px;max-width:100%;object-fit:contain" />
+                             style="max-height:240px; max-width:100%; object-fit:contain" />
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light border text-center text-muted mb-4">
+                        <i class="bi bi-image me-1"></i> Este aro todavía no tiene imágenes cargadas.
                     </div>
                 }
 
-                <dl class="row">
+                <dl class="row mb-3">
                     <dt class="col-sm-3">Nombre</dt>
                     <dd class="col-sm-9">@Model.Nombre</dd>
 
@@ -33,11 +107,25 @@
                     <dd class="col-sm-9">₡@Model.Precio.ToString("N2")</dd>
 
                     <dt class="col-sm-3">Stock disponible</dt>
-                    <dd class="col-sm-9 @(Model.Stock < 6 ?"text-danger fw-bold" :"")">@Model.Stock</dd>
+                    <dd class="col-sm-9 @(Model.Stock < 6 ? "text-danger fw-bold" : "")">@Model.Stock</dd>
+
+                    <dt class="col-sm-3">Mostrar en landing</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.MostrarEnLanding)
+                        {
+                            <span class="badge bg-success"><i class="bi bi-shop me-1"></i> Sí</span>
+                            <small class="text-muted ms-2">visible en /landing/catalogo?categoria=Lentes Graduados</small>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary"><i class="bi bi-shop me-1"></i> No</span>
+                            <small class="text-muted ms-2">solo visible en el inventario interno</small>
+                        }
+                    </dd>
 
                     <dt class="col-sm-3">Estado</dt>
                     <dd class="col-sm-9">
-                        @(Model.Activo ?"Activo" :"Inactivo")
+                        @(Model.Activo ? "Activo" : "Inactivo")
                     </dd>
                 </dl>
 
@@ -49,13 +137,17 @@
                 }
 
                 <div class="form-footer-actions justify-content-between align-items-center">
-                    <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="aros" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i> Volver al inventario
-                    </a>
-                    <div class="btn-group" role="group">
-                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-brand">
-                            <i class="bi bi-pencil me-1"></i> Editar
-                        </a>
+                    <div class="btn-toolbar mb-0" role="toolbar" aria-label="Navegación">
+                        <div class="btn-group" role="group">
+                            <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="aros" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Volver al inventario
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-brand">
+                                <i class="bi bi-pencil me-1"></i> Editar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="btn-toolbar mb-0" role="toolbar" aria-label="Eliminar aro">
                         <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="m-0"
                               onsubmit="return confirm('¿Desactivar este aro?');">
                             @Html.AntiForgeryToken()
@@ -70,8 +162,38 @@
     </div>
 </div>
 
+@* ============ PHOTOSWIPE LIGHTBOX ============ *@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.min.css" />
+
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script type="module">
+        // PhotoSwipe v5 — carga ESM y abre la galería al click en cualquier .aro-thumb
+        import PhotoSwipeLightbox from 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js';
+
+        const galeria = document.getElementById('aroGallery');
+        if (galeria) {
+            const dataSource = [
+                @foreach (var img in galeria)
+                {
+                    <text>{ src: '@img.Ruta', width: 1200, height: 1200, alt: '@Model.Nombre' },</text>
+                }
+            ];
+
+            const lightbox = new PhotoSwipeLightbox({
+                gallery: '#aroGallery',
+                children: 'a.aro-thumb',
+                pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+                bgOpacity: 0.92,
+                showHideAnimationType: 'fade',
+                padding: { top: 20, bottom: 20, left: 20, right: 20 }
+            });
+            lightbox.init();
+
+            // Soporte para swipe/touch ya viene incluido; además click derecho o flechas también.
+        }
+    </script>
     <script>
-        anime({ targets: '.animate-on-scroll', opacity: [0,1], translateY: [15,0], duration: 500, easing: 'easeOutQuad' });
+        anime({ targets: '.animate-on-scroll', opacity: [0, 1], translateY: [15, 0], duration: 500, easing: 'easeOutQuad' });
     </script>
 }

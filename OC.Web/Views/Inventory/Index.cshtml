@@ -398,10 +398,9 @@
                                                     <a asp-controller="Aros" asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info">
                                                         <i class="bi bi-eye"></i><span class="d-none d-xl-inline ms-1">Ver</span>
                                                     </a>
-                                                    <button type="button" class="btn btn-outline-secondary"
-                                                            onclick="editarAro('@item.Id', '@item.Nombre', '@item.SKU', @item.Precio.ToString("F2"), @item.Stock, @item.Activo.ToString().ToLower())">
+                                                    <a asp-controller="Aros" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary">
                                                         <i class="bi bi-pencil"></i><span class="d-none d-xl-inline ms-1">Editar</span>
-                                                    </button>
+                                                    </a>
                                                 </div>
                                                 <form asp-controller="Aros" asp-action="Delete" asp-route-id="@item.Id" method="post" class="ms-1"
                                                       onsubmit="return confirm('¿Desactivar este aro?');">

@@ -1,22 +1,42 @@
-﻿@{
+@{
     Layout = "_LayoutLanding";
-    ViewData["Title"] = "Catálogo de Lentes";
+    ViewData["Title"] = "Catálogo";
+
+    // Soporte dual: Productos o Aros (mismo template, cast en runtime)
+    var esAros = ViewBag.EsCategoriaAros as bool? ?? false;
     var imagenesPorProducto = ViewBag.ImagenesPorProducto as Dictionary<int, string>
                               ?? new Dictionary<int, string>();
-
-    string ImagenPara(int productoId, string? legacyRuta)
+    var imagenesPorAro = ViewBag.ImagenesPorAro as Dictionary<int, string>
+                         ?? new Dictionary<int, string>();
+    string ImagenParaProducto(int productoId, string? legacyRuta)
     {
         if (imagenesPorProducto.TryGetValue(productoId, out var ruta) && !string.IsNullOrEmpty(ruta))
             return ruta;
         return string.IsNullOrEmpty(legacyRuta) ? "/images/default-product.jpg" : legacyRuta;
     }
+    string ImagenParaAro(int aroId, string? legacyRuta)
+    {
+        if (imagenesPorAro.TryGetValue(aroId, out var ruta) && !string.IsNullOrEmpty(ruta))
+            return ruta;
+        return string.IsNullOrEmpty(legacyRuta) ? "/images/default-product.jpg" : legacyRuta;
+    }
 }
-@model OC.Core.Common.PagedResult<OC.Core.Domain.Entities.Producto>
+
+@model dynamic
+@using OC.Core.Common
+@using OC.Core.Domain.Entities
 
 <div class="container my-5 pt-5">
     <div class="text-center mb-5 animate-on-scroll">
         <h6 class="text-uppercase tracking-wide mb-2" style="color: var(--brand-accent); letter-spacing: 2px;">Explora nuestra colección</h6>
-        <h1 class="display-5 fw-bold text-white">Nuestros Lentes</h1>
+        @if (esAros)
+        {
+            <h1 class="display-5 fw-bold text-white">Nuestros Lentes</h1>
+        }
+        else
+        {
+            <h1 class="display-5 fw-bold text-white">Nuestros Lentes</h1>
+        }
     </div>
 
     <div class="row">
@@ -45,36 +65,70 @@
         </div>
 
         <div class="col-12 col-lg-9">
+            @{
+                // Como @model es dynamic, Model.Items / Model.PageIndex / Model.TotalPages
+                // funcionan tanto para PagedResult<Producto> como para PagedResult<Aro>.
+                var items = (Model.Items as IEnumerable<object>) ?? new List<object>();
+                int pageIndex = Model.PageIndex;
+                int totalPages = Model.TotalPages;
+            }
             <div class="row g-4 g-lg-4">
-                @if (Model.Items != null && Model.Items.Any())
+                @if (items.Any())
                 {
-                    @foreach (var prod in Model.Items)
+                    @if (esAros)
                     {
-                        <div class="col-12 col-sm-6 col-xl-4 animate-on-scroll">
-                            <div class="card product-card h-100 shadow-sm">
-                                <div class="img-wrapper relative">
-                                    <img src="@(ImagenPara(prod.Id, prod.RutaImagen))" alt="@prod.Nombre">
-                                </div>
-                                <div class="card-body d-flex flex-column p-4">
-                                    <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>
-                                    <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@prod.DescripcionCorta</p>
+                        @foreach (var aro in items.Cast<Aro>())
+                        {
+                            <div class="col-12 col-sm-6 col-xl-4 animate-on-scroll">
+                                <div class="card product-card h-100 shadow-sm">
+                                    <div class="img-wrapper relative">
+                                        <img src="@(ImagenParaAro(aro.Id, aro.RutaImagen))" alt="@aro.Nombre">
+                                    </div>
+                                    <div class="card-body d-flex flex-column p-4">
+                                        <h5 class="card-title text-white fw-bold mb-2">@aro.Nombre</h5>
+                                        <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@aro.SKU</p>
 
-                                    <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: var(--glass-border) !important;">
-                                        <span class="price-tag fw-bold">₡@prod.PrecioPublico.ToString("N2")</span>
-                                        <a href="/landing/detalle-producto/@prod.Id" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
-                                            <i class="bi bi-arrow-right"></i>
-                                        </a>
+                                        <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: var(--glass-border) !important;">
+                                            <span class="price-tag fw-bold">₡@aro.Precio.ToString("N2")</span>
+                                            <a href="/landing/detalle-aro/@aro.Id" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        }
+                    }
+                    else
+                    {
+                        @foreach (var prod in items.Cast<Producto>())
+                        {
+                            <div class="col-12 col-sm-6 col-xl-4 animate-on-scroll">
+                                <div class="card product-card h-100 shadow-sm">
+                                    <div class="img-wrapper relative">
+                                        <img src="@(ImagenParaProducto(prod.Id, prod.RutaImagen))" alt="@prod.Nombre">
+                                    </div>
+                                    <div class="card-body d-flex flex-column p-4">
+                                        <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>
+                                        <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@prod.DescripcionCorta</p>
+
+                                        <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: var(--glass-border) !important;">
+                                            <span class="price-tag fw-bold">�@prod.PrecioPublico.ToString("N2")</span>
+                                            <a href="/landing/detalle-producto/@prod.Id" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     }
                 }
                 else
                 {
                     <div class="col-12 text-center py-5 animate-on-scroll">
                         <i class="bi bi-emoji-frown display-1 text-light opacity-25 mb-3"></i>
-                        <h4 class="text-white">No se encontraron productos</h4>
+                        <h4 class="text-white">@(esAros ? "No se encontraron aros" : "No se encontraron productos")</h4>
                         <p class="text-light opacity-75">Intenta buscar en otra categoría.</p>
                     </div>
                 }
@@ -83,8 +137,8 @@
             @{
                 var pagination = new OC.Web.Models.PaginationInfo
                 {
-                    CurrentPage = Model.PageIndex,
-                    TotalPages = Model.TotalPages,
+                    CurrentPage = pageIndex,
+                    TotalPages = totalPages,
                     GetPageUrl = (page) => Url.Action("Catalogo", new { page, categoria = ViewBag.CategoriaActual, busqueda = ViewBag.Busqueda })
                 };
             }

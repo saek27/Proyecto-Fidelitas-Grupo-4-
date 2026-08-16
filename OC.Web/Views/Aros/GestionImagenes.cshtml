@@ -1,0 +1,139 @@
+@model List<OC.Core.Domain.Entities.AroImagen>
+@{
+    ViewData["Title"] = "Gestión de imágenes";
+    var aro = ViewBag.Aro as OC.Core.Domain.Entities.Aro;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card-dashboard animate-on-scroll" data-delay="0">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-images me-2"></i> Gestión de imágenes
+                    </h4>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@aro!.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Volver a Editar
+                        </a>
+                        <a asp-action="Details" asp-route-id="@aro.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-eye me-1"></i> Ver aro
+                        </a>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-4">
+                    Aro: <strong>@aro.Nombre</strong> (SKU: @aro.SKU)
+                </p>
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+                    </div>
+                }
+
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="bi bi-image"></i></div>
+                        <div class="empty-state-title">Sin imágenes</div>
+                        <div class="empty-state-text">Este aro no tiene imágenes. Volvé a "Editar" y subí algunas.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Estado</th>
+                                    <th>Principal</th>
+                                    <th>Orden</th>
+                                    <th>Subida</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var img in Model)
+                                {
+                                    <tr class="@(img.Activo ? "" : "text-muted")">
+                                        <td>
+                                            <img src="@img.Ruta"
+                                                 alt="@img.Id"
+                                                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); @(img.Activo ? "" : "opacity: 0.5; filter: grayscale(80%);")" />
+                                        </td>
+                                        <td>
+                                            @if (img.Activo)
+                                            {
+                                                <span class="status-badge status-badge-active">Activa</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge status-badge-inactive">Inactiva</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (img.EsPrincipal)
+                                            {
+                                                <i class="bi bi-star-fill text-warning" title="Principal"></i>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td>@img.Orden</td>
+                                        <td>@img.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="text-end">
+                                            @if (!img.Activo)
+                                            {
+                                                <form asp-action="RestaurarImagen" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="imagenId" value="@img.Id" />
+                                                    <input type="hidden" name="productoId" value="@aro.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Restaurar">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                </form>
+
+                                                <form asp-action="EliminarImagenDefinitiva" method="post" class="d-inline"
+                                                      onsubmit="return confirm('¿Eliminar definitivamente esta imagen? El archivo del disco NO se podrá recuperar.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="imagenId" value="@img.Id" />
+                                                    <input type="hidden" name="productoId" value="@aro.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">
+                                                    Para borrar, usá "Editar" → marcá la casilla de eliminar y guardá.
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-4 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Soft delete:</strong> cuando marcás una imagen para eliminar en "Editar" y guardás, deja de mostrarse pero el archivo se conserva acá. Desde esta pantalla podés <strong>restaurarla</strong> o <strong>eliminarla definitivamente</strong>.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

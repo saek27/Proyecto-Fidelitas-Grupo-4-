@@ -1,58 +1,186 @@
 @model OC.Core.Domain.Entities.Aro
 @{
-    ViewData["Title"] ="Editar Aro";
+    ViewData["Title"] = "Editar Aro";
+    var imagenes = ViewBag.Imagenes as List<OC.Core.Domain.Entities.AroImagen>
+                   ?? new List<OC.Core.Domain.Entities.AroImagen>();
+    var maxImagenes = ViewBag.MaxImagenes as int? ?? 7;
+    var activasCount = imagenes.Count(i => i.Activo);
+    var restantes = maxImagenes - activasCount;
 }
 
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-9">
             <div class="card-dashboard animate-on-scroll" data-delay="0">
-                <h4 class="mb-4"><i class="bi bi-eyeglasses me-2"></i> Editar Aro</h4>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0"><i class="bi bi-eyeglasses me-2"></i> Editar Aro</h4>
+                    <div>
+                        <a asp-action="GestionImagenes" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-images me-1"></i> Gestión de imágenes
+                        </a>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-eye me-1"></i> Ver
+                        </a>
+                    </div>
+                </div>
 
-                <form asp-action="Edit" method="post" enctype="multipart/form-data">
-                    <input type="hidden" asp-for="Id" />
+                <form asp-action="Edit" method="post" enctype="multipart/form-data" id="formEditarAro">
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="Activo" />
+                    <input type="hidden" name="ordenImagenes" id="ordenImagenesHidden" />
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-8 mb-3">
                             <label asp-for="Nombre" class="form-label fw-semibold">Nombre *</label>
                             <input asp-for="Nombre" class="form-control" />
                             <span asp-validation-for="Nombre" class="text-danger"></span>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label asp-for="SKU" class="form-label fw-semibold">SKU</label>
                             <input asp-for="SKU" class="form-control" readonly />
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="Precio" class="form-label fw-semibold">Precio (₡)</label>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Precio" class="form-label fw-semibold">Precio (₡) *</label>
                             <input asp-for="Precio" type="number" step="0.01" min="0" class="form-control" />
+                            <span asp-validation-for="Precio" class="text-danger"></span>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label asp-for="Stock" class="form-label fw-semibold">Stock *</label>
                             <input asp-for="Stock" type="number" min="0" class="form-control" />
-                        </div>
-                        <div class="col-md-4 mb-3 d-flex align-items-center">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" asp-for="Activo" />
-                                <label class="form-check-label" asp-for="Activo">Activo</label>
-                            </div>
+                            <span asp-validation-for="Stock" class="text-danger"></span>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Imagen del aro</label>
-                        @if (!string.IsNullOrEmpty(Model.RutaImagen))
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="MostrarEnLanding" id="MostrarEnLandingEdit" />
+                            <label class="form-check-label fw-semibold" for="MostrarEnLandingEdit">
+                                <i class="bi bi-shop me-1"></i> Mostrar en el landing (sección "Lentes Graduados")
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Imágenes del aro
+                            <span class="badge bg-secondary">@activasCount / @maxImagenes activas</span>
+                        </label>
+
+                        @if (imagenes.Any())
                         {
-                            <div class="mb-2">
-                                <img src="@Model.RutaImagen" alt="@Model.Nombre" class="rounded border"
-                                     style="max-height:100px; max-width:100px; object-fit:contain" />
+                            <div class="alert alert-light border">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <strong>Cómo usar:</strong>
+                                <ul class="mb-1 mt-1 small">
+                                    <li><i class="bi bi-grip-vertical"></i> <strong>Arrastrá</strong> las tarjetas para reordenarlas. La primera posición es la imagen principal.</li>
+                                    <li>También podés usar el radio <strong>"Principal"</strong> para fijarla explícitamente.</li>
+                                    <li>El checkbox <strong>"Eliminar"</strong> hace soft delete.</li>
+                                </ul>
+                            </div>
+
+                            <div class="row g-3" id="sortableGrid">
+                                @foreach (var img in imagenes.Where(i => i.Activo))
+                                {
+                                    <div class="col-md-4 col-lg-3 sortable-item" data-imagen-id="@img.Id">
+                                        <div class="card position-relative h-100 imagen-card @(img.EsPrincipal ? "border-warning es-principal" : "")"
+                                             style="border-width: @(img.EsPrincipal ? "2px" : "1px"); cursor: grab;">
+                                            <span class="position-absolute grip-handle" style="top: 6px; right: 6px; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: grab; z-index: 3;"
+                                                  title="Arrastrá para reordenar">
+                                                <i class="bi bi-grip-vertical"></i>
+                                            </span>
+                                            <img src="@img.Ruta" alt="@img.Id"
+                                                 class="card-img-top"
+                                                 style="height: 140px; object-fit: cover; @(img.EsPrincipal ? "" : "filter: brightness(0.95);")" />
+                                            <div class="card-body p-2">
+                                                <div class="form-check mb-1">
+                                                    <input class="form-check-input principal-radio" type="radio"
+                                                           name="imagenPrincipalId" value="@img.Id"
+                                                           id="principal_@img.Id"
+                                                           @(img.EsPrincipal ? "checked" : "") />
+                                                    <label class="form-check-label small fw-semibold" for="principal_@img.Id">
+                                                        <i class="bi bi-star-fill text-warning"></i> Principal
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-1">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="eliminarImagen_@img.Id" value="@img.Id"
+                                                           id="eliminar_@img.Id" />
+                                                    <label class="form-check-label small text-danger" for="eliminar_@img.Id">
+                                                        <i class="bi bi-trash"></i> Eliminar (soft)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @if (img.EsPrincipal)
+                                            {
+                                                <span class="position-absolute top-0 start-0 m-1 badge bg-warning text-dark principal-badge">
+                                                    <i class="bi bi-star-fill"></i> Principal
+                                                </span>
+                                            }
+                                            <span class="position-absolute bottom-0 end-0 m-1 badge bg-dark orden-badge" style="font-size: 0.7rem;">
+                                                #<span class="orden-display">@img.Orden</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (imagenes.Any(i => !i.Activo))
+                            {
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#imgsInactivas">
+                                        <i class="bi bi-eye-slash me-1"></i> Ver @imagenes.Count(i => !i.Activo) imagen(es) inactiva(s)
+                                    </button>
+                                    <div class="collapse mt-2" id="imgsInactivas">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var img in imagenes.Where(i => !i.Activo))
+                                            {
+                                                <div class="position-relative">
+                                                    <img src="@img.Ruta"
+                                                         style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; opacity: 0.5; filter: grayscale(80%); border: 1px solid var(--color-border);" />
+                                                    <span class="position-absolute top-0 start-0 badge bg-secondary" style="font-size: 0.6rem;">Inactiva</span>
+                                                </div>
+                                            }
+                                        </div>
+                                        <small class="text-muted d-block mt-1">
+                                            Para restaurar o eliminar definitivamente, usá "Gestión de imágenes" arriba a la derecha.
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Este aro aún no tiene imágenes. Subí al menos una abajo.
                             </div>
                         }
-                        <input type="file" name="imagenAro" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
-                        <div class="form-text">Deje vacío para conservar la imagen actual.</div>
+
+                        <hr class="my-3" />
+
+                        <label class="form-label fw-semibold">Agregar nuevas imágenes</label>
+                        @if (restantes > 0)
+                        {
+                            <input type="file" name="imagenesAro" id="imagenesInput" class="form-control"
+                                   accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+                            <div class="form-text">
+                                Podés agregar hasta <strong>@restantes imagen(es)</strong> más.
+                            </div>
+                            <div id="imagenesCounter" class="small text-muted mt-1">0 nuevas imágenes</div>
+                            <div id="imagenesPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Ya tenés @maxImagenes imágenes activas (máximo).
+                            </div>
+                        }
+                        <span id="imagenesError" class="text-danger"></span>
                     </div>
 
                     <div class="form-footer-actions">
@@ -60,7 +188,7 @@
                             <button type="submit" class="btn btn-brand">
                                 <i class="bi bi-check-lg me-2"></i> Guardar cambios
                             </button>
-                            <a asp-controller="Inventory" asp-action="Index" asp-route-seccion="aros" class="btn btn-outline-secondary">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-2"></i> Cancelar
                             </a>
                         </div>
@@ -71,9 +199,130 @@
     </div>
 </div>
 
+@section Styles {
+    <style>
+        .sortable-ghost { opacity: 0.35; background: rgba(245, 158, 11, 0.15); border: 2px dashed var(--color-warning) !important; }
+        .sortable-chosen { cursor: grabbing !important; }
+        .sortable-drag { opacity: 0.95 !important; transform: rotate(2deg); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .imagen-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .imagen-card:active { cursor: grabbing !important; }
+        .grip-handle:hover { color: var(--color-warning) !important; }
+    </style>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script>
-        anime({ targets: '.animate-on-scroll', opacity: [0,1], translateY: [15,0], duration: 500, easing: 'easeOutQuad' });
+        $(function () {
+            const restantes = @restantes;
+            const maxImagenes = @maxImagenes;
+
+            const input = document.getElementById('imagenesInput');
+            const preview = document.getElementById('imagenesPreview');
+            const counter = document.getElementById('imagenesCounter');
+
+            if (input) {
+                input.addEventListener('change', function () {
+                    preview.innerHTML = '';
+                    const files = Array.from(this.files);
+                    counter.textContent = `${files.length} / ${restantes} imágenes nuevas`;
+                    counter.classList.remove('text-danger', 'fw-bold');
+                    counter.classList.add('text-muted');
+
+                    files.slice(0, restantes).forEach((file, i) => {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'width: 90px; height: 90px;';
+                            div.innerHTML = `
+                                <img src="${e.target.result}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 2px dashed var(--color-success);" />
+                                <span class="position-absolute bottom-0 end-0 badge bg-success" style="font-size: 0.65rem;">+${i + 1}</span>
+                            `;
+                            preview.appendChild(div);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                });
+            }
+
+            const grid = document.getElementById('sortableGrid');
+            if (grid && typeof Sortable !== 'undefined') {
+                Sortable.create(grid, {
+                    animation: 180,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    handle: '.imagen-card',
+                    onEnd: function () {
+                        const items = grid.querySelectorAll('.sortable-item');
+                        let primerItemId = null;
+                        items.forEach(function (item, index) {
+                            const newOrder = index + 1;
+                            const id = item.getAttribute('data-imagen-id');
+                            const ordenDisplay = item.querySelector('.orden-display');
+                            if (ordenDisplay) ordenDisplay.textContent = newOrder;
+                            if (index === 0) primerItemId = id;
+                        });
+
+                        if (primerItemId) {
+                            grid.querySelectorAll('.principal-radio').forEach(function (radio) {
+                                radio.checked = (radio.value === primerItemId);
+                            });
+
+                            items.forEach(function (item) {
+                                const card = item.querySelector('.imagen-card');
+                                const badge = item.querySelector('.principal-badge');
+                                const radio = item.querySelector('.principal-radio');
+                                const isPrincipal = radio && radio.checked;
+
+                                if (isPrincipal) {
+                                    if (card) {
+                                        card.classList.add('border-warning', 'es-principal');
+                                        card.style.borderWidth = '2px';
+                                        const img = card.querySelector('img.card-img-top');
+                                        if (img) img.style.filter = '';
+                                    }
+                                    if (!badge) {
+                                        const newBadge = document.createElement('span');
+                                        newBadge.className = 'position-absolute top-0 start-0 m-1 badge bg-warning text-dark principal-badge';
+                                        newBadge.innerHTML = '<i class="bi bi-star-fill"></i> Principal';
+                                        card.appendChild(newBadge);
+                                    }
+                                } else {
+                                    if (card) {
+                                        card.classList.remove('border-warning', 'es-principal');
+                                        card.style.borderWidth = '1px';
+                                        const img = card.querySelector('img.card-img-top');
+                                        if (img) img.style.filter = 'brightness(0.95)';
+                                    }
+                                    if (badge) badge.remove();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('formEditarAro').addEventListener('submit', function () {
+                const ordenes = [];
+                grid.querySelectorAll('.sortable-item').forEach(function (item, index) {
+                    const id = item.getAttribute('data-imagen-id');
+                    const orden = index + 1;
+                    if (id && orden) ordenes.push(id + ':' + orden);
+                });
+                document.getElementById('ordenImagenesHidden').value = ordenes.join(',');
+
+                const anyChecked = grid.querySelector('.principal-radio:checked');
+                if (!anyChecked) {
+                    const primerItem = grid.querySelector('.sortable-item');
+                    if (primerItem) {
+                        const id = primerItem.getAttribute('data-imagen-id');
+                        const radio = grid.querySelector('.principal-radio[value="' + id + '"]');
+                        if (radio) radio.checked = true;
+                    }
+                }
+            });
+        });
     </script>
 }

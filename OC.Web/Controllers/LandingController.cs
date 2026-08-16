@@ -21,6 +21,7 @@ namespace OC.Web.Controllers
             PropertyNameCaseInsensitive = true
         };
         private readonly IGenericRepository<Producto> _productoRepo;
+        private readonly IGenericRepository<Aro> _aroRepo;
         private readonly IGenericRepository<Sucursal> _sucursalRepo;
         private readonly IGenericRepository<Cita> _citaRepo;
         private readonly IGenericRepository<SolicitudCita> _solicitudRepo;
@@ -30,10 +31,12 @@ namespace OC.Web.Controllers
         private readonly IGenericRepository<EnvioNotificacion> _notificacionRepo;
         private readonly IGenericRepository<Usuario> _usuarioRepo;
         private readonly IProductoImagenRepository _imagenRepo;
+        private readonly IAroImagenRepository _aroImagenRepo;
         private readonly IWebHostEnvironment _env;
 
         public LandingController(
             IGenericRepository<Producto> productoRepo,
+            IGenericRepository<Aro> aroRepo,
             IGenericRepository<Sucursal> sucursalRepo,
             IGenericRepository<Cita> citaRepo,
             IGenericRepository<SolicitudCita> solicitudRepo,
@@ -43,9 +46,11 @@ namespace OC.Web.Controllers
             IGenericRepository<EnvioNotificacion> notificacionRepo,
             IGenericRepository<Usuario> usuarioRepo,
             IProductoImagenRepository imagenRepo,
+            IAroImagenRepository aroImagenRepo,
             IWebHostEnvironment env)
         {
             _productoRepo = productoRepo;
+            _aroRepo = aroRepo;
             _sucursalRepo = sucursalRepo;
             _citaRepo = citaRepo;
             _solicitudRepo = solicitudRepo;
@@ -55,6 +60,7 @@ namespace OC.Web.Controllers
             _notificacionRepo = notificacionRepo;
             _usuarioRepo = usuarioRepo;
             _imagenRepo = imagenRepo;
+            _aroImagenRepo = aroImagenRepo;
             _env = env;
         }
 
@@ -74,20 +80,46 @@ namespace OC.Web.Controllers
         [Route("landing/index")]
         public async Task<IActionResult> Index()
         {
-            var productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado);
-            if (!productosCarrusel.Items.Any())
-                productosCarrusel = await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo);
-            ViewBag.ProductosCarrusel = productosCarrusel.Items;
+            // Carrusel principal (top 6) = Productos destacados + Aros con MostrarEnLanding=true.
+            // Si no hay productos destacados pero sí aros, mostrar aros.
+            var productosDestProd = (await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo && p.Destacado)).Items;
+            if (productosDestProd.Count == 0)
+                productosDestProd = (await _productoRepo.GetPagedAsync(1, 6, filter: p => p.Activo)).Items;
 
-            var destacados = await _productoRepo.GetPagedAsync(1, 8, filter: p => p.Destacado && p.Activo);
-            ViewBag.Destacados = destacados.Items;
+            var arosDestProd = (await _aroRepo.GetPagedAsync(1, 6, filter: a => a.Activo && a.MostrarEnLanding)).Items;
 
-            // Dict {productoId, rutaImagenPrincipal} para que las vistas usen la imagen correcta
-            var ids = productosCarrusel.Items.Select(p => p.Id)
-                .Concat(destacados.Items.Select(p => p.Id))
+            // Mezclar alternando Productos y Aros, completar hasta el límite.
+            var carruselMix = IntercalarLimitado<LandingItemVm>(
+                productosDestProd.Select(p => new LandingItemVm { Tipo = "Producto", Id = p.Id, Nombre = p.Nombre, Descripcion = p.DescripcionCorta, Precio = p.PrecioPublico, RutaImagenLegacy = p.RutaImagen, DetalleUrl = $"/landing/detalle-producto/{p.Id}" }).ToList(),
+                arosDestProd.Select(a => new LandingItemVm { Tipo = "Aro", Id = a.Id, Nombre = a.Nombre, Descripcion = a.SKU, Precio = a.Precio, RutaImagenLegacy = a.RutaImagen, DetalleUrl = $"/landing/detalle-aro/{a.Id}" }).ToList(),
+                6
+            );
+            ViewBag.CarruselMix = carruselMix;
+
+            // Productos Destacados (top 8) — mismo criterio
+            var productosDest = (await _productoRepo.GetPagedAsync(1, 8, filter: p => p.Activo && p.Destacado)).Items;
+            var arosDest = (await _aroRepo.GetPagedAsync(1, 8, filter: a => a.Activo && a.MostrarEnLanding)).Items;
+
+            var destacadosMix = IntercalarLimitado<LandingItemVm>(
+                productosDest.Select(p => new LandingItemVm { Tipo = "Producto", Id = p.Id, Nombre = p.Nombre, Descripcion = p.DescripcionCorta, Precio = p.PrecioPublico, RutaImagenLegacy = p.RutaImagen, DetalleUrl = $"/landing/detalle-producto/{p.Id}" }).ToList(),
+                arosDest.Select(a => new LandingItemVm { Tipo = "Aro", Id = a.Id, Nombre = a.Nombre, Descripcion = a.SKU, Precio = a.Precio, RutaImagenLegacy = a.RutaImagen, DetalleUrl = $"/landing/detalle-aro/{a.Id}" }).ToList(),
+                8
+            );
+            ViewBag.DestacadosMix = destacadosMix;
+
+            // Dict de imagen principal para IDs de Productos
+            var idsProd = carruselMix.Where(i => i.Tipo == "Producto").Select(i => i.Id)
+                .Concat(destacadosMix.Where(i => i.Tipo == "Producto").Select(i => i.Id))
                 .Distinct()
                 .ToList();
-            ViewBag.ImagenesPorProducto = await CargarImagenesPrincipalesAsync(ids);
+            ViewBag.ImagenesPorProducto = await CargarImagenesPrincipalesAsync(idsProd);
+
+            // Dict de imagen principal para IDs de Aros
+            var idsAro = carruselMix.Where(i => i.Tipo == "Aro").Select(i => i.Id)
+                .Concat(destacadosMix.Where(i => i.Tipo == "Aro").Select(i => i.Id))
+                .Distinct()
+                .ToList();
+            ViewBag.ImagenesPorAro = await CargarImagenesPrincipalesArosAsync(idsAro);
 
             return View();
         }
@@ -96,6 +128,23 @@ namespace OC.Web.Controllers
         [Route("landing/catalogo")]
         public async Task<IActionResult> Catalogo(string? categoria, string? busqueda, int page = 1)
         {
+            // "Lentes Graduados" es la categoría del landing que apunta a AROS, no a Productos.
+            // (Productos NO debe tener lentes — son solo accesorios/lentes de sol.)
+            if (categoria == "Lentes Graduados")
+            {
+                var arosPaged = await _aroRepo.GetPagedAsync(
+                    page, 12,
+                    filter: a => a.Activo && a.MostrarEnLanding &&
+                        (string.IsNullOrEmpty(busqueda) || a.Nombre.Contains(busqueda) || a.SKU.Contains(busqueda)),
+                    orderBy: q => q.OrderBy(a => a.Nombre)
+                );
+                ViewBag.CategoriaActual = categoria;
+                ViewBag.Busqueda = busqueda;
+                ViewBag.EsCategoriaAros = true;
+                ViewBag.ImagenesPorAro = await CargarImagenesPrincipalesArosAsync(arosPaged.Items.Select(a => a.Id).ToList());
+                return View("Catalogo", arosPaged);
+            }
+
             var productos = await _productoRepo.GetPagedAsync(
                 page, 12,
                 filter: p => p.Activo &&
@@ -105,8 +154,9 @@ namespace OC.Web.Controllers
             );
             ViewBag.CategoriaActual = categoria;
             ViewBag.Busqueda = busqueda;
+            ViewBag.EsCategoriaAros = false;
             ViewBag.ImagenesPorProducto = await CargarImagenesPrincipalesAsync(productos.Items.Select(p => p.Id).ToList());
-            return View(productos);
+            return View("Catalogo", productos);
         }
 
         [AllowAnonymous]
@@ -135,6 +185,61 @@ namespace OC.Web.Controllers
             }
             ViewBag.Imagenes = imagenes;
             return View(producto);
+        }
+
+        [AllowAnonymous]
+        [Route("landing/detalle-aro/{id}")]
+        public async Task<IActionResult> DetalleAro(int id)
+        {
+            var aro = await _aroRepo.GetByIdAsync(id);
+            if (aro == null) return NotFound();
+
+            var imagenes = await _aroImagenRepo.GetActivasByAroIdAsync(id);
+            if ((imagenes == null || imagenes.Count == 0) && !string.IsNullOrEmpty(aro.RutaImagen))
+            {
+                imagenes = new List<AroImagen>
+                {
+                    new AroImagen
+                    {
+                        AroId = aro.Id,
+                        Ruta = aro.RutaImagen,
+                        EsPrincipal = true,
+                        Orden = 0,
+                        Activo = true
+                    }
+                };
+            }
+            ViewBag.Imagenes = imagenes;
+            return View(aro);
+        }
+
+        private async Task<Dictionary<int, string>> CargarImagenesPrincipalesArosAsync(List<int> aroIds)
+        {
+            var resultado = new Dictionary<int, string>();
+            foreach (var id in aroIds)
+            {
+                var principal = await _aroImagenRepo.GetPrincipalAsync(id);
+                if (principal != null) resultado[id] = principal.Ruta;
+            }
+            return resultado;
+        }
+
+        /// <summary>
+        /// Intercala dos listas (Productos y Aros) para que aparezcan balanceados en el carrusel/destacados.
+        /// Ej: [Prod1, Prod2, ..., Aro1, Aro2, ...] → [Prod1, Aro1, Prod2, Aro2, Prod3, Aro3, ...]
+        /// Toma hasta `limite` items totales. Si una lista se agota antes, continúa con la otra.
+        /// </summary>
+        private static List<T> IntercalarLimitado<T>(List<T> listaA, List<T> listaB, int limite)
+        {
+            var resultado = new List<T>(limite);
+            int maxLen = Math.Max(listaA.Count, listaB.Count);
+            for (int i = 0; i < maxLen && resultado.Count < limite; i++)
+            {
+                if (i < listaA.Count) resultado.Add(listaA[i]);
+                if (resultado.Count >= limite) break;
+                if (i < listaB.Count) resultado.Add(listaB[i]);
+            }
+            return resultado;
         }
 
         [AllowAnonymous]

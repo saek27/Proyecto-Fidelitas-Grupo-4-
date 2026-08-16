@@ -367,6 +367,60 @@ WHERE p.RutaImagen IS NOT NULL
             context.Database.ExecuteSqlRaw(migrateSql);
         }
 
+        /// <summary>Crea la tabla AroImagenes y migra las imágenes existentes desde Aros.RutaImagen.</summary>
+        public static void EnsureAroImagenesTable(AppDbContext context)
+        {
+            const string createSql = @"
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'AroImagenes')
+BEGIN
+    CREATE TABLE [AroImagenes] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [AroId] int NOT NULL,
+        [Ruta] nvarchar(512) NOT NULL,
+        [Orden] int NOT NULL DEFAULT (0),
+        [EsPrincipal] bit NOT NULL DEFAULT (0),
+        [Activo] bit NOT NULL DEFAULT (1),
+        [FechaCreacion] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_AroImagenes] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_AroImagenes_Aros_AroId] FOREIGN KEY ([AroId]) REFERENCES [Aros]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_AroImagenes_AroId] ON [AroImagenes]([AroId]);
+    CREATE INDEX [IX_AroImagenes_AroId_Activo] ON [AroImagenes]([AroId], [Activo]);
+END
+";
+            context.Database.ExecuteSqlRaw(createSql);
+
+            const string migrateSql = @"
+INSERT INTO AroImagenes (AroId, Ruta, Orden, EsPrincipal, Activo, FechaCreacion)
+SELECT a.Id, a.RutaImagen, 0, 1, 1, SYSUTCDATETIME()
+FROM Aros a
+WHERE a.RutaImagen IS NOT NULL
+  AND LTRIM(RTRIM(a.RutaImagen)) <> ''
+  AND NOT EXISTS (
+      SELECT 1 FROM AroImagenes ai WHERE ai.AroId = a.Id
+  );
+";
+            context.Database.ExecuteSqlRaw(migrateSql);
+        }
+
+        /// <summary>Agrega la columna MostrarEnLanding a la tabla Aros si no existe.</summary>
+        public static void EnsureAroMostrarEnLandingColumn(AppDbContext context)
+        {
+            var sql = @"
+IF OBJECT_ID('Aros','U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = OBJECT_ID('Aros') AND name = 'MostrarEnLanding'
+    )
+    BEGIN
+        ALTER TABLE Aros ADD MostrarEnLanding bit NOT NULL CONSTRAINT DF_Aros_MostrarEnLanding DEFAULT (0);
+    END
+END
+";
+            context.Database.ExecuteSqlRaw(sql);
+        }
+
         public static void Initialize(AppDbContext context)
         {
             // 1. Solo crear sucursal si no hay ninguna

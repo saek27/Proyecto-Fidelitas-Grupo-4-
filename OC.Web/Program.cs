@@ -90,6 +90,9 @@ builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 //ProductoImagen — repositorio dedicado
 builder.Services.AddScoped<IProductoImagenRepository, ProductoImagenRepository>();
 
+//AroImagen — repositorio dedicado
+builder.Services.AddScoped<IAroImagenRepository, AroImagenRepository>();
+
 //Peso de archivo
 builder.Services.Configure<FormOptions>(options =>
 {
@@ -133,6 +136,8 @@ using (var scope = app.Services.CreateScope())
         OC.Data.Context.DbInitializer.EnsurePermisoRutaDocumentoIncapacidadColumn(context);
         OC.Data.Context.DbInitializer.EnsureProductoRutaImagenColumn(context);
         OC.Data.Context.DbInitializer.EnsureProductoImagenesTable(context);
+        OC.Data.Context.DbInitializer.EnsureAroImagenesTable(context);
+        OC.Data.Context.DbInitializer.EnsureAroMostrarEnLandingColumn(context);
         OC.Data.Context.DbInitializer.EnsureValorClinicoAddColumns(context);
         OC.Data.Context.DbInitializer.EnsureOrdenTrabajoNewColumns(context);
         OC.Data.Context.DbInitializer.EnsureProveedorSchema(context);

@@ -1,53 +1,65 @@
-﻿@{
+@{
     Layout = "_LayoutLanding";
     ViewData["Title"] = "Inicio - Óptica Comunal";
-    var destacados = ViewBag.Destacados as IEnumerable<OC.Core.Domain.Entities.Producto>;
-    var productosCarrusel = ViewBag.ProductosCarrusel as IEnumerable<OC.Core.Domain.Entities.Producto>;
+
+    // Mezcla de Productos y Aros (LandingItemVm)
+    var carruselMix = ViewBag.CarruselMix as List<OC.Core.Domain.Entities.LandingItemVm>
+                      ?? new List<OC.Core.Domain.Entities.LandingItemVm>();
+    var destacadosMix = ViewBag.DestacadosMix as List<OC.Core.Domain.Entities.LandingItemVm>
+                        ?? new List<OC.Core.Domain.Entities.LandingItemVm>();
     var imagenesPorProducto = ViewBag.ImagenesPorProducto as Dictionary<int, string>
                               ?? new Dictionary<int, string>();
+    var imagenesPorAro = ViewBag.ImagenesPorAro as Dictionary<int, string>
+                         ?? new Dictionary<int, string>();
 
-    string ImagenPara(int productoId, string? legacyRuta)
+    string ImagenPara(OC.Core.Domain.Entities.LandingItemVm item)
     {
-        if (imagenesPorProducto.TryGetValue(productoId, out var ruta) && !string.IsNullOrEmpty(ruta))
-            return ruta;
-        return string.IsNullOrEmpty(legacyRuta) ? "/images/default-product.jpg" : legacyRuta;
+        string? ruta = null;
+        if (item.Tipo == "Producto")
+            imagenesPorProducto.TryGetValue(item.Id, out ruta);
+        else
+            imagenesPorAro.TryGetValue(item.Id, out ruta);
+        if (!string.IsNullOrEmpty(ruta)) return ruta;
+        return string.IsNullOrEmpty(item.RutaImagenLegacy) ? "/images/default-product.jpg" : item.RutaImagenLegacy;
     }
 }
 
 
-@if (productosCarrusel != null && productosCarrusel.Any())
+@if (carruselMix.Any())
 {
-    var slideList = productosCarrusel.ToList();
+    var slideList = carruselMix.ToList();
     <div id="heroCarousel" style="position:relative; width:100%; height:80vh; min-height:520px; overflow:hidden; background:var(--brand-dark); margin-top:-5rem;">
 
         @for (int i = 0; i < slideList.Count; i++)
         {
-            var prod = slideList[i];
+            var item = slideList[i];
             <div class="hero-slide @(i == 0 ? "active" : "")" data-index="@i">
 
                 <div class="hero-slide__bg"
-                     style="background-image:url('@(ImagenPara(prod.Id, prod.RutaImagen))');">
+                     style="background-image:url('@ImagenPara(item)');">
                 </div>
 
                 <div class="hero-slide__overlay"></div>
 
                 <div class="hero-slide__content">
                     <div class="hero-slide__inner">
-                        <p class="hero-eyebrow">Colección Actual</p>
-                        <h1 class="hero-title">@prod.Nombre</h1>
-                        <p class="hero-desc">@prod.DescripcionCorta</p>
+                        <p class="hero-eyebrow">
+                            @(item.Tipo == "Aro" ? "Lentes Graduados" : "Colección Actual")
+                        </p>
+                        <h1 class="hero-title">@item.Nombre</h1>
+                        <p class="hero-desc">@item.Descripcion</p>
                         <div class="hero-price">
                             <small>Precio público</small>
-                            ₡@prod.PrecioPublico.ToString("N2")
+                            ₡@item.Precio.ToString("N2")
                         </div>
-                        <a href="/landing/detalle-producto/@prod.Id" class="hero-cta">
+                        <a href="@item.DetalleUrl" class="hero-cta">
                             Conoce más <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>
 
-                <img src="@(ImagenPara(prod.Id, prod.RutaImagen))"
-                     alt="@prod.Nombre"
+                <img src="@ImagenPara(item)"
+                     alt="@item.Nombre"
                      class="hero-slide__img" />
             </div>
         }
@@ -124,23 +136,29 @@ else
     </div>
 
     <div class="row g-4 g-lg-5">
-        @if (destacados != null && destacados.Any())
+        @if (destacadosMix.Any())
         {
-            @foreach (var prod in destacados)
+            @foreach (var item in destacadosMix)
             {
                 <div class="col-12 col-sm-6 col-lg-3 animate-on-scroll">
                     <div class="card product-card h-100">
                         <div class="img-wrapper relative">
-                            <img src="@(ImagenPara(prod.Id, prod.RutaImagen))" alt="@prod.Nombre">
+                            <img src="@ImagenPara(item)" alt="@item.Nombre">
+                            @if (item.Tipo == "Aro")
+                            {
+                                <span class="position-absolute top-0 start-0 m-1 badge" style="background: rgba(245, 158, 11, 0.9); color: #1e293b; font-size: 0.65rem;">
+                                    <i class="bi bi-eyeglasses"></i> Aro
+                                </span>
+                            }
                         </div>
                         <div class="card-body d-flex flex-column p-4">
-                            <h5 class="card-title text-white fw-bold mb-2">@prod.Nombre</h5>
+                            <h5 class="card-title text-white fw-bold mb-2">@item.Nombre</h5>
 
-                            <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@prod.DescripcionCorta</p>
+                            <p class="card-text text-light opacity-75 small mb-4 flex-grow-1">@item.Descripcion</p>
 
                             <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: var(--glass-border) !important;">
-                                <span class="price-tag fw-bold">₡@prod.PrecioPublico.ToString("N2")</span>
-                                <a href="/landing/detalle-producto/@prod.Id" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
+                                <span class="price-tag fw-bold">�@item.Precio.ToString("N2")</span>
+                                <a href="@item.DetalleUrl" class="btn btn-sm btn-outline-light rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" title="Ver detalles">
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
