@@ -433,382 +433,338 @@
         @* ── LANDING ── *@
         @if (seccion == "landing")
         {
-            var carruselItems = ViewBag.CarruselItems as List<OC.Core.Domain.Entities.LandingItemCarrusel> ?? new List<OC.Core.Domain.Entities.LandingItemCarrusel>();
-            var destacadosItems = ViewBag.DestacadosItems as List<OC.Core.Domain.Entities.LandingItemDestacado> ?? new List<OC.Core.Domain.Entities.LandingItemDestacado>();
-            var dispProductos = ViewBag.DisponiblesProductos as List<OC.Core.Domain.Entities.Producto> ?? new List<OC.Core.Domain.Entities.Producto>();
-            var dispAros = ViewBag.DisponiblesAros as List<OC.Core.Domain.Entities.Aro> ?? new List<OC.Core.Domain.Entities.Aro>();
-            var todosProductos = ViewBag.TodosProductos as List<OC.Core.Domain.Entities.Producto> ?? new List<OC.Core.Domain.Entities.Producto>();
-            var todosAros = ViewBag.TodosAros as List<OC.Core.Domain.Entities.Aro> ?? new List<OC.Core.Domain.Entities.Aro>();
+            // ── VISTAS PAGINADAS: 4 columnas (2 cards × 2 zonas) ──
+            var carruselDisp = ViewBag.CarruselDisp as List<object> ?? new List<object>();
+            var carruselSel = ViewBag.CarruselSel as List<object> ?? new List<object>();
+            var destacadosDisp = ViewBag.DestacadosDisp as List<object> ?? new List<object>();
+            var destacadosSel = ViewBag.DestacadosSel as List<object> ?? new List<object>();
 
-            string ImgProd(int id, string? legacy)
+            // Helper para paginar
+            string PaginationUrl(string baseParamName, int newPage)
             {
-                var p = todosProductos.FirstOrDefault(x => x.Id == id);
-                return p?.RutaImagen ?? legacy ?? "/images/default-product.jpg";
-            }
-            string ImgAro(int id, string? legacy)
-            {
-                var a = todosAros.FirstOrDefault(x => x.Id == id);
-                return a?.RutaImagen ?? legacy ?? "/images/default-product.jpg";
+                var qs = "seccion=landing";
+                qs += $"&{baseParamName}={newPage}";
+                qs += $"&{baseParamName.Replace("Page", "PageSize")}={ViewBag.CarruselDispPageSize}";
+                qs += $"&carruselSelPage={ViewBag.CarruselSelPage}&carruselSelPageSize={ViewBag.CarruselSelPageSize}";
+                qs += $"&destacadosDispPage={ViewBag.DestacadosDispPage}&destacadosDispPageSize={ViewBag.DestacadosDispPageSize}";
+                qs += $"&destacadosSelPage={ViewBag.DestacadosSelPage}&destacadosSelPageSize={ViewBag.DestacadosSelPageSize}";
+                return "/Inventory?" + qs;
             }
 
             <div class="tab-pane fade @(seccion == "landing" ? "show active" : "")" id="panel-landing" role="tabpanel">
-                <div class="card-dashboard mt-0">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <h5 class="mb-0">
-                                <i class="bi bi-collection-play-fill me-2 text-primary"></i>
-                                Gestión del landing público
-                            </h5>
-                            <small class="text-muted">Arrastrá los items entre las zonas para controlar qué aparece en el carrusel (6) y en destacados (8).</small>
-                        </div>
-                        <div>
-                            <span class="badge bg-primary me-2"><i class="bi bi-images me-1"></i> Carrusel: <span id="carruselCount">@carruselItems.Count</span>/6</span>
-                            <span class="badge bg-info"><i class="bi bi-stars me-1"></i> Destacados: <span id="destacadosCount">@destacadosItems.Count</span>/8</span>
-                        </div>
-                    </div>
-
-                    <div class="card-body p-4">
-                        @* ────── CARRUSEL (6 slots fijos) ────── *@
-                        <h6 class="mb-3 fw-bold">
-                            <i class="bi bi-images me-1 text-primary"></i> Carrusel principal
-                            <small class="text-muted fw-normal">(máx 6, orden de aparición = orden de slots)</small>
-                        </h6>
-                        <div class="row g-3 mb-2" id="carruselGrid">
-                            @for (int pos = 1; pos <= 6; pos++)
-                            {
-                                var item = carruselItems.FirstOrDefault(c => c.Posicion == pos);
-                                var tipo = item?.Tipo ?? "";
-                                var idEnSlot = item != null ? (item.ProductoId ?? item.AroId ?? 0) : 0;
-                                var token = (item?.Tipo == "Producto" ? "P" : item?.Tipo == "Aro" ? "A" : "") + ":" + idEnSlot;
-                                <div class="col-6 col-md-4 col-lg-2">
-                                    <div class="slot-card @(item != null ? "filled" : "empty")" data-pos="@pos" data-token="@token">
-                                        <div class="slot-num">#@pos</div>
-                                        @if (item != null && item.Tipo == "Producto")
-                                        {
-                                            var p = item.Producto;
-                                            <img src="@ImgProd(p.Id, p.RutaImagen)" alt="" class="slot-thumb" />
-                                            <div class="slot-name">@p.Nombre</div>
-                                            <div class="slot-badge badge bg-primary-subtle text-primary-emphasis">Producto</div>
-                                        }
-                                        else if (item != null && item.Tipo == "Aro")
-                                        {
-                                            var a = item.Aro;
-                                            <img src="@ImgAro(a.Id, a.RutaImagen)" alt="" class="slot-thumb" />
-                                            <div class="slot-name">@a.Nombre</div>
-                                            <div class="slot-badge badge bg-info-subtle text-info-emphasis">Aro</div>
-                                        }
-                                        else
-                                        {
-                                            <div class="slot-empty">
-                                                <i class="bi bi-plus-circle"></i>
-                                                <span>vacío</span>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <div class="text-end mb-4">
-                            <button type="button" class="btn btn-sm btn-primary" id="btnGuardarCarrusel">
-                                <i class="bi bi-save me-1"></i> Guardar carrusel
-                            </button>
-                            <span class="text-success small ms-2 d-none" id="carruselSaved">
-                                <i class="bi bi-check-circle-fill"></i> Guardado
-                            </span>
-                        </div>
-
-                        <hr />
-
-                        @* ────── DESTACADOS (8 slots fijos) ────── *@
-                        <h6 class="mb-3 fw-bold">
-                            <i class="bi bi-stars me-1 text-info"></i> Productos Destacados
-                            <small class="text-muted fw-normal">(máx 8)</small>
-                        </h6>
-                        <div class="row g-3 mb-2" id="destacadosGrid">
-                            @for (int pos = 1; pos <= 8; pos++)
-                            {
-                                var item = destacadosItems.FirstOrDefault(d => d.Posicion == pos);
-                                var idEnSlot = item != null ? (item.ProductoId ?? item.AroId ?? 0) : 0;
-                                var token = (item?.Tipo == "Producto" ? "P" : item?.Tipo == "Aro" ? "A" : "") + ":" + idEnSlot;
-                                <div class="col-6 col-md-4 col-lg-3">
-                                    <div class="slot-card @(item != null ? "filled" : "empty")" data-pos="@pos" data-token="@token">
-                                        <div class="slot-num">#@pos</div>
-                                        @if (item != null && item.Tipo == "Producto")
-                                        {
-                                            var p = item.Producto;
-                                            <img src="@ImgProd(p.Id, p.RutaImagen)" alt="" class="slot-thumb" />
-                                            <div class="slot-name">@p.Nombre</div>
-                                            <div class="slot-badge badge bg-primary-subtle text-primary-emphasis">Producto</div>
-                                        }
-                                        else if (item != null && item.Tipo == "Aro")
-                                        {
-                                            var a = item.Aro;
-                                            <img src="@ImgAro(a.Id, a.RutaImagen)" alt="" class="slot-thumb" />
-                                            <div class="slot-name">@a.Nombre</div>
-                                            <div class="slot-badge badge bg-info-subtle text-info-emphasis">Aro</div>
-                                        }
-                                        else
-                                        {
-                                            <div class="slot-empty">
-                                                <i class="bi bi-plus-circle"></i>
-                                                <span>vacío</span>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <div class="text-end mb-4">
-                            <button type="button" class="btn btn-sm btn-info" id="btnGuardarDestacados">
-                                <i class="bi bi-save me-1"></i> Guardar destacados
-                            </button>
-                            <span class="text-success small ms-2 d-none" id="destacadosSaved">
-                                <i class="bi bi-check-circle-fill"></i> Guardado
-                            </span>
-                        </div>
-
-                        <hr />
-
-                        @* ────── DISPONIBLES (pool) ────── *@
-                        <h6 class="mb-3 fw-bold">
-                            <i class="bi bi-inbox me-1 text-success"></i> Disponibles para arrastrar
-                            <small class="text-muted fw-normal">(@(dispProductos.Count + dispAros.Count) marcados, fuera de slots)</small>
-                        </h6>
-                        @if (!dispProductos.Any() && !dispAros.Any())
-                        {
-                            <div class="alert alert-info py-2">
-                                <i class="bi bi-info-circle me-1"></i> No hay items disponibles. Marcá un producto como "Destacado" en la pestaña Productos, o un aro con "Mostrar en landing" en Aros.
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="d-flex flex-wrap gap-2 overflow-auto pb-2" id="disponiblesGrid">
-                                @foreach (var p in dispProductos)
-                                {
-                                    <div class="disp-card disp-producto" data-token="P:@p.Id">
-                                        @if (!string.IsNullOrEmpty(p.RutaImagen))
-                                        {
-                                            <img src="@p.RutaImagen" alt="" class="disp-thumb" />
-                                        }
-                                        <div class="disp-name">@p.Nombre</div>
-                                        <span class="badge bg-primary-subtle text-primary-emphasis">Producto</span>
-                                    </div>
-                                }
-                                @foreach (var a in dispAros)
-                                {
-                                    <div class="disp-card disp-aro" data-token="A:@a.Id">
-                                        @if (!string.IsNullOrEmpty(a.RutaImagen))
-                                        {
-                                            <img src="@a.RutaImagen" alt="" class="disp-thumb" />
-                                        }
-                                        <div class="disp-name">@a.Nombre</div>
-                                        <span class="badge bg-info-subtle text-info-emphasis">Aro</span>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Tildá los items que querés incluir. Carrusel: máx 6. Destacados: máx 8. Si intentás agregar cuando está lleno, el sistema rechaza y te avisa.
                 </div>
 
-                <style>
-                    .slot-card {
-                        border: 2px dashed #dee2e6;
-                        border-radius: .5rem;
-                        padding: .5rem;
-                        min-height: 140px;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        text-align: center;
-                        position: relative;
-                        background: #f8f9fa;
-                        transition: all .15s;
-                    }
-                    .slot-card.filled {
-                        border-style: solid;
-                        border-color: #3b82f6;
-                        background: #fff;
-                    }
-                    .slot-card.sortable-ghost { opacity: .3; }
-                    .slot-card.sortable-chosen { box-shadow: 0 0 0 .25rem rgba(59,130,246,.35); }
-                    .slot-num {
-                        position: absolute;
-                        top: .25rem;
-                        left: .5rem;
-                        font-size: .75rem;
-                        font-weight: 700;
-                        color: #6c757d;
-                    }
-                    .slot-thumb {
-                        max-height: 60px;
-                        max-width: 100%;
-                        object-fit: contain;
-                        margin-bottom: .25rem;
-                    }
-                    .slot-name {
-                        font-size: .8rem;
-                        font-weight: 600;
-                        line-height: 1.1;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        max-height: 2.2em;
-                    }
-                    .slot-badge { font-size: .65rem; margin-top: .25rem; }
-                    .slot-empty {
-                        color: #adb5bd;
-                        font-size: .85rem;
-                    }
-                    .slot-empty i { font-size: 1.5rem; display: block; }
+                <form id="formLandingCarrusel" method="post" action="@Url.Action("GuardarCarrusel", "Inventory")">
+                    @Html.AntiForgeryToken()
+                    <div class="card-dashboard mb-3">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-images me-2 text-primary"></i>Carrusel principal <span class="badge bg-primary ms-2">@ViewBag.CarruselSelTotal / 6</span></h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold mb-2"><i class="bi bi-inbox me-1 text-success"></i>Disponibles <span class="badge bg-success-subtle text-success-emphasis ms-1">@ViewBag.CarruselDispTotal</span></h6>
+                                    <div class="list-scroll">
+                                        @if (!carruselDisp.Any())
+                                        {
+                                            <div class="text-muted small p-2">No hay items disponibles. Marcá más productos/aros desde sus pestañas.</div>
+                                        }
+                                        @foreach (var item in carruselDisp)
+                                        {
+                                            dynamic d = item;
+                                            <label class="list-item d-flex align-items-center gap-2 mb-1">
+                                                <input type="checkbox" class="form-check-input mt-0" name="agregar" value="@d.Id" data-tipo="@d.Tipo" />
+                                                <input type="hidden" name="tipo[@d.Id]" value="@d.Tipo" />
+                                                @if (!string.IsNullOrEmpty(d.RutaImagen))
+                                                {
+                                                    <img src="@d.RutaImagen" alt="" class="list-thumb" />
+                                                }
+                                                <div class="flex-grow-1">
+                                                    <div class="list-name">@d.Nombre</div>
+                                                    <span class="badge @(d.Tipo == "P" ? "bg-primary-subtle text-primary-emphasis" : "bg-info-subtle text-info-emphasis") list-badge">@(d.Tipo == "P" ? "Producto" : "Aro")</span>
+                                                </div>
+                                            </label>
+                                        }
+                                    </div>
+                                    @if ((int)ViewBag.CarruselDispTotalPages > 1)
+                                    {
+                                        <nav class="mt-2">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                                @for (int p = 1; p <= (int)ViewBag.CarruselDispTotalPages; p++)
+                                                {
+                                                    <li class="page-item @(p == (int)ViewBag.CarruselDispPage ? "active" : "")">
+                                                        <a class="page-link" href="@PaginationUrl("carruselDispPage", p)">@p</a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </nav>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold mb-2"><i class="bi bi-check2-square me-1 text-primary"></i>En el carrusel <span class="badge bg-primary ms-1">@ViewBag.CarruselSelTotal / 6</span></h6>
+                                    <div class="list-scroll">
+                                        @if (!carruselSel.Any())
+                                        {
+                                            <div class="text-muted small p-2">Vacío — tildá items de la izquierda.</div>
+                                        }
+                                        @foreach (var item in carruselSel)
+                                        {
+                                            dynamic d = item;
+                                            <label class="list-item selected d-flex align-items-center gap-2 mb-1">
+                                                <input type="checkbox" class="form-check-input mt-0" name="quitar" value="@d.Id" />
+                                                @if (!string.IsNullOrEmpty(d.RutaImagen))
+                                                {
+                                                    <img src="@d.RutaImagen" alt="" class="list-thumb" />
+                                                }
+                                                <div class="flex-grow-1">
+                                                    <div class="list-name">@d.Nombre</div>
+                                                    <span class="badge @(d.Tipo == "P" ? "bg-primary-subtle text-primary-emphasis" : "bg-info-subtle text-info-emphasis") list-badge">@(d.Tipo == "P" ? "Producto" : "Aro")</span>
+                                                </div>
+                                                <span class="text-danger small"><i class="bi bi-x"></i> quitar</span>
+                                            </label>
+                                        }
+                                    </div>
+                                    @if ((int)ViewBag.CarruselSelTotalPages > 1)
+                                    {
+                                        <nav class="mt-2">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                                @for (int p = 1; p <= (int)ViewBag.CarruselSelTotalPages; p++)
+                                                {
+                                                    <li class="page-item @(p == (int)ViewBag.CarruselSelPage ? "active" : "")">
+                                                        <a class="page-link" href="@PaginationUrl("carruselSelPage", p)">@p</a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </nav>
+                                    }
+                                </div>
+                            </div>
+                            <div class="text-end mt-3">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-save me-1"></i>Guardar carrusel
+                                </button>
+                                <span class="text-success small ms-2 d-none" data-saved>
+                                    <i class="bi bi-check-circle-fill"></i>Guardado
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
 
-                    .disp-card {
-                        border: 1px solid #dee2e6;
-                        border-radius: .5rem;
+                <form id="formLandingDestacados" method="post" action="@Url.Action("GuardarDestacados", "Inventory")">
+                    @Html.AntiForgeryToken()
+                    <div class="card-dashboard mb-3">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-stars me-2 text-info"></i>Productos Destacados <span class="badge bg-info ms-2">@ViewBag.DestacadosSelTotal / 8</span></h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold mb-2"><i class="bi bi-inbox me-1 text-success"></i>Disponibles <span class="badge bg-success-subtle text-success-emphasis ms-1">@ViewBag.DestacadosDispTotal</span></h6>
+                                    <div class="list-scroll">
+                                        @if (!destacadosDisp.Any())
+                                        {
+                                            <div class="text-muted small p-2">No hay items disponibles.</div>
+                                        }
+                                        @foreach (var item in destacadosDisp)
+                                        {
+                                            dynamic d = item;
+                                            <label class="list-item d-flex align-items-center gap-2 mb-1">
+                                                <input type="checkbox" class="form-check-input mt-0" name="agregar" value="@d.Id" data-tipo="@d.Tipo" />
+                                                <input type="hidden" name="tipo[@d.Id]" value="@d.Tipo" />
+                                                @if (!string.IsNullOrEmpty(d.RutaImagen))
+                                                {
+                                                    <img src="@d.RutaImagen" alt="" class="list-thumb" />
+                                                }
+                                                <div class="flex-grow-1">
+                                                    <div class="list-name">@d.Nombre</div>
+                                                    <span class="badge @(d.Tipo == "P" ? "bg-primary-subtle text-primary-emphasis" : "bg-info-subtle text-info-emphasis") list-badge">@(d.Tipo == "P" ? "Producto" : "Aro")</span>
+                                                </div>
+                                            </label>
+                                        }
+                                    </div>
+                                    @if ((int)ViewBag.DestacadosDispTotalPages > 1)
+                                    {
+                                        <nav class="mt-2">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                                @for (int p = 1; p <= (int)ViewBag.DestacadosDispTotalPages; p++)
+                                                {
+                                                    <li class="page-item @(p == (int)ViewBag.DestacadosDispPage ? "active" : "")">
+                                                        <a class="page-link" href="@PaginationUrl("destacadosDispPage", p)">@p</a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </nav>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-semibold mb-2"><i class="bi bi-check2-square me-1 text-info"></i>En destacados <span class="badge bg-info ms-1">@ViewBag.DestacadosSelTotal / 8</span></h6>
+                                    <div class="list-scroll">
+                                        @if (!destacadosSel.Any())
+                                        {
+                                            <div class="text-muted small p-2">Vacío — tildá items de la izquierda.</div>
+                                        }
+                                        @foreach (var item in destacadosSel)
+                                        {
+                                            dynamic d = item;
+                                            <label class="list-item selected d-flex align-items-center gap-2 mb-1">
+                                                <input type="checkbox" class="form-check-input mt-0" name="quitar" value="@d.Id" />
+                                                @if (!string.IsNullOrEmpty(d.RutaImagen))
+                                                {
+                                                    <img src="@d.RutaImagen" alt="" class="list-thumb" />
+                                                }
+                                                <div class="flex-grow-1">
+                                                    <div class="list-name">@d.Nombre</div>
+                                                    <span class="badge @(d.Tipo == "P" ? "bg-primary-subtle text-primary-emphasis" : "bg-info-subtle text-info-emphasis") list-badge">@(d.Tipo == "P" ? "Producto" : "Aro")</span>
+                                                </div>
+                                                <span class="text-danger small"><i class="bi bi-x"></i> quitar</span>
+                                            </label>
+                                        }
+                                    </div>
+                                    @if ((int)ViewBag.DestacadosSelTotalPages > 1)
+                                    {
+                                        <nav class="mt-2">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                                @for (int p = 1; p <= (int)ViewBag.DestacadosSelTotalPages; p++)
+                                                {
+                                                    <li class="page-item @(p == (int)ViewBag.DestacadosSelPage ? "active" : "")">
+                                                        <a class="page-link" href="@PaginationUrl("destacadosSelPage", p)">@p</a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </nav>
+                                    }
+                                </div>
+                            </div>
+                            <div class="text-end mt-3">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-save me-1"></i>Guardar destacados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <style>
+                    .list-scroll {
+                        max-height: 360px;
+                        overflow-y: auto;
+                        border: 1px solid #e9ecef;
+                        border-radius: .375rem;
                         padding: .5rem;
+                        background: #f8f9fa;
+                    }
+                    .list-item {
                         background: #fff;
-                        width: 110px;
-                        cursor: grab;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        text-align: center;
+                        border: 1px solid #e9ecef;
+                        border-radius: .375rem;
+                        padding: .375rem .5rem;
+                        cursor: pointer;
                         transition: all .15s;
                     }
-                    .disp-card:hover { box-shadow: 0 .25rem .5rem rgba(0,0,0,.1); }
-                    .disp-card:active { cursor: grabbing; }
-                    .disp-thumb {
-                        max-height: 50px;
-                        max-width: 100%;
+                    .list-item:hover { box-shadow: 0 .125rem .25rem rgba(0,0,0,.08); border-color: #adb5bd; }
+                    .list-item.selected { background: #e7f1ff; border-color: #3b82f6; }
+                    .list-thumb {
+                        width: 36px;
+                        height: 36px;
                         object-fit: contain;
-                        margin-bottom: .25rem;
+                        border-radius: .25rem;
                     }
-                    .disp-name {
-                        font-size: .7rem;
+                    .list-name {
+                        font-size: .85rem;
                         font-weight: 600;
-                        line-height: 1.1;
+                        line-height: 1.2;
                         overflow: hidden;
                         text-overflow: ellipsis;
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        max-height: 2.2em;
+                        white-space: nowrap;
                     }
-                    .disp-card .badge { font-size: .6rem; margin-top: .25rem; }
+                    .list-badge { font-size: .65rem; }
                 </style>
 
-                <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
                 <script>
                     (function () {
+                        // AJAX para los 2 forms. Tope client-side + fetch + actualización del DOM en vivo.
                         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
-                        const ANTIFORGERY_HEADER = { 'RequestVerificationToken': token, 'Content-Type': 'application/x-www-form-urlencoded' };
 
-                        // ── Helpers ──
-                        function leerOrden(gridId, maxSlots) {
-                            const slots = document.querySelectorAll('#' + gridId + ' .slot-card');
-                            const orden = [];
-                            slots.forEach(s => {
-                                const t = s.dataset.token;
-                                if (t && t.includes(':') && t.split(':')[1] !== '0') {
-                                    orden.push(t);
-                                }
-                            });
-                            return orden.slice(0, maxSlots);
+                        function leerChecks(form) {
+                            const fd = new FormData();
+                            form.querySelectorAll('input[name="agregar"]:checked').forEach(cb => fd.append('agregar', cb.value));
+                            form.querySelectorAll('input[name="quitar"]:checked').forEach(cb => fd.append('quitar', cb.value));
+                            form.querySelectorAll('input[name^="tipo["]').forEach(inp => fd.append(inp.name, inp.value));
+                            return fd;
                         }
 
-                        function flashSaved(which) {
-                            const el = document.getElementById(which + 'Saved');
-                            el.classList.remove('d-none');
-                            setTimeout(() => el.classList.add('d-none'), 2500);
+                        function flashSaved(form) {
+                            const span = form.querySelector('[data-saved]');
+                            if (!span) return;
+                            span.classList.remove('d-none');
+                            setTimeout(() => span.classList.add('d-none'), 2500);
                         }
 
-                        function actualizarContador(gridId, counterId, max) {
-                            const slots = document.querySelectorAll('#' + gridId + ' .slot-card.filled');
-                            document.getElementById(counterId).textContent = slots.length;
-                        }
+                        async function enviarForm(form, max, label) {
+                            const yaSeleccionados = form.querySelectorAll('input[name="quitar"]:checked').length;
+                            const yaQuitados = form.querySelectorAll('input[name="quitar"]:not(:checked)').length;
+                            const nuevos = form.querySelectorAll('input[name="agregar"]:checked').length;
+                            const totalFinal = (yaSeleccionados + yaQuitados + nuevos);
 
-                        // ── SortableJS para CARRUSEL ──
-                        new Sortable(document.getElementById('carruselGrid'), {
-                            animation: 150,
-                            group: { name: 'landing-items', pull: true, put: true },
-                            filter: '.col-6, .col-md-4, .col-lg-2', // el slot completo (div col) es draggable
-                            draggable: '.col-6, .col-md-4, .col-lg-2',
-                            onAdd: function (evt) {
-                                // Cuando dropean una .disp-card del pool dentro de un slot-card,
-                                // mover el contenido (.disp-card inner) al slot y eliminar el wrapper col.
-                                const item = evt.item;
-                                const slot = item.querySelector('.slot-card, .disp-card');
-                                if (slot && slot.classList.contains('disp-card')) {
-                                    // Reemplazar el contenido del slot ocupado por el item del pool
-                                    const targetSlot = item.querySelector('.slot-card');
-                                    // Limpiar el col wrapper y dejar solo el slot-card
-                                }
+                            // tope: existentes que NO se quitan + nuevos
+                            const existentesFinales = form.querySelectorAll('input[name="quitar"]').length
+                                - form.querySelectorAll('input[name="quitar"]:checked').length;
+                            if (existentesFinales + nuevos > max) {
+                                alert(`${label} admite máximo ${max} items. Tenés ${existentesFinales} actuales + ${nuevos} nuevos = ${existentesFinales + nuevos}. Quité ${(existentesFinales + nuevos) - max} primero.`);
+                                return;
                             }
-                        });
+                            if (existentesFinales + nuevos === 0 && max > 0) {
+                                alert(`${label} no puede quedar vacío. Mantené al menos uno o desmarcá todo desde Productos/Aros.`);
+                                return;
+                            }
 
-                        // Estrategia más simple: cada slot-card es draggable individualmente.
-                        // El pool es un grupo aparte. Los slots del carrusel son 6 fijos.
-                        // SortableJS permite arrastrar entre grupos si comparten `group`.
+                            const btn = form.querySelector('button[type="submit"]');
+                            const originalText = btn.innerHTML;
+                            btn.disabled = true;
+                            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
 
-                        // Vamos con la estrategia visual: cada slot-card tiene su contenido.
-                        // Los disp-cards también son draggables y se pueden dropear en slots.
-                        // Al dropear, el JS intercambia el contenido del slot con el del disp-card.
-
-                        function setupSlot(gridId, counterId, maxSlots, saveUrl, savedId) {
-                            const grid = document.getElementById(gridId);
-
-                            // Hacer cada .col que envuelve un slot draggable + droppable
-                            Sortable.create(grid, {
-                                animation: 150,
-                                group: { name: 'landing-' + savedId, pull: true, put: true },
-                                draggable: '[data-pos]',
-                                filter: '.slot-empty',
-                                preventOnFilter: false,
-                                onEnd: function () { actualizarContador(gridId, counterId, maxSlots); }
-                            });
-
-                            // Hacer cada .disp-card draggable hacia los slots
-                            document.querySelectorAll('#disponiblesGrid .disp-card').forEach(card => {
-                                Sortable.create(card.parentElement, {
-                                    group: { name: 'landing-' + savedId, pull: 'clone', put: false },
-                                    draggable: '.disp-card',
-                                    sort: false
+                            try {
+                                const resp = await fetch(form.action, {
+                                    method: 'POST',
+                                    headers: { 'RequestVerificationToken': token },
+                                    body: leerChecks(form)
                                 });
-                            });
-
-                            document.getElementById('btnGuardar' + (savedId === 'carrusel' ? 'Carrusel' : 'Destacados')).addEventListener('click', async function () {
-                                const orden = leerOrden(gridId, maxSlots);
-                                const body = new URLSearchParams();
-                                orden.forEach(t => body.append('orden', t));
-
-                                try {
-                                    const resp = await fetch(saveUrl, {
-                                        method: 'POST',
-                                        headers: ANTIFORGERY_HEADER,
-                                        body: body.toString()
-                                    });
-                                    const data = await resp.json();
-                                    if (data.ok) {
-                                        flashSaved(savedId);
-                                        actualizarContador(gridId, counterId, maxSlots);
-                                    } else {
-                                        alert('Error: ' + (data.error || 'desconocido'));
-                                    }
-                                } catch (e) {
-                                    alert('Error de red: ' + e.message);
+                                const data = await resp.json();
+                                if (data.ok) {
+                                    flashSaved(form);
+                                    // Recargar la página para reflejar el nuevo estado del pool/slot
+                                    // (necesario porque la membresía cambia y la paginación puede cambiar)
+                                    window.location.reload();
+                                } else {
+                                    alert('Error: ' + (data.error || 'desconocido'));
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalText;
                                 }
-                            });
+                            } catch (e) {
+                                alert('Error de red: ' + e.message);
+                                btn.disabled = false;
+                                btn.innerHTML = originalText;
+                            }
                         }
 
-                        setupSlot('carruselGrid', 'carruselCount', 6,
-                                  '@Url.Action("GuardarCarrusel", "Inventory")',
-                                  'carrusel');
-
-                        setupSlot('destacadosGrid', 'destacadosCount', 8,
-                                  '@Url.Action("GuardarDestacados", "Inventory")',
-                                  'destacados');
+                        const formCarrusel = document.getElementById('formLandingCarrusel');
+                        if (formCarrusel) {
+                            formCarrusel.addEventListener('submit', function (e) {
+                                e.preventDefault();
+                                enviarForm(this, 6, 'El carrusel');
+                            });
+                        }
+                        const formDestacados = document.getElementById('formLandingDestacados');
+                        if (formDestacados) {
+                            formDestacados.addEventListener('submit', function (e) {
+                                e.preventDefault();
+                                enviarForm(this, 8, 'Destacados');
+                            });
+                        }
                     })();
                 </script>
             </div>

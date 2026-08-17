@@ -223,11 +223,13 @@ namespace OC.Web.Controllers
         {
             // "Lentes Graduados" es la categoría del landing que apunta a AROS, no a Productos.
             // (Productos NO debe tener lentes — son solo accesorios/lentes de sol.)
+            // Mostramos TODOS los aros activos del inventario. La marca MostrarEnLanding
+            // solo afecta el carrusel/destacados del Index principal, no el catálogo.
             if (categoria == "Lentes Graduados")
             {
                 var arosPaged = await _aroRepo.GetPagedAsync(
                     page, 12,
-                    filter: a => a.Activo && a.MostrarEnLanding &&
+                    filter: a => a.Activo &&
                         (string.IsNullOrEmpty(busqueda) || a.Nombre.Contains(busqueda) || a.SKU.Contains(busqueda)),
                     orderBy: q => q.OrderBy(a => a.Nombre)
                 );

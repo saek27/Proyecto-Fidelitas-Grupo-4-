@@ -53,7 +53,11 @@ namespace OC.Web.Controllers
             string? filtroTecnologia = null,
             int tecPage = 1, int tecPageSize = 12,
             string? filtroAro = null,
-            int aroPage = 1, int aroPageSize = 12)
+            int aroPage = 1, int aroPageSize = 12,
+            int carruselDispPage = 1, int carruselDispPageSize = 12,
+            int carruselSelPage = 1, int carruselSelPageSize = 12,
+            int destacadosDispPage = 1, int destacadosDispPageSize = 12,
+            int destacadosSelPage = 1, int destacadosSelPageSize = 12)
         {
             // Productos
             // Productos con filtro
@@ -117,39 +121,127 @@ namespace OC.Web.Controllers
             ViewBag.Tecnologias = tecnologias.Items.ToList();
             ViewBag.Aros = aros.Items.ToList();
 
-            // ── LANDING: slots del carrusel + destacados + disponibles ──
+            // ── LANDING: 4 listas paginadas (carrusel disponibles/seleccionados, destacados disponibles/seleccionados) ──
             if (seccion == "landing")
             {
                 var carrusel = await _landingCarruselRepo.GetAllAsync();
                 var destacados = await _landingDestacadoRepo.GetAllAsync();
 
                 // IDs ya asignados a slots
+                var idsEnCarrusel = new HashSet<int>(
+                    carrusel.Select(c => c.ProductoId ?? c.AroId ?? 0)
+                        .Concat(destacados.Select(d => d.ProductoId ?? d.AroId ?? 0)));
                 var idsEnCarruselProducto = new HashSet<int>(carrusel.Where(c => c.ProductoId.HasValue).Select(c => c.ProductoId!.Value));
                 var idsEnCarruselAro = new HashSet<int>(carrusel.Where(c => c.AroId.HasValue).Select(c => c.AroId!.Value));
                 var idsEnDestProducto = new HashSet<int>(destacados.Where(d => d.ProductoId.HasValue).Select(d => d.ProductoId!.Value));
                 var idsEnDestAro = new HashSet<int>(destacados.Where(d => d.AroId.HasValue).Select(d => d.AroId!.Value));
 
-                // Pool de productos y aros elegibles (Activo=true, marcados como destacados/landing)
-                var todosProductos = (await _productoRepo.GetAllAsync(p => p.Activo)).ToList();
-                var todosAros = (await _aroRepo.GetAllAsync(a => a.Activo)).ToList();
+                // Pool de productos y aros marcados (Activo=true, Destacado=true / MostrarEnLanding=true)
+                // Se aplica ANTES de paginar para tener el total real.
+                // Pool: todos los items MARCADOS (independiente de Activo).
+                // Razón: el admin debe poder gestionar el landing incluso si el item está inactivo
+                // (lo reactivará desde la pestaña Productos/Aros). El landing público filtra Activo por su cuenta.
+                var todosProductosMarcados = (await _productoRepo.GetAllAsync(p => p.Destacado))
+                    .OrderBy(p => p.Nombre).ToList();
+                var todosArosMarcados = (await _aroRepo.GetAllAsync(a => a.MostrarEnLanding))
+                    .OrderBy(a => a.Nombre).ToList();
 
-                // Disponibles: marcado=true pero NO está en ningún slot
-                var disponiblesProductos = todosProductos
-                    .Where(p => p.Destacado && !idsEnCarruselProducto.Contains(p.Id) && !idsEnDestProducto.Contains(p.Id))
-                    .ToList();
-                var disponiblesAros = todosAros
-                    .Where(a => a.MostrarEnLanding && !idsEnCarruselAro.Contains(a.Id) && !idsEnDestAro.Contains(a.Id))
+                // Pool combinado (marcados, ordenados) — para "Disponibles" de CARRUSEL
+                var poolMarcados = todosProductosMarcados
+                    .Select(p => new { Id = p.Id, Tipo = "P", Nombre = p.Nombre, RutaImagen = p.RutaImagen, SKU = (string?)null, Precio = (decimal?)p.PrecioPublico })
+                    .Concat(todosArosMarcados.Select(a => new { Id = a.Id, Tipo = "A", Nombre = a.Nombre, RutaImagen = a.RutaImagen, SKU = a.SKU, Precio = (decimal?)a.Precio }))
                     .ToList();
 
-                ViewBag.CarruselItems = carrusel;
-                ViewBag.DestacadosItems = destacados;
-                ViewBag.DisponiblesProductos = disponiblesProductos;
-                ViewBag.DisponiblesAros = disponiblesAros;
-                ViewBag.TodosProductos = todosProductos;  // para thumbnails en slots
-                ViewBag.TodosAros = todosAros;
+                // ── CARRUSEL — Disponibles (marcados, fuera del carrusel)
+                // Excluir items que ya están en CarruselItems (respetando Tipo)
+                var carruselDispFull = poolMarcados
+                    .Where(x => !(x.Tipo == "P" && idsEnCarruselProducto.Contains(x.Id)))
+                    .Where(x => !(x.Tipo == "A" && idsEnCarruselAro.Contains(x.Id)))
+                    .ToList();
+                var carruselDisp = Paginar(carruselDispFull, carruselDispPage, carruselDispPageSize);
+
+                // ── CARRUSEL — Seleccionados (los que están en CarruselItems)
+                var carruselSelFull = carrusel
+                    .Select(c => new
+                    {
+                        Id = c.ProductoId ?? c.AroId ?? 0,
+                        Tipo = c.Tipo == "Producto" ? "P" : "A",
+                        Nombre = (c.Producto?.Nombre ?? c.Aro?.Nombre) ?? "",
+                        RutaImagen = c.Producto?.RutaImagen ?? c.Aro?.RutaImagen
+                    })
+                    .ToList();
+                var carruselSel = Paginar(carruselSelFull, carruselSelPage, carruselSelPageSize);
+
+                // ── DESTACADOS — Disponibles (marcados, fuera de destacados)
+                var destDispFull = poolMarcados
+                    .Where(x => !(x.Tipo == "P" && idsEnDestProducto.Contains(x.Id)))
+                    .Where(x => !(x.Tipo == "A" && idsEnDestAro.Contains(x.Id)))
+                    .ToList();
+                var destacadosDisp = Paginar(destDispFull, destacadosDispPage, destacadosDispPageSize);
+
+                // ── DESTACADOS — Seleccionados (los que están en DestacadosItems)
+                var destSelFull = destacados
+                    .Select(d => new
+                    {
+                        Id = d.ProductoId ?? d.AroId ?? 0,
+                        Tipo = d.Tipo == "Producto" ? "P" : "A",
+                        Nombre = (d.Producto?.Nombre ?? d.Aro?.Nombre) ?? "",
+                        RutaImagen = d.Producto?.RutaImagen ?? d.Aro?.RutaImagen
+                    })
+                    .ToList();
+                var destacadosSel = Paginar(destSelFull, destacadosSelPage, destacadosSelPageSize);
+
+                ViewBag.CarruselDisp = carruselDisp.Items;
+                ViewBag.CarruselDispTotal = carruselDisp.TotalCount;
+                ViewBag.CarruselDispPage = carruselDisp.PageIndex;
+                ViewBag.CarruselDispTotalPages = carruselDisp.TotalPages;
+                ViewBag.CarruselDispPageSize = carruselDispPageSize;
+
+                ViewBag.CarruselSel = carruselSel.Items;
+                ViewBag.CarruselSelTotal = carruselSel.TotalCount;
+                ViewBag.CarruselSelPage = carruselSel.PageIndex;
+                ViewBag.CarruselSelTotalPages = carruselSel.TotalPages;
+                ViewBag.CarruselSelPageSize = carruselSelPageSize;
+
+                ViewBag.DestacadosDisp = destacadosDisp.Items;
+                ViewBag.DestacadosDispTotal = destacadosDisp.TotalCount;
+                ViewBag.DestacadosDispPage = destacadosDisp.PageIndex;
+                ViewBag.DestacadosDispTotalPages = destacadosDisp.TotalPages;
+                ViewBag.DestacadosDispPageSize = destacadosDispPageSize;
+
+                ViewBag.DestacadosSel = destacadosSel.Items;
+                ViewBag.DestacadosSelTotal = destacadosSel.TotalCount;
+                ViewBag.DestacadosSelPage = destacadosSel.PageIndex;
+                ViewBag.DestacadosSelTotalPages = destacadosSel.TotalPages;
+                ViewBag.DestacadosSelPageSize = destacadosSelPageSize;
             }
 
             return View(productos);
+        }
+
+        /// <summary>Paginador genérico para listas anónimas (las 4 listas de landing).</summary>
+        private class PagedAnon
+        {
+            public List<object> Items { get; set; } = new();
+            public int PageIndex { get; set; }
+            public int TotalCount { get; set; }
+            public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+            public int PageSize { get; set; }
+        }
+
+        private PagedAnon Paginar<T>(List<T> source, int page, int pageSize)
+        {
+            page = Math.Max(1, page);
+            pageSize = pageSize <= 0 ? 12 : pageSize;
+            var skip = (page - 1) * pageSize;
+            var items = source.Skip(skip).Take(pageSize).Cast<object>().ToList();
+            return new PagedAnon
+            {
+                Items = items,
+                PageIndex = page,
+                TotalCount = source.Count,
+                PageSize = pageSize
+            };
         }
 
         public IActionResult Create(string seccion = "productos")
@@ -586,46 +678,68 @@ namespace OC.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GuardarCarrusel([FromForm] List<string> orden)
+        // Payload: agregar=<id1>&agregar=<id2>&quitar=<id3>&tipo_<id>=P|A
+        // Si el admin intenta agregar cuando ya hay 6, se rechaza (topé estricto).
+        public async Task<IActionResult> GuardarCarrusel(
+            [FromForm] List<int> agregar,
+            [FromForm] List<int> quitar,
+            [FromForm] Dictionary<string, string> tipo)
         {
-            if (orden == null) orden = new List<string>();
-            if (orden.Count > 6)
+            agregar ??= new List<int>();
+            quitar ??= new List<int>();
+            tipo ??= new Dictionary<string, string>();
+
+            // IDs actualmente en el carrusel
+            var actuales = (await _landingCarruselRepo.GetAllAsync())
+                .Select(c => (Tipo: c.Tipo, Id: c.ProductoId ?? c.AroId ?? 0))
+                .ToList();
+            int actualesCount = actuales.Count;
+
+            // IDs después del cambio (los agregar entran, los quitar salen)
+            var idsActualesSet = new HashSet<int>(actuales.Select(a => a.Id));
+            var idsEnCarruselFinal = new HashSet<int>(
+                actuales.Where(a => !quitar.Contains(a.Id)).Select(a => a.Id)
+                    .Concat(agregar)
+            );
+
+            if (idsEnCarruselFinal.Count > 6)
                 return Json(new { ok = false, error = "El carrusel admite máximo 6 items." });
 
-            // Cascada: items que SALEN del carrusel deben desmarcar Destacado
-            // (pero solo si tampoco están en destacados)
-            var nuevosProductos = new HashSet<int>();
-            var nuevosAros = new HashSet<int>();
-            var itemsLimpios = new List<LandingItemInput>();
+            if (idsEnCarruselFinal.Count == 0)
+                return Json(new { ok = false, error = "El carrusel no puede quedar vacío si querés guardar; desmarcá todo desde Productos/Aros." });
 
-            foreach (var token in orden)
+            // Detectar si el cliente pasó un ID que NO está marcado como Destacado/MostrarEnLanding:
+            // (no podemos — porque el checkbox en la vista solo aparece para items marcados)
+
+            // Detectar conflicto: si el admin intenta agregar un ID que YA está y NO lo quitó, está OK.
+            // Si quiere agregar uno nuevo pero ya hay 6, ya rechazamos arriba.
+
+            // Construir lista final en orden: primero los existentes que NO se quitaron (mantienen Posicion),
+            // después los nuevos agregar (al final).
+            var itemsFinal = new List<LandingItemInput>();
+            foreach (var (tipoStr, id) in actuales)
             {
-                if (string.IsNullOrWhiteSpace(token)) continue;
-                var partes = token.Split(':');
-                if (partes.Length != 2) continue;
-                var tipo = partes[0].Trim().ToUpperInvariant();
-                if (!int.TryParse(partes[1].Trim(), out var id) || id <= 0) continue;
-
-                if (tipo == "P")
-                {
-                    nuevosProductos.Add(id);
-                    itemsLimpios.Add(new LandingItemInput("Producto", id));
-                }
-                else if (tipo == "A")
-                {
-                    nuevosAros.Add(id);
-                    itemsLimpios.Add(new LandingItemInput("Aro", id));
-                }
+                if (!quitar.Contains(id))
+                    itemsFinal.Add(new LandingItemInput(tipoStr, id));
             }
+            // Tipos para los nuevos agregar (vienen en `tipo_<id>`)
+            foreach (var idNuevo in agregar)
+            {
+                if (idsActualesSet.Contains(idNuevo)) continue; // ya estaba
+                var t = (tipo.TryGetValue(idNuevo.ToString(), out var tt) ? tt : "")
+                    .Trim().ToUpperInvariant();
+                if (t != "P" && t != "A") continue;
+                itemsFinal.Add(new LandingItemInput(t == "P" ? "Producto" : "Aro", idNuevo));
+            }
+
+            if (itemsFinal.Count > 6)
+                itemsFinal = itemsFinal.Take(6).ToList();
 
             try
             {
-                await _landingCarruselRepo.ReplaceAllAsync(itemsLimpios);
-
-                // Cascada de flags
-                await SincronizarFlagsCarrusel(nuevosProductos, nuevosAros);
-
-                return Json(new { ok = true, count = itemsLimpios.Count });
+                await _landingCarruselRepo.ReplaceAllAsync(itemsFinal);
+                await SincronizarFlagsCarruselDesdeFinal(itemsFinal);
+                return Json(new { ok = true, count = itemsFinal.Count });
             }
             catch (System.Exception ex)
             {
@@ -635,42 +749,51 @@ namespace OC.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GuardarDestacados([FromForm] List<string> orden)
+        public async Task<IActionResult> GuardarDestacados(
+            [FromForm] List<int> agregar,
+            [FromForm] List<int> quitar,
+            [FromForm] Dictionary<string, string> tipo)
         {
-            if (orden == null) orden = new List<string>();
-            if (orden.Count > 8)
+            agregar ??= new List<int>();
+            quitar ??= new List<int>();
+            tipo ??= new Dictionary<string, string>();
+
+            var actuales = (await _landingDestacadoRepo.GetAllAsync())
+                .Select(d => (Tipo: d.Tipo, Id: d.ProductoId ?? d.AroId ?? 0))
+                .ToList();
+
+            var idsActualesSet = new HashSet<int>(actuales.Select(a => a.Id));
+            var idsEnDestFinal = new HashSet<int>(
+                actuales.Where(a => !quitar.Contains(a.Id)).Select(a => a.Id)
+                    .Concat(agregar)
+            );
+
+            if (idsEnDestFinal.Count > 8)
                 return Json(new { ok = false, error = "Destacados admite máximo 8 items." });
 
-            var nuevosProductos = new HashSet<int>();
-            var nuevosAros = new HashSet<int>();
-            var itemsLimpios = new List<LandingItemInput>();
-
-            foreach (var token in orden)
+            var itemsFinal = new List<LandingItemInput>();
+            foreach (var (tipoStr, id) in actuales)
             {
-                if (string.IsNullOrWhiteSpace(token)) continue;
-                var partes = token.Split(':');
-                if (partes.Length != 2) continue;
-                var tipo = partes[0].Trim().ToUpperInvariant();
-                if (!int.TryParse(partes[1].Trim(), out var id) || id <= 0) continue;
-
-                if (tipo == "P")
-                {
-                    nuevosProductos.Add(id);
-                    itemsLimpios.Add(new LandingItemInput("Producto", id));
-                }
-                else if (tipo == "A")
-                {
-                    nuevosAros.Add(id);
-                    itemsLimpios.Add(new LandingItemInput("Aro", id));
-                }
+                if (!quitar.Contains(id))
+                    itemsFinal.Add(new LandingItemInput(tipoStr, id));
             }
+            foreach (var idNuevo in agregar)
+            {
+                if (idsActualesSet.Contains(idNuevo)) continue;
+                var t = (tipo.TryGetValue(idNuevo.ToString(), out var tt) ? tt : "")
+                    .Trim().ToUpperInvariant();
+                if (t != "P" && t != "A") continue;
+                itemsFinal.Add(new LandingItemInput(t == "P" ? "Producto" : "Aro", idNuevo));
+            }
+
+            if (itemsFinal.Count > 8)
+                itemsFinal = itemsFinal.Take(8).ToList();
 
             try
             {
-                await _landingDestacadoRepo.ReplaceAllAsync(itemsLimpios);
-                await SincronizarFlagsDestacados(nuevosProductos, nuevosAros);
-
-                return Json(new { ok = true, count = itemsLimpios.Count });
+                await _landingDestacadoRepo.ReplaceAllAsync(itemsFinal);
+                await SincronizarFlagsDestacadosDesdeFinal(itemsFinal);
+                return Json(new { ok = true, count = itemsFinal.Count });
             }
             catch (System.Exception ex)
             {
@@ -679,88 +802,83 @@ namespace OC.Web.Controllers
         }
 
         /// <summary>
-        /// Para cada Producto en el carrusel: Destacado=1.
-        /// Para los que SALEN: si tampoco están en destacados, Destacado=0.
-        /// Mismo patrón para Aros con MostrarEnLanding.
+        /// Cascada al guardar CARRUSEL: el itemFinal ya está en BD.
+        /// - Marca Destacado=true para cada Producto en el carrusel.
+        /// - Marca MostrarEnLanding=true para cada Aro en el carrusel.
+        /// - Items que están marcados pero NO están en CARRUSEL ni DESTACADOS: desmarca.
         /// </summary>
-        private async Task SincronizarFlagsCarrusel(HashSet<int> productosEnSlot, HashSet<int> arosEnSlot)
+        private async Task SincronizarFlagsCarruselDesdeFinal(List<LandingItemInput> carruselFinal)
         {
-            var destItems = await _landingDestacadoRepo.GetAllAsync();
-            var destProdIds = new HashSet<int>(destItems.Where(d => d.ProductoId.HasValue).Select(d => d.ProductoId!.Value));
-            var destAroIds = new HashSet<int>(destItems.Where(d => d.AroId.HasValue).Select(d => d.AroId!.Value));
+            var destFinal = (await _landingDestacadoRepo.GetAllAsync())
+                .Select(d => (Tipo: d.Tipo, Id: d.ProductoId ?? d.AroId ?? 0))
+                .ToList();
 
-            // Productos: marcar los que están en carrusel
-            foreach (var id in productosEnSlot)
+            var prodEnCarrusel = new HashSet<int>(
+                carruselFinal.Where(c => c.Tipo == "Producto").Select(c => c.Id));
+            var aroEnCarrusel = new HashSet<int>(
+                carruselFinal.Where(c => c.Tipo == "Aro").Select(c => c.Id));
+            var prodEnDest = new HashSet<int>(
+                destFinal.Where(d => d.Tipo == "Producto").Select(d => d.Id));
+            var aroEnDest = new HashSet<int>(
+                destFinal.Where(d => d.Tipo == "Aro").Select(d => d.Id));
+
+            foreach (var id in prodEnCarrusel)
                 await _db.Database.ExecuteSqlRawAsync(
                     "UPDATE Productos SET Destacado = 1 WHERE Id = {0}", id);
-
-            // Productos que SALEN: si NO están en destacados, desmarcar
-            var todosProdEnCarruselAntes = await _db.Productos
-                .Where(p => p.Activo)
-                .ToListAsync();
-            foreach (var p in todosProdEnCarruselAntes.Where(p => p.Destacado))
-            {
-                bool estaEnCarruselNuevo = productosEnSlot.Contains(p.Id);
-                bool estaEnDestacados = destProdIds.Contains(p.Id);
-                if (!estaEnCarruselNuevo && !estaEnDestacados)
-                    await _db.Database.ExecuteSqlRawAsync(
-                        "UPDATE Productos SET Destacado = 0 WHERE Id = {0}", p.Id);
-            }
-
-            // Aros: marcar los que están en carrusel
-            foreach (var id in arosEnSlot)
+            foreach (var id in aroEnCarrusel)
                 await _db.Database.ExecuteSqlRawAsync(
                     "UPDATE Aros SET MostrarEnLanding = 1 WHERE Id = {0}", id);
 
-            // Aros que SALEN
-            var todosArosActivos = await _db.Aros
-                .Where(a => a.Activo)
-                .ToListAsync();
-            foreach (var a in todosArosActivos.Where(a => a.MostrarEnLanding))
+            // Limpiar flags huérfanos
+            var productos = await _db.Productos.Where(p => p.Activo && p.Destacado).ToListAsync();
+            foreach (var p in productos)
             {
-                bool estaEnCarruselNuevo = arosEnSlot.Contains(a.Id);
-                bool estaEnDestacados = destAroIds.Contains(a.Id);
-                if (!estaEnCarruselNuevo && !estaEnDestacados)
+                if (!prodEnCarrusel.Contains(p.Id) && !prodEnDest.Contains(p.Id))
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE Productos SET Destacado = 0 WHERE Id = {0}", p.Id);
+            }
+            var aros = await _db.Aros.Where(a => a.Activo && a.MostrarEnLanding).ToListAsync();
+            foreach (var a in aros)
+            {
+                if (!aroEnCarrusel.Contains(a.Id) && !aroEnDest.Contains(a.Id))
                     await _db.Database.ExecuteSqlRawAsync(
                         "UPDATE Aros SET MostrarEnLanding = 0 WHERE Id = {0}", a.Id);
             }
         }
 
-        private async Task SincronizarFlagsDestacados(HashSet<int> productosEnSlot, HashSet<int> arosEnSlot)
+        private async Task SincronizarFlagsDestacadosDesdeFinal(List<LandingItemInput> destFinal)
         {
-            var carItems = await _landingCarruselRepo.GetAllAsync();
-            var carProdIds = new HashSet<int>(carItems.Where(c => c.ProductoId.HasValue).Select(c => c.ProductoId!.Value));
-            var carAroIds = new HashSet<int>(carItems.Where(c => c.AroId.HasValue).Select(c => c.AroId!.Value));
+            var carruselFinal = (await _landingCarruselRepo.GetAllAsync())
+                .Select(c => (Tipo: c.Tipo, Id: c.ProductoId ?? c.AroId ?? 0))
+                .ToList();
 
-            // Marcar los que entran
-            foreach (var id in productosEnSlot)
+            var prodEnDest = new HashSet<int>(
+                destFinal.Where(d => d.Tipo == "Producto").Select(d => d.Id));
+            var aroEnDest = new HashSet<int>(
+                destFinal.Where(d => d.Tipo == "Aro").Select(d => d.Id));
+            var prodEnCarrusel = new HashSet<int>(
+                carruselFinal.Where(c => c.Tipo == "Producto").Select(c => c.Id));
+            var aroEnCarrusel = new HashSet<int>(
+                carruselFinal.Where(c => c.Tipo == "Aro").Select(c => c.Id));
+
+            foreach (var id in prodEnDest)
                 await _db.Database.ExecuteSqlRawAsync(
                     "UPDATE Productos SET Destacado = 1 WHERE Id = {0}", id);
-            foreach (var id in arosEnSlot)
+            foreach (var id in aroEnDest)
                 await _db.Database.ExecuteSqlRawAsync(
                     "UPDATE Aros SET MostrarEnLanding = 1 WHERE Id = {0}", id);
 
-            // Los que SALEN: si NO están en carrusel tampoco, desmarcar
-            var todosProdDestacados = await _db.Productos
-                .Where(p => p.Activo && p.Destacado)
-                .ToListAsync();
-            foreach (var p in todosProdDestacados)
+            var productos = await _db.Productos.Where(p => p.Activo && p.Destacado).ToListAsync();
+            foreach (var p in productos)
             {
-                bool estaEnDestNuevo = productosEnSlot.Contains(p.Id);
-                bool estaEnCarrusel = carProdIds.Contains(p.Id);
-                if (!estaEnDestNuevo && !estaEnCarrusel)
+                if (!prodEnDest.Contains(p.Id) && !prodEnCarrusel.Contains(p.Id))
                     await _db.Database.ExecuteSqlRawAsync(
                         "UPDATE Productos SET Destacado = 0 WHERE Id = {0}", p.Id);
             }
-
-            var todosArosLanding = await _db.Aros
-                .Where(a => a.Activo && a.MostrarEnLanding)
-                .ToListAsync();
-            foreach (var a in todosArosLanding)
+            var aros = await _db.Aros.Where(a => a.Activo && a.MostrarEnLanding).ToListAsync();
+            foreach (var a in aros)
             {
-                bool estaEnDestNuevo = arosEnSlot.Contains(a.Id);
-                bool estaEnCarrusel = carAroIds.Contains(a.Id);
-                if (!estaEnDestNuevo && !estaEnCarrusel)
+                if (!aroEnDest.Contains(a.Id) && !aroEnCarrusel.Contains(a.Id))
                     await _db.Database.ExecuteSqlRawAsync(
                         "UPDATE Aros SET MostrarEnLanding = 0 WHERE Id = {0}", a.Id);
             }
